@@ -117,7 +117,20 @@ verdiğin anda bu adaptif davranış kapanıyor.
 `interruption_delay`'i yükseltmenin tek meşru sebebi: "hı hı" gibi kısa onay sesleri
 ajanın sözünü kesiyorsa.
 
-**Karar: `turn_detection` bloğunu hiç yazmıyoruz.** Sorun çıkarsa 15 Eylül'de bakarız.
+**İlk karar `turn_detection` bloğunu hiç yazmamaktı.** İlk canlı oturumda bozuldu:
+konuşanın öbekler arasındaki kısa duraklamaları cümle sonu sanıldı ve tek bir cümle
+("post a goods receipt, twenty pieces of 4711") ikiye bölündü. Uyarlanabilir tempo
+akıcı, aralıksız konuşma üzerine kalibreli; ana dili İngilizce olmayan bir konuşmacıda
+yetmiyor.
+
+**Yeni karar:** `min_silence: 800`, `max_silence: 2000`, barge-in açık.
+
+**Bedeli açıkça söylenmeli:** bu iki alanı elle vermek uyarlanabilir tempoyu kapatıyor.
+Artık herkese aynı sabit ayar uygulanıyor. Demo için doğru takas, ama "her konuşana
+uyum sağlıyor" iddiası artık geçerli değil — sunumda bu cümle kurulmayacak.
+
+Değerler ölçülerek seçilmedi, ilk deneme olarak konuldu. Kesilme sürerse `min_silence`
+yükseltilir; ajan geç cevap veriyormuş gibi hissettirirse `max_silence` düşürülür.
 
 ---
 
