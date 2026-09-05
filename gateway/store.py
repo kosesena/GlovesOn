@@ -7,12 +7,19 @@ sap_mock.py'de. Gercek bir S/4HANA'ya gecildiginde bu dosya tamamen olur.
 
 from __future__ import annotations
 
+import os
 import sqlite3
 import time
 from contextlib import closing
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent / "gloveson.db"
+# Varsayilan olarak dosya kodun yanindadir. Bir dagitimda kod dizini her
+# yayinda yeniden kurulur, yani veri yayinlar arasi yasamaz; kalici bir disk
+# baglayabilenler GLOVESON_DB_PATH ile onu gosterir. Mock icin kayip veri
+# felaket degil - acilista tohum veri yeniden yazilir - ama bu ayrimi
+# yapilandirmayla soylemek, kod okuyup tahmin ettirmekten iyi.
+DB_PATH = Path(os.getenv("GLOVESON_DB_PATH", "")
+               or Path(__file__).resolve().parent / "gloveson.db")
 
 # Ayni malzeme + miktar + depo yeri bu sure icinde ikinci kez gelirse yeni belge
 # acilmaz. Zaman asimina ugramis bir yazmadan sonra iscinin cumleyi tekrar
@@ -99,6 +106,7 @@ def _ensure_columns(conn) -> list[str]:
 
 
 def init_db(force: bool = False) -> None:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     if force and DB_PATH.exists():
         DB_PATH.unlink()
     with closing(db()) as conn:
