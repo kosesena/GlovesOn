@@ -139,7 +139,10 @@
   .frow { display: grid; grid-template-columns: 150px 1fr; gap: 10px;
           padding: 6px 0; border-bottom: 1px dotted #dcdfe3; font-size: 12px; }
   .frow:last-of-type { border-bottom: none; }
-  .frow[hidden] { display: none; }
+  /* Bir elemani gizlemek icin `hidden` yeterli olmali. Yazdigimiz her
+     `display:` kurali onu eziyor - stok seridi bu yuzden bosken de
+     gorunuyordu, iki tire halinde. Tek kural, sinif sinif yama yerine. */
+  [hidden] { display: none !important; }
   .frow span { color: #8a9099; font-size: 9.5px; letter-spacing: .07em;
                padding-top: 3px; text-transform: uppercase; }
   .frow b { font-weight: 600; word-break: break-all; }
