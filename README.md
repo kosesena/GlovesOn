@@ -133,3 +133,7 @@ agent reads back quantity, unit, material description **and** destination bin an
 worker confirms. The gateway independently rejects unknown materials, non-integer and
 non-positive quantities, and any call without the shared tool secret — so a
 mis-behaving prompt still cannot corrupt stock.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
