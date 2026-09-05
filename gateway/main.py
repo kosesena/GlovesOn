@@ -180,6 +180,20 @@ def init_db(force: bool = False) -> None:
 
 _subscribers: list[asyncio.Queue] = []
 
+# Kapanma isareti. SSE akisi acik bir baglanti oldugu icin, bu olmadan uvicorn
+# yeniden baslarken "waiting for connections to close" satirinda asili kaliyor.
+_shutting_down = asyncio.Event()
+
+# Akisin azami omru. Dolunca akis kapaniyor, tarayici kendiliginden yeniden
+# baglaniyor (EventSource'un davranisi). Boylece hicbir baglanti sonsuza kadar
+# yasamiyor ve yeniden baslatma en fazla bu kadar bekliyor.
+SSE_MAX_LIFETIME_SECONDS = 50
+
+
+@app.on_event("shutdown")
+async def _on_shutdown() -> None:
+    _shutting_down.set()
+
 
 def publish(event_type: str, payload: dict[str, Any]) -> None:
     """Demo ekranindaki herkese olay yayinla. Sessizce basarisiz olur."""
@@ -197,11 +211,12 @@ async def events() -> StreamingResponse:
     _subscribers.append(queue)
 
     async def stream():
+        deadline = time.monotonic() + SSE_MAX_LIFETIME_SECONDS
         try:
             yield "retry: 2000\n\n"
-            while True:
+            while not _shutting_down.is_set() and time.monotonic() < deadline:
                 try:
-                    message = await asyncio.wait_for(queue.get(), timeout=15)
+                    message = await asyncio.wait_for(queue.get(), timeout=5)
                     yield f"data: {message}\n\n"
                 except asyncio.TimeoutError:
                     yield ": keep-alive\n\n"

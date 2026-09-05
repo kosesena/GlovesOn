@@ -68,17 +68,25 @@ def main() -> None:
     headers = {"Authorization": API_KEY, "Content-Type": "application/json"}
 
     updating = bool(AGENT_ID) and not args.force_new
+
     if updating:
-        url, method = f"{API_BASE}/agents/{AGENT_ID}", "PATCH"
+        # Guncelleme fiili dokumanda net degil; desteklenen ilkini kullan.
+        url = f"{API_BASE}/agents/{AGENT_ID}"
         print(f"  Guncelleniyor: {AGENT_ID}")
+        response = None
+        for method in ("PUT", "PATCH", "POST"):
+            response = httpx.request(method, url, headers=headers, json=payload, timeout=30)
+            if response.status_code != 405:
+                print(f"  ({method} kabul edildi)")
+                break
+            print(f"  {method} desteklenmiyor, sonrakini deniyorum...")
     else:
         url, method = f"{API_BASE}/agents", "POST"
         print("  Yeni agent olusturuluyor...")
-
-    response = httpx.request(method, url, headers=headers, json=payload, timeout=30)
+        response = httpx.request(method, url, headers=headers, json=payload, timeout=30)
 
     if response.status_code >= 400:
-        print(f"\n  {method} {url}")
+        print(f"\n  {url}")
         print(f"  {response.status_code}: {response.text}\n", file=sys.stderr)
         if updating:
             print("  Ipucu: guncelleme calismazsa --force-new ile yenisini olustur.")
