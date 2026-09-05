@@ -92,9 +92,21 @@ Replit also runs the service as written — FastAPI, SQLite and a long-lived SSE
 connection all work unchanged. A serverless target would have required replacing the
 storage layer and rethinking the event stream for no gain at this scale.
 
-Set `ASSEMBLYAI_API_KEY`, `TOOL_SHARED_SECRET` and `AGENT_ID` as secrets there, point
-`GATEWAY_PUBLIC_URL` at the deployment's own URL, and re-run `agent/publish.py` so the
-tool definitions carry the new address.
+### Deploying it
+
+1. Import this repository into Replit.
+2. Add `ASSEMBLYAI_API_KEY`, `TOOL_SHARED_SECRET` and `AGENT_ID` in the **Secrets**
+   pane — never in a file. The gateway reads them from the environment.
+3. Deploy as a **Reserved VM**, not Autoscale.
+4. Point `GATEWAY_PUBLIC_URL` at the deployment's own URL and re-run
+   `agent/publish.py`, so the tool definitions carry the new address.
+
+**Why Reserved VM and not Autoscale:** Autoscale scales to zero between requests, which
+is the same shape as a serverless platform — the SQLite file would not survive and the
+SSE stream feeding the live ERP panel would be cut. A Reserved VM is one machine that
+never sleeps, so both survive. `.replit` carries the run command and port mapping; the
+deployment type is chosen in Replit's own UI, so it is the one setting this repository
+cannot enforce for you.
 
 ## Try saying
 
