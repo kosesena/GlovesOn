@@ -64,6 +64,23 @@
     color: var(--warn); background: #241d0d; border: 1px solid #4a3a14; max-width: 100%;
   }
   .msg.sys { align-self: center; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  /* Bos ekran. Bir isci mikrofona, ne diyebilecegini bilmeden basmaz - ve
+     bunu ogrenecegi yer, elleri doluyken okuyacagi bir README degil. Ilk
+     mesaj gelir gelmez kayboluyor: yonerge, konusmanin ustune yigilmamali. */
+  .primer { padding: 18px 18px 6px; display: flex; flex-direction: column; gap: 14px; }
+  .pr-lead { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .pr-lead b { color: var(--accent); font-weight: 600; }
+  .pr-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+  .pr-list li { border-left: 2px solid var(--accent-dim); padding: 1px 0 1px 12px; }
+  .pr-list q { font-size: 14px; color: var(--text); quotes: '\201C' '\201D'; }
+  .pr-list span { display: block; margin-top: 4px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .pr-list span b { color: var(--warn); font-weight: 600; }
+  .pr-foot {
+    font-family: var(--mono); font-size: 11px; line-height: 1.55; color: var(--muted);
+    border-top: 1px solid var(--line); padding-top: 12px;
+  }
+  .pr-foot b { color: var(--accent); font-weight: 600; }
+
   .who { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
 
   .controls { padding: 14px 18px; border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: center; }
@@ -207,9 +224,28 @@
 <main>
   <section>
     <h2>Conversation</h2>
-    <div id="log">
-      <div class="msg sys">Press “Start talking”, then say: “How many of material four seven one one do we have?”</div>
+    <!-- #log'un DISINDA duruyor: "Reset demo" gunlugun icerigini komple
+         degistiriyor, primer orada olsaydi onunla birlikte silinirdi. -->
+    <div id="primer" class="primer">
+      <div class="pr-lead">Press <b>Start talking</b>, then say one of these.</div>
+      <ul class="pr-list">
+        <li><q>How many of material four seven one one do we have?</q>
+            <span>quantity, unit, description and the bin it sits in</span></li>
+        <li><q>Where are the ball bearings stored?</q>
+            <span>finds the material from its description, not its number</span></li>
+        <li><q>Post a goods receipt, twenty pieces of four seven one one</q>
+            <span>the agent reads the line back — then say <b>confirm</b></span></li>
+        <li><q>Reverse material document four nine zero zero zero zero zero one two three</q>
+            <span>posts a 102 against the 101 — both documents stay</span></li>
+      </ul>
+      <div class="pr-foot">
+        Neither write happens without a spoken read-back and an unmistakable
+        <b>yes</b>. Say the same receipt twice and the second one is refused,
+        not posted.
+      </div>
     </div>
+
+    <div id="log"></div>
     <div class="controls">
       <span class="hint">Headphones recommended · barge-in enabled — you can interrupt the agent</span>
     </div>
@@ -251,6 +287,14 @@
       <table class="mini">
         <tbody id="docBody"><tr><td colspan="4" class="empty">No documents yet.</td></tr></tbody>
       </table>
+
+      <!-- Depoda ne var. Bos ekrani doldurmaktan cok, konusana soyleyecek
+           malzeme numarasi vermek icin: LABST bir yazmadan sonra degisiyor,
+           yani ayni tablo hem davet hem de kanit. -->
+      <div class="sub">Stock in this plant</div>
+      <table class="mini">
+        <tbody id="stockBody"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
+      </table>
     </div>
   </section>
 </main>
@@ -260,6 +304,7 @@
 // Live ERP panel — Server-Sent Events'ten beslenir
 // ---------------------------------------------------------------------------
 const docBody    = document.getElementById('docBody');
+const stockBody  = document.getElementById('stockBody');
 const pendingEl  = document.getElementById('pending');
 const pendingTxt = document.getElementById('pendingText');
 const stampEl    = document.getElementById('stamp');
@@ -367,6 +412,10 @@ async function refreshInventory() {
         <td>${d.MBLNR}</td><td>${d.BWART}</td><td>${d.MATNR}</td>
         <td class="num">${d.MENGE} ${d.MEINS}</td></tr>`).join('')
     : '<tr><td colspan="4" class="empty">No documents yet.</td></tr>';
+
+  stockBody.innerHTML = data.stock.map(s => `
+    <tr><td>${s.MATNR}</td><td>${s.MAKTX}</td><td>${s.LGPLA}</td>
+        <td class="num">${s.LABST} ${s.MEINS}</td></tr>`).join('');
 }
 
 const sse = new EventSource('/events');
@@ -420,6 +469,8 @@ document.getElementById('resetBtn').onclick = async () => {
   document.getElementById('log').innerHTML =
     '<div class="msg sys">Demo reset. Stock levels restored.</div>';
   clearDoc();
+  refreshInventory();          // stok tablosu tohum degerlere donsun
+  primerEl.hidden = false;     // ekran yeniden bos: yonergeler geri gelsin
 };
 
 // ---------------------------------------------------------------------------
@@ -429,6 +480,7 @@ const SAMPLE_RATE = 24000;           // API sozlesmesi: PCM16 mono 24 kHz
 const WS_URL = 'wss://agents.assemblyai.com/v1/ws';
 
 const logEl    = document.getElementById('log');
+const primerEl = document.getElementById('primer');
 const talkBtn  = document.getElementById('talkBtn');
 const statusEl = document.getElementById('status');
 const dotEl    = document.getElementById('dot');
@@ -525,6 +577,7 @@ function drawFrame(now) {
 requestAnimationFrame(drawFrame);
 
 function append(kind, who, text) {
+  primerEl.hidden = true;
   const el = document.createElement('div');
   el.className = `msg ${kind}`;
   el.innerHTML = who ? `<div class="who">${who}</div>` : '';
