@@ -1,4 +1,4 @@
-# VoxERP — Hands-Free Warehouse Operator
+# GlovesOn — Hands-Free Warehouse Operator
 
 > Voice agent that lets a warehouse worker query and **write to** an SAP ERP system
 > without touching a screen. Built for the AssemblyAI Voice Agent Hackathon (Sept 2026).
@@ -12,7 +12,7 @@ and you confirm — a material document is actually posted and stock changes on 
 ## Architecture
 
 ```
-Browser mic ──PCM16/24kHz──> AssemblyAI Voice Agent API ──HTTP tools──> VoxERP Gateway ──> SAP
+Browser mic ──PCM16/24kHz──> AssemblyAI Voice Agent API ──HTTP tools──> GlovesOn Gateway ──> SAP
                              (STT · turn detection ·                    (FastAPI)          (mock today,
                               LLM · TTS · barge-in)                                         OData tomorrow)
                                                                               │

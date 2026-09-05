@@ -1,5 +1,5 @@
 """
-VoxERP Gateway
+GlovesOn Gateway
 ==============
 AssemblyAI Voice Agent API ile SAP arasindaki koprü.
 
@@ -37,14 +37,14 @@ from fastapi.responses import FileResponse, StreamingResponse
 load_dotenv()
 
 ROOT = Path(__file__).resolve().parent.parent
-DB_PATH = ROOT / "gateway" / "voxerp.db"
+DB_PATH = ROOT / "gateway" / "gloveson.db"
 WEB_DIR = ROOT / "web"
 
 ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
 TOOL_SHARED_SECRET = os.getenv("TOOL_SHARED_SECRET", "degistir-beni-lutfen")
 AGENT_ID = os.getenv("AGENT_ID", "")
 
-app = FastAPI(title="VoxERP Gateway", version="0.1.0")
+app = FastAPI(title="GlovesOn Gateway", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

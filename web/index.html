@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>VoxERP — Hands-Free Warehouse Terminal</title>
+<title>GlovesOn — Hands-Free Warehouse Terminal</title>
 <style>
   :root {
     --bg: #0b0f14;
@@ -94,7 +94,7 @@
 <body>
 
 <header>
-  <div class="logo">VOX<span>ERP</span></div>
+  <div class="logo">GLOVES<span>ON</span></div>
   <div class="plant">PLANT 1000 · WAREHOUSE TERMINAL</div>
   <div class="spacer"></div>
   <div class="dot" id="dot"></div>
@@ -359,7 +359,7 @@ async function start() {
         break;
 
       case 'transcript.agent':
-        append('agent', 'voxerp', m.text ?? '');
+        append('agent', 'gloveson', m.text ?? '');
         break;
 
       case 'reply.done':

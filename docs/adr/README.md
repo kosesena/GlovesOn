@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Short records of the decisions that shaped VoxERP: the context, the options that
+Short records of the decisions that shaped GlovesOn: the context, the options that
 were actually on the table, what was chosen, and what that choice costs.
 
 A decision belongs here if reversing it later would be expensive.
