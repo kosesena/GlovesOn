@@ -88,6 +88,37 @@
          text-transform: uppercase; color: var(--muted); background: #0e141c;
          border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); }
   .empty { padding: 16px 12px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+
+  /* Bekleyen yazma - mimarinin gorunur hali */
+  .pending {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px; margin: 0;
+    background: #241d0d; border-bottom: 1px solid #4a3a14;
+    font-family: var(--mono); font-size: 12px; color: var(--warn);
+  }
+  .pdot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--warn);
+    animation: pulse 1.1s ease-in-out infinite; flex: none;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+
+  tr.draft td {
+    color: var(--warn); background: #1d1808;
+    border-top: 1px dashed #4a3a14; border-bottom: 1px dashed #4a3a14;
+    animation: pulse 1.1s ease-in-out infinite;
+  }
+
+  /* Yazma ani */
+  td.count { color: var(--accent); font-weight: 600; }
+  tr.bump td { animation: bump 1.6s ease-out; }
+  .mblnr-new { animation: reveal 1.2s ease-out; }
+  @keyframes reveal {
+    0%   { background: var(--accent); color: #06201a; }
+    100% { background: transparent; }
+  }
+
+  /* Ses seviyesi */
+  #meter { width: 54px; height: 18px; display: block; }
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } section + section { border-left: none; border-top: 1px solid var(--line); } }
 </style>
 </head>
@@ -97,6 +128,7 @@
   <div class="logo">GLOVES<span>ON</span></div>
   <div class="plant">PLANT 1000 · WAREHOUSE TERMINAL</div>
   <div class="spacer"></div>
+  <canvas id="meter" width="108" height="36" aria-hidden="true"></canvas>
   <div class="dot" id="dot"></div>
   <div class="status" id="status">idle</div>
   <button id="resetBtn">Reset demo</button>
@@ -116,6 +148,9 @@
 
   <section>
     <h2>Live ERP state</h2>
+    <div id="pending" class="pending" hidden>
+      <span class="pdot"></span><span id="pendingText"></span>
+    </div>
     <div class="tables">
       <div class="sub">MARD — Stock per storage location</div>
       <table>
@@ -139,9 +174,26 @@
 // ---------------------------------------------------------------------------
 // Live ERP panel — Server-Sent Events'ten beslenir
 // ---------------------------------------------------------------------------
-const stockBody = document.getElementById('stockBody');
-const docBody   = document.getElementById('docBody');
+const stockBody  = document.getElementById('stockBody');
+const docBody    = document.getElementById('docBody');
+const pendingEl  = document.getElementById('pending');
+const pendingTxt = document.getElementById('pendingText');
 let lastTouched = null;
+let newestDoc = null;
+const knownStock = new Map();   // MATNR-LGORT -> son gorulen LABST
+
+// Sayiyi eskiden yeniye sayarak degistirir. Yazma anini gorunur kilan sey bu.
+function countTo(cell, from, to, unit) {
+  const t0 = performance.now(), dur = 800;
+  cell.classList.add('count');
+  (function step(now) {
+    const k = Math.min(1, (now - t0) / dur);
+    const eased = 1 - Math.pow(1 - k, 3);
+    cell.textContent = `${Math.round(from + (to - from) * eased)} ${unit}`;
+    if (k < 1) requestAnimationFrame(step);
+    else setTimeout(() => cell.classList.remove('count'), 900);
+  })(t0);
+}
 
 async function refreshInventory() {
   const data = await fetch('/api/inventory').then(r => r.json());
@@ -157,9 +209,22 @@ async function refreshInventory() {
 
   docBody.innerHTML = data.documents.length
     ? data.documents.map(d => `
-      <tr><td>${d.MBLNR}</td><td>${d.BWART}</td><td>${d.MATNR}</td>
+      <tr class="${d.MBLNR === newestDoc ? 'mblnr-new' : ''}">
+          <td>${d.MBLNR}</td><td>${d.BWART}</td><td>${d.MATNR}</td>
           <td class="num">${d.MENGE} ${d.MEINS}</td><td>${d.LGPLA}</td><td>${d.BUDAT}</td></tr>`).join('')
     : '<tr><td colspan="6" class="empty">No documents yet.</td></tr>';
+  newestDoc = null;
+
+  // Degisen stok satirini sayarak goster
+  for (const r of data.stock) {
+    const key = `${r.MATNR}-${r.LGORT}`;
+    const before = knownStock.get(key);
+    knownStock.set(key, r.LABST);
+    if (before !== undefined && before !== r.LABST) {
+      const cell = stockBody.querySelector(`[data-key="${key}"] td.num`);
+      if (cell) countTo(cell, before, r.LABST, r.MEINS);
+    }
+  }
 
   if (lastTouched) {
     const row = stockBody.querySelector(`[data-key="${lastTouched}"]`);
@@ -168,13 +233,46 @@ async function refreshInventory() {
   }
 }
 
+// ---- Bekleyen yazma -------------------------------------------------------
+// Amaci sus degil: "onaydan once hicbir sey yazilmadi" cumlesini ekranda
+// gorunur kilmak. Jurinin duymasi gereken seyi ekran soyluyor.
+function showPending(text) {
+  pendingTxt.textContent = text;
+  pendingEl.hidden = false;
+}
+function clearPending() {
+  pendingEl.hidden = true;
+  const draft = docBody.querySelector('tr.draft');
+  if (draft) draft.remove();
+  if (!docBody.querySelector('tr')) {
+    docBody.innerHTML = '<tr><td colspan="6" class="empty">No documents yet.</td></tr>';
+  }
+}
+function showDraftRow(args) {
+  const empty = docBody.querySelector('.empty');
+  if (empty) docBody.innerHTML = '';
+  docBody.querySelector('tr.draft')?.remove();
+  const tr = document.createElement('tr');
+  tr.className = 'draft';
+  tr.innerHTML = `<td>posting…</td><td>—</td><td>${args.material ?? '?'}</td>
+    <td class="num">${args.quantity ?? '?'}</td><td>—</td><td>—</td>`;
+  docBody.prepend(tr);
+}
+
 const sse = new EventSource('/events');
 sse.onmessage = (e) => {
   const evt = JSON.parse(e.data);
   if (evt.type === 'goods_receipt') {
     lastTouched = `${evt.data.MATNR}-${evt.data.LGORT}`;
+    newestDoc = evt.data.MBLNR;
+    clearPending();
     refreshInventory();
+  } else if (evt.type === 'duplicate_blocked') {
+    showPending(`Refused — this exact posting already exists as ${evt.data.MBLNR}. Nothing was written.`);
+    setTimeout(clearPending, 6000);
   } else if (evt.type === 'reset') {
+    knownStock.clear();
+    clearPending();
     refreshInventory();
   }
 };
@@ -197,14 +295,96 @@ const talkBtn  = document.getElementById('talkBtn');
 const statusEl = document.getElementById('status');
 const dotEl    = document.getElementById('dot');
 
-let ws = null, micCtx = null, micNode = null, micStream = null;
+let ws = null, micCtx = null, micNode = null, micStream = null, micAnalyser = null;
 let playCtx = null, playCursor = 0;
 let partialEl = null, live = false;
 
-function setStatus(text, on = false) {
-  statusEl.textContent = text;
+// ---------------------------------------------------------------------------
+// Durum satiri: ne olduğunu ve ne kadar surdugunu birlikte gosterir.
+// Sus degil - tool cagrilarinin gercek suresini olcuyor. NFR'deki gecikme
+// butcesinin "olculen" sutunu buradan doluyor.
+// ---------------------------------------------------------------------------
+const meterEl = document.getElementById('meter');
+const mctx = meterEl.getContext('2d');
+
+let statusLabel = 'idle', statusOn = false, statusSince = 0, statusTimed = false;
+let micLevel = 0, agentLevel = 0;
+let pendingTool = null;
+
+const TOOL_LABEL = {
+  get_stock: 'checking stock',
+  search_material: 'searching materials',
+  get_purchase_order: 'checking purchase order',
+  post_goods_receipt: 'posting to ERP',
+  reverse_goods_receipt: 'reversing document',
+};
+
+function setStatus(text, on = false, timed = false) {
+  statusLabel = text;
+  statusOn = on;
+  statusTimed = timed;
+  statusSince = performance.now();
   dotEl.classList.toggle('on', on);
 }
+
+// Bir tool cagrisi bittiginde suresini kisa sure ekranda tutar.
+let holdUntil = 0;
+function setStatusHeld(text) {
+  statusLabel = text;
+  statusTimed = false;
+  holdUntil = performance.now() + 1800;
+}
+
+// Tool cagrisi bitti: gercek suresini kisa sure ekranda tut.
+// Bu sayi, NFR'deki gecikme butcesinin olculen degeri.
+function endToolPhase() {
+  if (!pendingTool) return;
+  const ms = performance.now() - statusSince;
+  const label = TOOL_LABEL[pendingTool] ?? pendingTool;
+  pendingTool = null;
+  setStatusHeld(`${label} \u00b7 ${(ms / 1000).toFixed(1)}s \u2713`);
+}
+
+function drawFrame(now) {
+  // durum metni
+  if (now > holdUntil) {
+    statusEl.textContent = statusTimed
+      ? `${statusLabel} · ${((now - statusSince) / 1000).toFixed(1)}s`
+      : statusLabel;
+  } else {
+    statusEl.textContent = statusLabel;
+  }
+
+  // mikrofon seviyesi
+  if (micAnalyser) {
+    const buf = new Uint8Array(micAnalyser.fftSize);
+    micAnalyser.getByteTimeDomainData(buf);
+    let sum = 0;
+    for (let i = 0; i < buf.length; i++) { const v = (buf[i] - 128) / 128; sum += v * v; }
+    micLevel = Math.min(1, Math.sqrt(sum / buf.length) * 4);
+  } else {
+    micLevel *= 0.85;
+  }
+  agentLevel *= 0.88;
+
+  // cizim: ajan konusurken onun seviyesi, yoksa mikrofonunki
+  const speaking = agentLevel > 0.02;
+  const level = speaking ? agentLevel : micLevel;
+  const color = speaking ? '#35d0a5' : (live ? '#4ea3f5' : '#3a4a5c');
+
+  const W = meterEl.width, H = meterEl.height, bars = 9, gap = 3;
+  const bw = (W - gap * (bars - 1)) / bars;
+  mctx.clearRect(0, 0, W, H);
+  mctx.fillStyle = color;
+  for (let i = 0; i < bars; i++) {
+    // ortadan disa dogru azalan bir profil, ses seviyesiyle olceklenir
+    const shape = 1 - Math.abs(i - (bars - 1) / 2) / ((bars - 1) / 2) * 0.55;
+    const h = Math.max(2, level * shape * H * (0.55 + 0.45 * Math.sin(i * 1.7 + now / 90)));
+    mctx.fillRect(i * (bw + gap), (H - h) / 2, bw, h);
+  }
+  requestAnimationFrame(drawFrame);
+}
+requestAnimationFrame(drawFrame);
 
 function append(kind, who, text) {
   const el = document.createElement('div');
@@ -241,6 +421,9 @@ function base64ToFloat32(b64) {
 
 // --- ajanin sesini calma ----------------------------------------------------
 function playChunk(float32) {
+  let sum = 0;
+  for (let i = 0; i < float32.length; i += 8) sum += float32[i] * float32[i];
+  agentLevel = Math.max(agentLevel, Math.min(1, Math.sqrt(sum / (float32.length / 8)) * 5));
   if (!playCtx) playCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
   const buf = playCtx.createBuffer(1, float32.length, SAMPLE_RATE);
   buf.copyToChannel(float32, 0);
@@ -284,11 +467,16 @@ async function startMic() {
       ws.send(JSON.stringify({ type: 'input.audio', audio: floatToBase64PCM16(e.data) }));
     }
   };
-  micCtx.createMediaStreamSource(micStream).connect(micNode);
+  const src = micCtx.createMediaStreamSource(micStream);
+  micAnalyser = micCtx.createAnalyser();
+  micAnalyser.fftSize = 512;
+  src.connect(micAnalyser);
+  src.connect(micNode);
   micNode.connect(micCtx.destination); // sessiz uc - grafi canli tutar
 }
 
 function stopMic() {
+  micAnalyser = null;
   if (micNode) { micNode.port.onmessage = null; micNode.disconnect(); micNode = null; }
   if (micCtx)  { micCtx.close(); micCtx = null; }
   if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
@@ -334,7 +522,7 @@ async function start() {
 
       case 'input.speech.started':
         stopPlayback();               // barge-in: ajanin sesini kes
-        setStatus('user speaking', true);
+        setStatus('listening to you', true);
         break;
 
       case 'transcript.user.delta':
@@ -346,23 +534,41 @@ async function start() {
       case 'transcript.user':
         if (partialEl) { partialEl.remove(); partialEl = null; }
         append('user', 'operator', m.text ?? '');
-        setStatus('thinking', true);
+        setStatus('thinking', true, true);
         break;
 
-      case 'tool.call':
-        append('tool', '', `→ ${m.name}(${JSON.stringify(m.arguments ?? {})})`);
+      case 'tool.call': {
+        const args = m.arguments ?? {};
+        append('tool', '', `\u2192 ${m.name}(${JSON.stringify(args)})`);
+        pendingTool = m.name;
+        setStatus(TOOL_LABEL[m.name] ?? m.name, true, true);
+        // Yazma isleminde niyeti ekranda goster: henuz hicbir sey yazilmadi.
+        if (m.name === 'post_goods_receipt') {
+          showDraftRow(args);
+          showPending('Writing to the ERP \u2014 not committed until the system confirms');
+        }
         break;
+      }
 
       case 'reply.audio':
         if (m.audio) playChunk(base64ToFloat32(m.audio));
+        endToolPhase();
         setStatus('agent speaking', true);
         break;
 
-      case 'transcript.agent':
-        append('agent', 'gloveson', m.text ?? '');
+      case 'transcript.agent': {
+        const text = m.text ?? '';
+        append('agent', 'gloveson', text);
+        endToolPhase();
+        // Ajan onay istiyorsa: henuz hicbir sey yazilmadi, ekranda soyle.
+        if (/confirm\s*\?\s*$/i.test(text.trim())) {
+          showPending('Awaiting your confirmation \u2014 nothing has been written yet');
+        }
         break;
+      }
 
       case 'reply.done':
+        endToolPhase();
         setStatus('listening', true);
         break;
 
@@ -387,6 +593,8 @@ function end() {
 
 function cleanup() {
   live = false;
+  pendingTool = null;
+  clearPending();
   stopMic();
   stopPlayback();
   if (ws) { ws.onclose = null; ws.close(); ws = null; }
