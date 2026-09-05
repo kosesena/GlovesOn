@@ -3,11 +3,14 @@
 # ONEMLI: Deploy ederken "Reserved VM" sec, "Autoscale" DEGIL.
 # Autoscale trafik yokken kapanir; SQLite dosyasi ve SSE baglantisi kaybolur —
 # yani Vercel'de yasayacagimiz sorunun aynisi. Reserved VM hic uyumuyor.
+# Dagitim turu Replit'in kendi ekranindan secilir; bu dosya onu dayatamaz.
 
 entrypoint = "gateway/main.py"
 modules = ["python-3.11"]
 
-run = ["uvicorn", "gateway.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Komutlar dizi degil metin: metin olanlar kabuktan gecer, boylece ${PORT}
+# genisler. Replit dagitimda portu kendi atar, yerelde 8000'e duseriz.
+run = "uvicorn gateway.main:app --host 0.0.0.0 --port ${PORT:-8000}"
 
 [[ports]]
 localPort = 8000
@@ -15,4 +18,4 @@ externalPort = 80
 
 [deployment]
 build = "pip install -r requirements.txt"
-run = ["uvicorn", "gateway.main:app", "--host", "0.0.0.0", "--port", "8000"]
+run = "uvicorn gateway.main:app --host 0.0.0.0 --port ${PORT:-8000}"

@@ -42,6 +42,10 @@ ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
 TOOL_SHARED_SECRET = os.getenv("TOOL_SHARED_SECRET", "degistir-beni-lutfen")
 AGENT_ID = os.getenv("AGENT_ID", "")
 
+# Uvicorn'a verdigimiz port. Replit dagitimda PORT'u kendisi atar; yerelde
+# serve.sh ayni degiskeni okur, boylece iki taraf ayni sayida anlasir.
+PORT = int(os.getenv("PORT", "8000"))
+
 app = FastAPI(title="GlovesOn Gateway", version="0.2.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -50,25 +54,21 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 app.include_router(sap_mock.router, prefix="/sap/opu/odata/sap", tags=["mock-s4hana"])
 
 _sap: SapClient | None = None
-_self_base: str | None = None
 
-
-@app.middleware("http")
-async def _remember_own_address(request, call_next):
-    # SAP_BASE_URL verilmediginde gateway kendi icindeki mock S/4HANA'ya
-    # baglanir. Kendi adresini ilk istekten ogrenir; boylece port neyse
-    # (yerelde 8000, Replit'te baska) yapilandirma gerekmez.
-    global _self_base
-    if _self_base is None:
-        _self_base = str(request.base_url).rstrip("/")
-    return await call_next(request)
+# SAP_BASE_URL verilmediginde gateway kendi icindeki mock S/4HANA'ya baglanir.
+# Bu adres bilerek loopback: bir vekil sunucunun (Replit, Cloudflare) arkasinda
+# calisirken kendi *public* adresimize gitmek istegi veri merkezinden cikarip
+# geri sokar ve http -> https yonlendirmesine takilir; SapClient yonlendirme
+# takip etmiyor, dolayisiyla her tool cagrisi sessizce patlardi. Loopback ayni
+# zamanda hala gercek bir HTTP atlamasi - mock disaridan bir sistem gibi
+# cagrilmaya devam ediyor, kisayol yok.
+MOCK_SAP_BASE_URL = os.getenv("MOCK_SAP_BASE_URL", "").rstrip("/") or f"http://127.0.0.1:{PORT}"
 
 
 def sap() -> SapClient:
     global _sap
     if _sap is None:
-        base = sap_client.SAP_BASE_URL or _self_base or "http://127.0.0.1:8000"
-        _sap = SapClient(base)
+        _sap = SapClient(sap_client.SAP_BASE_URL or MOCK_SAP_BASE_URL)
     return _sap
 
 
@@ -480,7 +480,7 @@ def reset() -> dict[str, str]:
 @app.get("/health")
 def health() -> dict[str, Any]:
     return {"ok": True, "agent_id": AGENT_ID or None,
-            "sap_base_url": sap_client.SAP_BASE_URL or f"{_self_base} (mock S/4HANA)"}
+            "sap_base_url": sap_client.SAP_BASE_URL or f"{MOCK_SAP_BASE_URL} (mock S/4HANA)"}
 
 
 @app.get("/")
