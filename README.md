@@ -186,7 +186,8 @@ an unmistakable yes.
 | `execution_mode: "hold"` on both writes | the agent waits for the ERP, and says so |
 | `transcription_prompt` | a receiving dock: forklift noise, spoken material numbers |
 | `keyterms` | material numbers, movement vocabulary, spelled-out digits |
-| Barge-in | the client flushes queued audio on `input.speech.started` |
+| `turn_detection` | `min_silence: 800` · `max_silence: 2000` — adaptive pacing is deliberately **off** |
+| Barge-in | `interrupt_response: true`; the client flushes queued audio on `input.speech.started` |
 | Session token minting | `GET /api/voice-token` — the API key never reaches the browser |
 
 Measured limits and open gaps — including accents and non-native speakers, still
