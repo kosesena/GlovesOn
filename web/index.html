@@ -297,7 +297,7 @@ const statusEl = document.getElementById('status');
 const dotEl    = document.getElementById('dot');
 
 let ws = null, micCtx = null, micNode = null, micStream = null, micAnalyser = null;
-let playCtx = null, playCursor = 0;
+let playCtx = null, playCursor = 0, playSources = [];
 let partialEl = null, live = false;
 
 // ---------------------------------------------------------------------------
@@ -421,16 +421,32 @@ function base64ToFloat32(b64) {
 }
 
 // --- ajanin sesini calma ----------------------------------------------------
+// Tarayicilar AudioContext'i yalnizca bir kullanici hareketi sirasinda
+// calistiriyor. Bu yuzden baglami "Start talking" tiklamasinda kuruyoruz;
+// ilk ses paketi geldiginde kurmak gec kaliyor ve baglam askida basliyor -
+// hicbir sey duyulmuyor.
+async function ensurePlayback() {
+  if (!playCtx) playCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+  if (playCtx.state === 'suspended') { try { await playCtx.resume(); } catch {} }
+  return playCtx;
+}
+
 function playChunk(float32) {
   let sum = 0;
   for (let i = 0; i < float32.length; i += 8) sum += float32[i] * float32[i];
   agentLevel = Math.max(agentLevel, Math.min(1, Math.sqrt(sum / (float32.length / 8)) * 5));
-  if (!playCtx) playCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+
+  if (!playCtx) { ensurePlayback(); return; }
+  if (playCtx.state === 'suspended') playCtx.resume().catch(() => {});
+
   const buf = playCtx.createBuffer(1, float32.length, SAMPLE_RATE);
   buf.copyToChannel(float32, 0);
   const src = playCtx.createBufferSource();
   src.buffer = buf;
   src.connect(playCtx.destination);
+  src.onended = () => { playSources = playSources.filter(s => s !== src); };
+  playSources.push(src);
+
   const now = playCtx.currentTime;
   playCursor = Math.max(playCursor, now + 0.05);
   src.start(playCursor);
@@ -438,8 +454,10 @@ function playChunk(float32) {
 }
 
 function stopPlayback() {
-  // Kullanici sozunu kestiginde kuyrugu bosalt: eski AudioContext'i kapat.
-  if (playCtx) { playCtx.close(); playCtx = null; }
+  // Barge-in: sirada bekleyen sesi sustur. Baglami KAPATMIYORUZ - kapatirsak
+  // bir sonraki cevap icin yeniden kurmak gerekir ve o da askida baslar.
+  for (const s of playSources) { try { s.stop(); } catch {} }
+  playSources = [];
   playCursor = 0;
 }
 
@@ -487,6 +505,7 @@ function stopMic() {
 async function start() {
   setStatus('connecting…');
   talkBtn.disabled = true;
+  await ensurePlayback();   // tiklama hareketi hala gecerliyken sesi ac
 
   let token, agentId;
   try {
@@ -601,6 +620,8 @@ function cleanup() {
   live = false;
   pendingTool = null;
   clearPending();
+  if (playCtx) { playCtx.close().catch(() => {}); playCtx = null; }
+  playSources = [];
   stopMic();
   stopPlayback();
   if (ws) { ws.onclose = null; ws.close(); ws = null; }
