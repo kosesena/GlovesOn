@@ -39,12 +39,28 @@ ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "web"
 
 ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
-TOOL_SHARED_SECRET = os.getenv("TOOL_SHARED_SECRET", "degistir-beni-lutfen")
+TOOL_SHARED_SECRET = os.getenv("TOOL_SHARED_SECRET", "").strip()
 AGENT_ID = os.getenv("AGENT_ID", "")
 
 # Uvicorn'a verdigimiz port. Replit dagitimda PORT'u kendisi atar; yerelde
 # serve.sh ayni degiskeni okur, boylece iki taraf ayni sayida anlasir.
 PORT = int(os.getenv("PORT", "8000"))
+
+# Demo ekranindaki "sifirla" dugmesi mock veritabanini bastan kurar. Tunel
+# adresi rastgeleyken bunu bulan olmazdi; sabit bir adreste, kimlik istemeyen
+# bir POST demoyu jurinin altindan silebilir. Degiskeni 0 yaparak kapatilir.
+ENABLE_RESET = os.getenv("GLOVESON_ENABLE_RESET", "1") not in ("0", "false", "no")
+
+# Paylasilan sir eskiden .env.example'daki metne dusuyordu. Yerelde zararsizdi;
+# public bir adreste, dokumante edilmis bir varsayilan sir demek sirsizlik
+# demek. Eksikse acilista duruyoruz - sessizce korumasiz calismaktansa
+# hic calismamak.
+if not TOOL_SHARED_SECRET or TOOL_SHARED_SECRET == "degistir-beni-lutfen":
+    raise RuntimeError(
+        "TOOL_SHARED_SECRET is unset or still the placeholder from .env.example. "
+        "Set it to a value of your own (locally in .env, on Replit in the Secrets "
+        "pane) and make sure the same value is used when you run ./publish.sh."
+    )
 
 app = FastAPI(title="GlovesOn Gateway", version="0.2.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -442,10 +458,34 @@ async def purchase_order(
 # Demo ekrani destek uclari
 # ---------------------------------------------------------------------------
 
+# Bir ses oturumu saniye basina faturalanir ve bu uc, anahtari sunucuda
+# tutabilmek icin bilerek kimliksiz: tarayici anahtari hic gormesin diye
+# token'i biz basiyoruz. Tunel adresi her seferinde degisirken bunu bulan
+# olmazdi. Sabit bir adreste bulunur, ve bulan kisi bizim faturamiza oturum
+# acar. Bedeli: mesru bir demo da ust sinira carpabilir, o yuzden pencere
+# genis tutuldu ve sinir asildiginda 429 ile acikca soyluyoruz.
+VOICE_TOKEN_MAX = int(os.getenv("VOICE_TOKEN_MAX_PER_HOUR", "40"))
+VOICE_TOKEN_WINDOW_SECONDS = 3600
+_voice_token_grants: list[float] = []
+
+
+def _voice_token_budget() -> int:
+    cutoff = time.time() - VOICE_TOKEN_WINDOW_SECONDS
+    _voice_token_grants[:] = [t for t in _voice_token_grants if t >= cutoff]
+    return VOICE_TOKEN_MAX - len(_voice_token_grants)
+
+
 @app.get("/api/voice-token")
 async def voice_token() -> dict[str, Any]:
     if not ASSEMBLYAI_API_KEY:
         raise HTTPException(status_code=500, detail="ASSEMBLYAI_API_KEY is not set")
+    if _voice_token_budget() <= 0:
+        raise HTTPException(
+            status_code=429,
+            detail=f"This gateway has handed out {VOICE_TOKEN_MAX} voice sessions in the "
+                   f"last hour and is holding off. Try again shortly, or raise "
+                   f"VOICE_TOKEN_MAX_PER_HOUR.")
+    _voice_token_grants.append(time.time())
     async with httpx.AsyncClient(timeout=15) as client:
         r = await client.get("https://agents.assemblyai.com/v1/token",
                              params={"expires_in_seconds": 300, "max_session_duration_seconds": 600},
@@ -472,6 +512,8 @@ def inventory() -> dict[str, Any]:
 
 @app.post("/api/reset")
 def reset() -> dict[str, str]:
+    if not ENABLE_RESET:
+        raise HTTPException(status_code=403, detail="Reset is disabled on this deployment.")
     store.init_db(force=True)
     publish("reset", {})
     return {"status": "reset"}
