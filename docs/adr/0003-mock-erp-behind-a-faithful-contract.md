@@ -59,6 +59,31 @@ is below it.
   management, `$batch`, and error payloads that are considerably less tidy.
 - Movement types beyond 101 and 501 are not modelled at all.
 
+## Update, 5 September
+
+The claim above — that swapping in a real OData service changes four functions and no
+agent configuration — was still only a claim, because the mock exposed endpoints of our
+own invention that merely *resembled* SAP.
+
+It no longer is. The mock now implements the released APIs themselves
+(`API_MATERIAL_DOCUMENT_SRV`, `API_MATERIAL_STOCK_SRV`, `API_PRODUCT_SRV`,
+`API_PURCHASEORDER_PROCESS_SRV`) and sits opposite the gateway rather than inside it.
+The gateway reaches it over HTTP, performs the `X-CSRF-Token: Fetch` handshake, posts a
+real `A_MaterialDocumentHeader` body and parses the `{"d": …}` envelope back. Pointing
+`SAP_BASE_URL` at a tenant is the entire migration, because there is no alternative code
+path to switch to.
+
+Two things this forced into the open, both of which the earlier naive mock had hidden:
+
+- A stock question needs **two** API calls. Stock and description live in different
+  services. The latency budget has to carry that, and now does.
+- `GoodsMovementCode` must agree with the movement type — 01 against a purchase order,
+  05 without one. A mock that accepted any combination would have taught us nothing.
+
+The duplicate guard moved in the opposite direction, out of the mock and into the
+gateway. Real S/4HANA accepts the same goods receipt twice without complaint, so a guard
+living in the mock would have quietly disappeared on the day it was needed most.
+
 ## Follow-up
 
 Connecting a BTP trial is scheduled as optional work, time-boxed and abandoned if it

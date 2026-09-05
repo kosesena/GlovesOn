@@ -1,17 +1,15 @@
 """
 GlovesOn Gateway
-==============
-AssemblyAI Voice Agent API ile SAP arasindaki koprü.
+================
+Sesli ajan ile SAP arasindaki koprü.
 
-Iki isi var:
-  1. Agent'in HTTP tool'larini karsilar (stok sorgu, mal girisi, siparis durumu)
-  2. Demo ekranina canli olay akisi (SSE) yayinlar
+Ajan burayla konusur, burasi SAP ile. Ajan hicbir zaman SAP sekli gormez:
+tool cevaplari sesli okunabilir cumlelerdir, OData zarfi degil. SAP'ye ozgu
+her sey (CSRF, {"d": ...}, 18 hane MATNR, hareket turleri) sap_client.py'de.
 
-Alan adlari bilerek SAP sozlesmesine sadik (MATNR, WERKS, LGORT, LABST, BWART...).
-Boylece mock'tan gercek SAP OData servisine gecis = sadece BASE URL degisikligi.
+Gercek bir S/4HANA'ya gecis = SAP_BASE_URL degiskeni. Baska hicbir sey.
 
 Calistirma:
-    pip install -r requirements.txt
     uvicorn gateway.main:app --reload --port 8000
 """
 
@@ -20,13 +18,10 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import random
-import sqlite3
 import time
 from contextlib import closing
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import httpx
 from dotenv import load_dotenv
@@ -34,169 +29,71 @@ from fastapi import Body, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 
+from . import sap_client, sap_mock, store
+from .sap_client import SapClient, SapError
+from .store import norm_matnr, pretty_matnr
+
 load_dotenv()
 
 ROOT = Path(__file__).resolve().parent.parent
-DB_PATH = ROOT / "gateway" / "gloveson.db"
 WEB_DIR = ROOT / "web"
 
 ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
 TOOL_SHARED_SECRET = os.getenv("TOOL_SHARED_SECRET", "degistir-beni-lutfen")
 AGENT_ID = os.getenv("AGENT_ID", "")
 
-app = FastAPI(title="GlovesOn Gateway", version="0.1.0")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = FastAPI(title="GlovesOn Gateway", version="0.2.0")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+# Mock S/4HANA'yi ayni surecte servis et. Gateway ona yine de HTTP ile,
+# disaridan bir sistemmis gibi baglanir - kisayol yok.
+app.include_router(sap_mock.router, prefix="/sap/opu/odata/sap", tags=["mock-s4hana"])
+
+_sap: SapClient | None = None
+_self_base: str | None = None
 
 
-# --------------------------------------------------------------------------
-# SAP alan adi yardimcilari
-# --------------------------------------------------------------------------
-
-def norm_matnr(raw: str | int) -> str:
-    """
-    SAP MATNR 18 karakterlik, sifirla soldan doldurulmus bir alandir.
-    Kullanici sesle '4711' der; SAP '000000000000004711' bekler.
-    Bu fonksiyon iki dunyayi birlestirir.
-    """
-    s = str(raw).strip().upper().replace(" ", "").replace("-", "")
-    if s.isdigit():
-        return s.zfill(18)
-    return s
+@app.middleware("http")
+async def _remember_own_address(request, call_next):
+    # SAP_BASE_URL verilmediginde gateway kendi icindeki mock S/4HANA'ya
+    # baglanir. Kendi adresini ilk istekten ogrenir; boylece port neyse
+    # (yerelde 8000, Replit'te baska) yapilandirma gerekmez.
+    global _self_base
+    if _self_base is None:
+        _self_base = str(request.base_url).rstrip("/")
+    return await call_next(request)
 
 
-def pretty_matnr(matnr: str) -> str:
-    """18 haneli MATNR'yi insana/sese uygun hale getirir."""
-    return matnr.lstrip("0") or "0"
+def sap() -> SapClient:
+    global _sap
+    if _sap is None:
+        base = sap_client.SAP_BASE_URL or _self_base or "http://127.0.0.1:8000"
+        _sap = SapClient(base)
+    return _sap
 
 
-# --------------------------------------------------------------------------
-# Veritabani
-# --------------------------------------------------------------------------
-
-SEED_MATERIALS = [
-    # (MATNR, MAKTX aciklama, MEINS birim, WERKS, LGORT, LGPLA raf, LABST stok)
-    ("4711", "Hex Bolt M8x40 Zinc Plated", "EA", "1000", "0001", "A-03-02", 240),
-    ("4712", "Hex Nut M8 Stainless", "EA", "1000", "0001", "A-03-05", 1850),
-    ("4713", "Hydraulic Hose 12mm 2m", "EA", "1000", "0001", "B-01-11", 36),
-    ("5100", "Ball Bearing 6204-2RS", "EA", "1000", "0002", "C-07-01", 122),
-    ("5101", "Timing Belt 8M-1200", "EA", "1000", "0002", "C-07-04", 18),
-    ("6200", "Industrial Grease EP2 400g", "KG", "1000", "0002", "D-02-09", 74),
-    ("6201", "Cutting Fluid Concentrate 20L", "L", "1000", "0002", "D-02-12", 9),
-    ("7300", "Safety Gloves Cut Level 5 (L)", "PC", "1000", "0001", "E-05-03", 410),
-]
-
-SEED_ORDERS = [
-    # (EBELN siparis, LIFNR tedarikci, MATNR, MENGE, STATUS, ETA)
-    ("4500001234", "Bosch Rexroth AG", "4713", 50, "Partially Delivered", "2026-09-11"),
-    ("4500001235", "SKF Turkiye", "5100", 200, "Open", "2026-09-18"),
-    ("4500001236", "Fuchs Lubricants", "6201", 40, "Delivered", "2026-09-02"),
-]
-
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS mard (
-    matnr TEXT NOT NULL,
-    maktx TEXT NOT NULL,
-    meins TEXT NOT NULL,
-    werks TEXT NOT NULL,
-    lgort TEXT NOT NULL,
-    lgpla TEXT NOT NULL,
-    labst INTEGER NOT NULL,
-    PRIMARY KEY (matnr, werks, lgort)
-);
-CREATE TABLE IF NOT EXISTS mkpf (
-    mblnr TEXT PRIMARY KEY,
-    bwart TEXT NOT NULL,
-    matnr TEXT NOT NULL,
-    menge INTEGER NOT NULL,
-    meins TEXT NOT NULL,
-    werks TEXT NOT NULL,
-    lgort TEXT NOT NULL,
-    lgpla TEXT NOT NULL,
-    budat TEXT NOT NULL,
-    ebeln TEXT,
-    created_at REAL NOT NULL DEFAULT 0
-);
-CREATE TABLE IF NOT EXISTS ekko (
-    ebeln TEXT PRIMARY KEY,
-    lifnr TEXT NOT NULL,
-    matnr TEXT NOT NULL,
-    menge INTEGER NOT NULL,
-    status TEXT NOT NULL,
-    eta TEXT NOT NULL
-);
-"""
-
-
-def db() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-# Ayni malzeme + miktar + depo yeri kombinasyonu bu sure icinde ikinci kez
-# gelirse yeni belge acilmaz; ilk belge geri dondurulur. Zaman asimina ugrayan
-# bir yazma isleminden sonra iscinin cumleyi tekrar etmesi bu pencereye duser.
-DUPLICATE_WINDOW_SECONDS = 120
-
-
-def init_db(force: bool = False) -> None:
-    if force and DB_PATH.exists():
-        DB_PATH.unlink()
-    with closing(db()) as conn:
-        conn.executescript(SCHEMA)
-        # Yamadan once olusmus veritabanlari icin
-        cols = {r["name"] for r in conn.execute("PRAGMA table_info(mkpf)")}
-        if "created_at" not in cols:
-            conn.execute("ALTER TABLE mkpf ADD COLUMN created_at REAL NOT NULL DEFAULT 0")
-        already = conn.execute("SELECT COUNT(*) c FROM mard").fetchone()["c"]
-        if not already:
-            conn.executemany(
-                "INSERT INTO mard (matnr, maktx, meins, werks, lgort, lgpla, labst)"
-                " VALUES (?,?,?,?,?,?,?)",
-                [
-                    (norm_matnr(m), desc, uom, werks, lgort, bin_, qty)
-                    for m, desc, uom, werks, lgort, bin_, qty in SEED_MATERIALS
-                ],
-            )
-            conn.executemany(
-                "INSERT INTO ekko (ebeln, lifnr, matnr, menge, status, eta)"
-                " VALUES (?,?,?,?,?,?)",
-                [
-                    (ebeln, lifnr, norm_matnr(m), qty, status, eta)
-                    for ebeln, lifnr, m, qty, status, eta in SEED_ORDERS
-                ],
-            )
-        conn.commit()
-
-
-# --------------------------------------------------------------------------
-# Canli olay akisi (demo ekrani icin)
-# --------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Canli olay akisi (demo ekrani)
+# ---------------------------------------------------------------------------
 
 _subscribers: list[asyncio.Queue] = []
-
-# Kapanma isareti. SSE akisi acik bir baglanti oldugu icin, bu olmadan uvicorn
-# yeniden baslarken "waiting for connections to close" satirinda asili kaliyor.
 _shutting_down = asyncio.Event()
-
-# Akisin azami omru. Dolunca akis kapaniyor, tarayici kendiliginden yeniden
-# baglaniyor (EventSource'un davranisi). Boylece hicbir baglanti sonsuza kadar
-# yasamiyor ve yeniden baslatma en fazla bu kadar bekliyor.
 SSE_MAX_LIFETIME_SECONDS = 50
+
+
+@app.on_event("startup")
+async def _on_startup() -> None:
+    store.init_db()
 
 
 @app.on_event("shutdown")
 async def _on_shutdown() -> None:
     _shutting_down.set()
+    if _sap is not None:
+        await _sap.aclose()
 
 
 def publish(event_type: str, payload: dict[str, Any]) -> None:
-    """Demo ekranindaki herkese olay yayinla. Sessizce basarisiz olur."""
     message = json.dumps({"type": event_type, "ts": time.time(), "data": payload})
     for queue in list(_subscribers):
         try:
@@ -216,342 +113,266 @@ async def events() -> StreamingResponse:
             yield "retry: 2000\n\n"
             while not _shutting_down.is_set() and time.monotonic() < deadline:
                 try:
-                    message = await asyncio.wait_for(queue.get(), timeout=5)
-                    yield f"data: {message}\n\n"
+                    yield f"data: {await asyncio.wait_for(queue.get(), timeout=5)}\n\n"
                 except asyncio.TimeoutError:
                     yield ": keep-alive\n\n"
         finally:
             if queue in _subscribers:
                 _subscribers.remove(queue)
 
-    return StreamingResponse(
-        stream(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
+    return StreamingResponse(stream(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
-
-# --------------------------------------------------------------------------
-# Tool kimlik dogrulama
-# --------------------------------------------------------------------------
 
 def require_tool_auth(secret: str | None) -> None:
-    """
-    AssemblyAI tool header'larini sifreli saklar ve her cagrida gonderir.
-    Gateway public HTTPS'te durdugu icin bu kontrol sart.
-    """
     if secret != TOOL_SHARED_SECRET:
         raise HTTPException(status_code=401, detail="Invalid tool secret")
 
 
-# --------------------------------------------------------------------------
-# TOOL 1 - Stok sorgula
-# --------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# TOOL 1 — stok sorgula
+# ---------------------------------------------------------------------------
 
 @app.get("/erp/stock")
-def get_stock(
-    material: str = Query(..., description="Malzeme numarasi, orn. 4711"),
-    plant: str = Query("1000", description="Uretim yeri / WERKS"),
+async def get_stock(
+    material: str = Query(...),
+    plant: str = Query("1000"),
     x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret"),
 ) -> dict[str, Any]:
     require_tool_auth(x_tool_secret)
     matnr = norm_matnr(material)
 
-    with closing(db()) as conn:
-        rows = conn.execute(
-            "SELECT * FROM mard WHERE matnr = ? AND werks = ?", (matnr, plant)
-        ).fetchall()
+    try:
+        # Gercek SAP'de de boyle: stok bir API'den, aciklama baskasindan.
+        rows = await sap().get_stock(matnr, plant)
+        desc = await sap().get_description(matnr)
+    except SapError as e:
+        publish("tool", {"tool": "get_stock", "ok": False, "code": e.code})
+        return {"found": False, "message": e.message}
 
     if not rows:
         publish("tool", {"tool": "get_stock", "ok": False, "material": material})
-        # Agent'in sese cevirebilecegi net bir hata - kod degil, cumle.
-        return {
-            "found": False,
-            "message": f"Material {pretty_matnr(matnr)} not found in plant {plant}.",
-        }
+        return {"found": False,
+                "message": f"Material {pretty_matnr(matnr)} not found in plant {plant}."}
 
-    locations = [
-        {
-            "LGORT": r["lgort"],
-            "LGPLA": r["lgpla"],
-            "LABST": r["labst"],
-            "MEINS": r["meins"],
-        }
-        for r in rows
-    ]
-    total = sum(r["labst"] for r in rows)
+    locations = [{
+        "LGORT": r["StorageLocation"], "LGPLA": r["StorageBin"],
+        "LABST": int(float(r["MatlWrhsStkQtyInMatlBaseUnit"])), "MEINS": r["MaterialBaseUnit"],
+    } for r in rows]
+
     result = {
         "found": True,
         "MATNR": pretty_matnr(matnr),
-        "MAKTX": rows[0]["maktx"],
-        "MEINS": rows[0]["meins"],
+        "MAKTX": desc["ProductDescription"] if desc else "",
+        "MEINS": rows[0]["MaterialBaseUnit"],
         "WERKS": plant,
-        "total_unrestricted": total,
+        "total_unrestricted": sum(l["LABST"] for l in locations),
         "locations": locations,
     }
     publish("tool", {"tool": "get_stock", "ok": True, "result": result})
     return result
 
 
-# --------------------------------------------------------------------------
-# TOOL 2 - Malzeme ara (sesle numara yerine isim soylendiginde)
-# --------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# TOOL 2 — malzeme ara
+# ---------------------------------------------------------------------------
 
 @app.get("/erp/material-search")
-def material_search(
-    query: str = Query(..., description="Malzeme aciklamasindan parca, orn. 'bearing'"),
+async def material_search(
+    query: str = Query(...),
     x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret"),
 ) -> dict[str, Any]:
     require_tool_auth(x_tool_secret)
-    with closing(db()) as conn:
-        rows = conn.execute(
-            "SELECT DISTINCT matnr, maktx, meins FROM mard"
-            " WHERE LOWER(maktx) LIKE ? ORDER BY maktx LIMIT 5",
-            (f"%{query.lower().strip()}%",),
-        ).fetchall()
+    try:
+        rows = await sap().search_descriptions(query)
+    except SapError as e:
+        return {"count": 0, "matches": [], "message": e.message}
 
-    matches = [
-        {"MATNR": pretty_matnr(r["matnr"]), "MAKTX": r["maktx"], "MEINS": r["meins"]}
-        for r in rows
-    ]
+    matches = [{"MATNR": pretty_matnr(r["Product"]), "MAKTX": r["ProductDescription"],
+                "MEINS": r["BaseUnit"]} for r in rows]
     publish("tool", {"tool": "material_search", "ok": True, "count": len(matches)})
     return {"count": len(matches), "matches": matches}
 
 
-# --------------------------------------------------------------------------
-# TOOL 3 - Mal girisi kaydet (YAZMA islemi - execution_mode: hold)
-# --------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# TOOL 3 — mal girisi (YAZMA)
+# ---------------------------------------------------------------------------
 
 @app.post("/erp/goods-receipt")
-def post_goods_receipt(
+async def post_goods_receipt(
     body: dict = Body(...),
     x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret"),
 ) -> dict[str, Any]:
     require_tool_auth(x_tool_secret)
 
-    material = body.get("material")
-    quantity = body.get("quantity")
-    plant = str(body.get("plant") or "1000")
-    storage_location = str(body.get("storage_location") or "0001")
-    purchase_order = body.get("purchase_order")
-    allow_duplicate = bool(body.get("allow_duplicate"))
-
+    material, quantity = body.get("material"), body.get("quantity")
     if material is None or quantity is None:
         raise HTTPException(status_code=400, detail="material and quantity are required")
-
     try:
         quantity = int(quantity)
     except (TypeError, ValueError):
         return {"posted": False, "message": "Quantity must be a whole number."}
-
     if quantity <= 0:
         return {"posted": False, "message": "Quantity must be greater than zero."}
 
+    plant = str(body.get("plant") or "1000")
+    lgort = str(body.get("storage_location") or "0001")
+    allow_duplicate = bool(body.get("allow_duplicate"))
     matnr = norm_matnr(material)
 
-    with closing(db()) as conn:
-        row = conn.execute(
-            "SELECT * FROM mard WHERE matnr = ? AND werks = ? AND lgort = ?",
-            (matnr, plant, storage_location),
-        ).fetchone()
+    try:
+        rows = await sap().get_stock(matnr, plant)
+        desc = await sap().get_description(matnr)
+    except SapError as e:
+        return {"posted": False, "message": e.message}
+    if not rows:
+        return {"posted": False,
+                "message": f"Material {pretty_matnr(matnr)} is not stocked in plant {plant}."}
 
-        if row is None:
+    unit = rows[0]["MaterialBaseUnit"]
+    bin_ = next((r["StorageBin"] for r in rows if r["StorageLocation"] == lgort), rows[0]["StorageBin"])
+    maktx = desc["ProductDescription"] if desc else ""
+
+    # --- Ayni niyet iki kere kaydedilmesin ---------------------------------
+    # Zaman asimina ugrayan bir yazma belirsizdir: belge dusmus ama cevap
+    # donmemis olabilir. Isci cumleyi tekrar eder, stok iki kat artar.
+    # Bu kontrol bilerek burada: gercek SAP ikinci girisi reddetmez, biz ederiz.
+    if not allow_duplicate:
+        dup = await _recent_identical(matnr, quantity, plant, lgort, body.get("purchase_order"))
+        if dup is not None:
+            seconds = int(time.time() - float(dup["CreationDateTime"]))
+            publish("duplicate_blocked", {"MBLNR": dup["MaterialDocument"]})
             return {
-                "posted": False,
+                "posted": False, "duplicate": True,
+                "MBLNR": dup["MaterialDocument"], "seconds_ago": seconds,
                 "message": (
-                    f"Material {pretty_matnr(matnr)} is not stocked in plant {plant}, "
-                    f"storage location {storage_location}."
-                ),
+                    f"This exact posting already went through {seconds} seconds ago as "
+                    f"material document {dup['MaterialDocument']}: {quantity} {unit} of "
+                    f"{maktx} into bin {bin_}. Nothing was posted this time. Ask the worker "
+                    f"whether this is a second, separate delivery. If it is, call again with "
+                    f"allow_duplicate set to true."),
             }
 
-        # --- Ayni niyet iki kere kaydedilmesin -------------------------------
-        # Bir yazma islemi zaman asimina ugradiginda belge kaydedilmis ama cevap
-        # geri donmemis olabilir. Isci cumleyi tekrar eder ve stok iki kez artar.
-        # Burada ayni kombinasyon kisa sure icinde tekrar gelirse yeni belge
-        # acmiyor, ilk belgeyi geri donduruyoruz. Karar isciye birakiliyor:
-        # gercekten ikinci bir giris istiyorsa allow_duplicate ile tekrar cagirir.
-        if not allow_duplicate:
-            recent = conn.execute(
-                "SELECT * FROM mkpf WHERE matnr = ? AND menge = ? AND werks = ?"
-                " AND lgort = ? AND IFNULL(ebeln,'') = ? AND created_at >= ?"
-                " ORDER BY created_at DESC LIMIT 1",
-                (
-                    matnr, quantity, plant, storage_location,
-                    purchase_order or "", time.time() - DUPLICATE_WINDOW_SECONDS,
-                ),
-            ).fetchone()
-            if recent is not None:
-                seconds = int(time.time() - recent["created_at"])
-                publish("duplicate_blocked", {"MBLNR": recent["mblnr"]})
-                return {
-                    "posted": False,
-                    "duplicate": True,
-                    "MBLNR": recent["mblnr"],
-                    "seconds_ago": seconds,
-                    "message": (
-                        f"This exact posting already went through {seconds} seconds "
-                        f"ago as material document {recent['mblnr']}: {quantity} "
-                        f"{row['meins']} of {row['maktx']} into bin {row['lgpla']}. "
-                        f"Nothing was posted this time. Ask the worker whether this "
-                        f"is a second, separate delivery. If it is, call again with "
-                        f"allow_duplicate set to true."
-                    ),
-                }
+    payload = sap_client.goods_receipt_payload(
+        matnr, quantity, plant, lgort, unit, body.get("purchase_order"))
 
-        # BWART 101 = satinalma siparisine karsi mal girisi
-        # BWART 501 = siparissiz mal girisi
-        bwart = "101" if purchase_order else "501"
-        mblnr = f"49{random.randint(10_000_000, 99_999_999)}"
-        budat = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        new_qty = row["labst"] + quantity
+    try:
+        d = await sap().post_material_document(payload)
+    except SapError as e:
+        return {"posted": False, "message": e.message}
 
-        conn.execute(
-            "UPDATE mard SET labst = ? WHERE matnr = ? AND werks = ? AND lgort = ?",
-            (new_qty, matnr, plant, storage_location),
-        )
-        conn.execute(
-            "INSERT INTO mkpf (mblnr, bwart, matnr, menge, meins, werks, lgort, lgpla,"
-            " budat, ebeln, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-            (
-                mblnr, bwart, matnr, quantity, row["meins"], plant,
-                storage_location, row["lgpla"], budat, purchase_order, time.time(),
-            ),
-        )
-        conn.commit()
-
+    item = d["to_MaterialDocumentItem"]["results"][0]
+    new_level = int(float(item["MaterialBaseUnitStockQuantity"]))
     result = {
-        "posted": True,
-        "MBLNR": mblnr,
-        "BWART": bwart,
-        "MATNR": pretty_matnr(matnr),
-        "MAKTX": row["maktx"],
-        "MENGE": quantity,
-        "MEINS": row["meins"],
-        "WERKS": plant,
-        "LGORT": storage_location,
-        "LGPLA": row["lgpla"],
-        "BUDAT": budat,
-        "new_stock_level": new_qty,
-        "message": (
-            f"Material document {mblnr} posted. {quantity} {row['meins']} of "
-            f"{row['maktx']} received into bin {row['lgpla']}. "
-            f"New stock level is {new_qty}."
-        ),
+        "posted": True, "MBLNR": d["MaterialDocument"], "MJAHR": d["MaterialDocumentYear"],
+        "BWART": item["GoodsMovementType"], "MATNR": pretty_matnr(matnr), "MAKTX": maktx,
+        "MENGE": quantity, "MEINS": unit, "WERKS": plant, "LGORT": lgort, "LGPLA": bin_,
+        "BUDAT": d["PostingDate"], "new_stock_level": new_level,
+        "message": (f"Material document {d['MaterialDocument']} posted. {quantity} {unit} of "
+                    f"{maktx} received into bin {bin_}. New stock level is {new_level}."),
     }
     publish("goods_receipt", result)
     return result
 
 
-# --------------------------------------------------------------------------
-# TOOL 4 - Satinalma siparisi durumu
-# --------------------------------------------------------------------------
+DUPLICATE_WINDOW_SECONDS = 120
+
+
+async def _recent_identical(matnr: str, quantity: int, plant: str, lgort: str,
+                            ebeln: str | None) -> dict[str, Any] | None:
+    """
+    Son belgeleri SAP'den okuyup ayni niyetin kisa sure once kaydedilip
+    kaydedilmedigine bakar. Gateway durumsuz kalir: hafizada bir sey tutmaz,
+    dogruyu her zaman kayit sisteminden sorar.
+    """
+    try:
+        docs = await sap().list_documents(10)
+    except SapError:
+        return None   # okuyamiyorsak yazmayi engellemeyiz; asil koruma sesli onay
+    cutoff = time.time() - DUPLICATE_WINDOW_SECONDS
+    for d in docs:
+        if (d.get("GoodsMovementType") in ("101", "501")
+                and d.get("Material") == matnr
+                and int(float(d.get("QuantityInEntryUnit", 0))) == quantity
+                and d.get("Plant") == plant
+                and d.get("StorageLocation") == lgort
+                and (d.get("PurchaseOrder") or None) == (ebeln or None)
+                and float(d.get("CreationDateTime") or 0) >= cutoff):
+            return d
+    return None
+
+
+# ---------------------------------------------------------------------------
+# TOOL 4 — satinalma siparisi durumu
+# ---------------------------------------------------------------------------
 
 @app.get("/erp/purchase-order")
-def purchase_order(
-    order: str = Query(..., description="Siparis numarasi / EBELN"),
+async def purchase_order(
+    order: str = Query(...),
     x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret"),
 ) -> dict[str, Any]:
     require_tool_auth(x_tool_secret)
-    ebeln = str(order).strip().replace(" ", "")
+    try:
+        row = await sap().get_purchase_order(str(order).strip().replace(" ", ""))
+    except SapError as e:
+        return {"found": False, "message": e.message}
+    if row is None:
+        return {"found": False, "message": f"Purchase order {order} was not found."}
 
-    with closing(db()) as conn:
-        row = conn.execute("SELECT * FROM ekko WHERE ebeln = ?", (ebeln,)).fetchone()
-        if row is None:
-            publish("tool", {"tool": "purchase_order", "ok": False, "order": ebeln})
-            return {"found": False, "message": f"Purchase order {ebeln} was not found."}
-        mat = conn.execute(
-            "SELECT maktx FROM mard WHERE matnr = ? LIMIT 1", (row["matnr"],)
-        ).fetchone()
-
-    result = {
-        "found": True,
-        "EBELN": row["ebeln"],
-        "LIFNR": row["lifnr"],
-        "MATNR": pretty_matnr(row["matnr"]),
-        "MAKTX": mat["maktx"] if mat else "",
-        "MENGE": row["menge"],
-        "status": row["status"],
-        "expected_delivery": row["eta"],
-    }
+    result = {"found": True, "EBELN": row["PurchaseOrder"], "LIFNR": row["Supplier"],
+              "MATNR": pretty_matnr(row["Material"]), "MAKTX": row["ProductDescription"],
+              "MENGE": int(float(row["OrderQuantity"])),
+              "status": row["PurchasingDocumentStatus"],
+              "expected_delivery": row["ScheduleLineDeliveryDate"]}
     publish("tool", {"tool": "purchase_order", "ok": True, "result": result})
     return result
 
 
-# --------------------------------------------------------------------------
-# Demo ekrani destek uclari (tool degil - sadece arayuz icin)
-# --------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Demo ekrani destek uclari
+# ---------------------------------------------------------------------------
 
 @app.get("/api/voice-token")
 async def voice_token() -> dict[str, Any]:
-    """Tarayiciya kisa omurlu token uretir. API anahtari asla tarayiciya gitmez."""
     if not ASSEMBLYAI_API_KEY:
         raise HTTPException(status_code=500, detail="ASSEMBLYAI_API_KEY is not set")
-
     async with httpx.AsyncClient(timeout=15) as client:
-        response = await client.get(
-            "https://agents.assemblyai.com/v1/token",
-            params={"expires_in_seconds": 300, "max_session_duration_seconds": 600},
-            headers={"Authorization": f"Bearer {ASSEMBLYAI_API_KEY}"},
-        )
-    if response.status_code != 200:
-        raise HTTPException(status_code=502, detail=f"Token error: {response.text}")
-
-    return {"token": response.json()["token"], "agent_id": AGENT_ID}
+        r = await client.get("https://agents.assemblyai.com/v1/token",
+                             params={"expires_in_seconds": 300, "max_session_duration_seconds": 600},
+                             headers={"Authorization": f"Bearer {ASSEMBLYAI_API_KEY}"})
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"Token error: {r.text}")
+    return {"token": r.json()["token"], "agent_id": AGENT_ID}
 
 
 @app.get("/api/inventory")
 def inventory() -> dict[str, Any]:
-    with closing(db()) as conn:
-        rows = conn.execute(
-            "SELECT * FROM mard ORDER BY matnr, lgort"
-        ).fetchall()
-        docs = conn.execute(
-            "SELECT * FROM mkpf ORDER BY rowid DESC LIMIT 10"
-        ).fetchall()
+    with closing(store.db()) as conn:
+        rows = conn.execute("SELECT * FROM mard ORDER BY matnr, lgort").fetchall()
+        docs = conn.execute("SELECT * FROM mkpf ORDER BY rowid DESC LIMIT 10").fetchall()
     return {
-        "stock": [
-            {
-                "MATNR": pretty_matnr(r["matnr"]),
-                "MAKTX": r["maktx"],
-                "WERKS": r["werks"],
-                "LGORT": r["lgort"],
-                "LGPLA": r["lgpla"],
-                "LABST": r["labst"],
-                "MEINS": r["meins"],
-            }
-            for r in rows
-        ],
-        "documents": [
-            {
-                "MBLNR": d["mblnr"],
-                "BWART": d["bwart"],
-                "MATNR": pretty_matnr(d["matnr"]),
-                "MENGE": d["menge"],
-                "MEINS": d["meins"],
-                "LGPLA": d["lgpla"],
-                "BUDAT": d["budat"],
-            }
-            for d in docs
-        ],
+        "stock": [{"MATNR": pretty_matnr(r["matnr"]), "MAKTX": r["maktx"], "WERKS": r["werks"],
+                   "LGORT": r["lgort"], "LGPLA": r["lgpla"], "LABST": r["labst"],
+                   "MEINS": r["meins"]} for r in rows],
+        "documents": [{"MBLNR": d["mblnr"], "BWART": d["bwart"], "MATNR": pretty_matnr(d["matnr"]),
+                       "MENGE": d["menge"], "MEINS": d["meins"], "LGPLA": d["lgpla"],
+                       "BUDAT": d["budat"]} for d in docs],
     }
 
 
 @app.post("/api/reset")
 def reset() -> dict[str, str]:
-    """Demo cekimi oncesi temiz baslangic."""
-    init_db(force=True)
+    store.init_db(force=True)
     publish("reset", {})
     return {"status": "reset"}
 
 
 @app.get("/health")
 def health() -> dict[str, Any]:
-    return {"ok": True, "agent_id": AGENT_ID or None}
+    return {"ok": True, "agent_id": AGENT_ID or None,
+            "sap_base_url": sap_client.SAP_BASE_URL or f"{_self_base} (mock S/4HANA)"}
 
 
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(WEB_DIR / "index.html")
-
-
-init_db()

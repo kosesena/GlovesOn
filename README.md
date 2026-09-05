@@ -33,6 +33,50 @@ translation and the write guardrails.
 | Noise suppression (voice focus) | warehouse floor noise |
 | Session token minting | `GET /api/voice-token` — the API key never reaches the browser |
 
+## Talking to SAP
+
+The gateway does not fake SAP: it speaks the released OData APIs, over HTTP, with
+the CSRF handshake a real S/4HANA demands.
+
+```
+agent ──> gateway ──HTTP──> S/4HANA
+                              API_MATERIAL_DOCUMENT_SRV      A_MaterialDocumentHeader   (write)
+                              API_MATERIAL_STOCK_SRV         A_MatlStkInAcctMod         (stock)
+                              API_PRODUCT_SRV                A_ProductDescription       (description)
+                              API_PURCHASEORDER_PROCESS_SRV  A_PurchaseOrder            (PO status)
+```
+
+Every write follows the sequence a real integration must follow: fetch a token from
+the service root with `X-CSRF-Token: Fetch`, then POST the document carrying that
+token. A write without it is refused with `CSRF_TOKEN_INVALID`, exactly as S/4HANA
+refuses it. The client refreshes the token once and retries when it expires.
+
+The posted body is the real one:
+
+```json
+{ "PostingDate": "…", "GoodsMovementCode": "05",
+  "to_MaterialDocumentItem": [ { "Material": "000000000000004711", "Plant": "1000",
+    "StorageLocation": "0001", "GoodsMovementType": "501",
+    "EntryUnit": "EA", "QuantityInEntryUnit": "20" } ] }
+```
+
+`GoodsMovementCode` is not decoration: **01** is a receipt against a purchase order and
+**05** a receipt without one, and the movement type must agree with it. Send 101 with
+code 05 and the system refuses the document.
+
+Note that a stock question costs two calls, not one — stock and description live in
+different APIs. That is how S/4HANA actually works, and it shows up in the latency
+budget rather than being wished away.
+
+**Where the mock sits.** `gateway/sap_mock.py` implements that OData surface and stands
+*opposite* the gateway, not inside it. The gateway reaches it over HTTP like any other
+system. Setting `SAP_BASE_URL` to a real tenant is therefore the whole migration — no
+code path changes, because there is no second code path.
+
+**What the mock deliberately does not do:** refuse a duplicate posting. Real S/4HANA
+accepts the same goods receipt twice without complaint. That guard belongs to us, so it
+lives in the gateway, where it survives the move to a real system.
+
 ## SAP fidelity
 
 The mock speaks real SAP: `MATNR` (18-char zero-padded), `MAKTX`, `WERKS`, `LGORT`,
@@ -92,21 +136,9 @@ Replit also runs the service as written — FastAPI, SQLite and a long-lived SSE
 connection all work unchanged. A serverless target would have required replacing the
 storage layer and rethinking the event stream for no gain at this scale.
 
-### Deploying it
-
-1. Import this repository into Replit.
-2. Add `ASSEMBLYAI_API_KEY`, `TOOL_SHARED_SECRET` and `AGENT_ID` in the **Secrets**
-   pane — never in a file. The gateway reads them from the environment.
-3. Deploy as a **Reserved VM**, not Autoscale.
-4. Point `GATEWAY_PUBLIC_URL` at the deployment's own URL and re-run
-   `agent/publish.py`, so the tool definitions carry the new address.
-
-**Why Reserved VM and not Autoscale:** Autoscale scales to zero between requests, which
-is the same shape as a serverless platform — the SQLite file would not survive and the
-SSE stream feeding the live ERP panel would be cut. A Reserved VM is one machine that
-never sleeps, so both survive. `.replit` carries the run command and port mapping; the
-deployment type is chosen in Replit's own UI, so it is the one setting this repository
-cannot enforce for you.
+Set `ASSEMBLYAI_API_KEY`, `TOOL_SHARED_SECRET` and `AGENT_ID` as secrets there, point
+`GATEWAY_PUBLIC_URL` at the deployment's own URL, and re-run `agent/publish.py` so the
+tool definitions carry the new address.
 
 ## Try saying
 
@@ -133,7 +165,3 @@ agent reads back quantity, unit, material description **and** destination bin an
 worker confirms. The gateway independently rejects unknown materials, non-integer and
 non-positive quantities, and any call without the shared tool secret — so a
 mis-behaving prompt still cannot corrupt stock.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
