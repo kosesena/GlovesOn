@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import secrets
 import time
 from contextlib import closing
 from pathlib import Path
@@ -29,7 +30,7 @@ from fastapi import Body, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 
-from . import sap_client, sap_mock, store
+from . import audit, sap_client, sap_mock, store
 from .sap_client import SapClient, SapError
 from .store import norm_matnr, pretty_matnr
 
@@ -100,6 +101,7 @@ SSE_MAX_LIFETIME_SECONDS = 50
 @app.on_event("startup")
 async def _on_startup() -> None:
     store.init_db()
+    audit.init()
 
 
 @app.on_event("shutdown")
@@ -235,6 +237,11 @@ async def post_goods_receipt(
     lgort = str(body.get("storage_location") or "0001")
     allow_duplicate = bool(body.get("allow_duplicate"))
     matnr = norm_matnr(material)
+    # Denetim izi icin: isciye okunup onaylanan cumle ve oturum referansi.
+    # Yoklugu yazmayi DURDURMAZ - izi zenginlestirir, sart kosmaz. Bir yazma
+    # kimlik dogrulamaya degil onaya dayanir; bkz. docs/adr/0002.
+    utterance = str(body.get("confirmed_utterance") or "")
+    session_id = str(body.get("session_id") or "") or (_voice_session_ref or "") or (_voice_session_ref or "")
 
     try:
         rows = await sap().get_stock(matnr, plant)
@@ -270,7 +277,8 @@ async def post_goods_receipt(
             }
 
     payload = sap_client.goods_receipt_payload(
-        matnr, quantity, plant, lgort, unit, body.get("purchase_order"))
+        matnr, quantity, plant, lgort, unit, body.get("purchase_order"),
+        session_ref=session_id or None)
 
     try:
         d = await sap().post_material_document(payload)
@@ -284,10 +292,12 @@ async def post_goods_receipt(
         "BWART": item["GoodsMovementType"], "MATNR": pretty_matnr(matnr), "MAKTX": maktx,
         "MENGE": quantity, "MEINS": unit, "WERKS": plant, "LGORT": lgort, "LGPLA": bin_,
         "BUDAT": d["PostingDate"], "new_stock_level": new_level,
+        "posted_at": time.time(),
         "message": (f"Material document {d['MaterialDocument']} posted. {quantity} {unit} of "
                     f"{maktx} received into bin {bin_}. New stock level is {new_level}."),
     }
-    publish("goods_receipt", result)
+    audit.record(d["MaterialDocument"], "goods_receipt", utterance, session_id)
+    publish("goods_receipt", {**result, "session_id": session_id})
     return result
 
 
@@ -370,6 +380,8 @@ async def reverse_goods_receipt(
     document = str(body.get("document") or "").strip()
     if not document:
         raise HTTPException(status_code=400, detail="document is required")
+    utterance = str(body.get("confirmed_utterance") or "")
+    session_id = str(body.get("session_id") or "")
 
     try:
         docs = await sap().list_documents(10)
@@ -397,7 +409,8 @@ async def reverse_goods_receipt(
         desc = await sap().get_description(original["Material"])
         payload = sap_client.reversal_payload(
             original["Material"], original["Plant"], original["StorageLocation"],
-            original["EntryUnit"], document, original["GoodsMovementType"])
+            original["EntryUnit"], document, original["GoodsMovementType"],
+            session_ref=session_id or None)
         d = await sap().post_material_document(payload)
     except SapError as e:
         return {"reversed": False, "message": e.message}
@@ -419,12 +432,14 @@ async def reverse_goods_receipt(
         "LGORT": original["StorageLocation"],
         "LGPLA": original["StorageBin"],
         "new_stock_level": new_level,
+        "posted_at": time.time(),
         "message": (f"Material document {d['MaterialDocument']} reverses {document}. "
                     f"{qty} {original['EntryUnit']} of {maktx} taken back out of bin "
                     f"{original['StorageBin']}. New stock level is {new_level}. "
                     f"Both documents stay in the system."),
     }
-    publish("goods_receipt", {**result, "reversal": True})
+    audit.record(d["MaterialDocument"], "reversal", utterance, session_id)
+    publish("goods_receipt", {**result, "reversal": True, "session_id": session_id})
     return result
 
 
@@ -465,6 +480,14 @@ async def purchase_order(
 # acar. Bedeli: mesru bir demo da ust sinira carpabilir, o yuzden pencere
 # genis tutuldu ve sinir asildiginda 429 ile acikca soyluyoruz.
 VOICE_TOKEN_MAX = int(os.getenv("VOICE_TOKEN_MAX_PER_HOUR", "40"))
+
+# Su anki ses oturumunun referansi. Tool cagrilari AssemblyAI'in sunucusundan
+# gelir ve hangi oturumdan dogduklarini soylemez; token bastigimiz anda bir
+# referans uretir, yazmalari ona baglariz. "Bu belge su oturum acikken atildi"
+# demek dogrudur. Ayni anda IKI oturum konusursa ikisi ayni referansi alir -
+# docs/nfr.md'nin kaydettigi tek-oturum tavaninin bir sonucu, cozdugumuz
+# bir sey degil.
+_voice_session_ref: str | None = None
 VOICE_TOKEN_WINDOW_SECONDS = 3600
 _voice_token_grants: list[float] = []
 
@@ -486,6 +509,8 @@ async def voice_token() -> dict[str, Any]:
                    f"last hour and is holding off. Try again shortly, or raise "
                    f"VOICE_TOKEN_MAX_PER_HOUR.")
     _voice_token_grants.append(time.time())
+    global _voice_session_ref
+    _voice_session_ref = secrets.token_hex(4)
     async with httpx.AsyncClient(timeout=15) as client:
         r = await client.get("https://agents.assemblyai.com/v1/token",
                              params={"expires_in_seconds": 300, "max_session_duration_seconds": 600},
@@ -506,7 +531,7 @@ def inventory() -> dict[str, Any]:
                    "MEINS": r["meins"]} for r in rows],
         "documents": [{"MBLNR": d["mblnr"], "BWART": d["bwart"], "MATNR": pretty_matnr(d["matnr"]),
                        "MENGE": d["menge"], "MEINS": d["meins"], "LGPLA": d["lgpla"],
-                       "BUDAT": d["budat"]} for d in docs],
+                       "BUDAT": d["budat"], "created_at": d["created_at"]} for d in docs],
     }
 
 

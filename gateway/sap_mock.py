@@ -113,6 +113,10 @@ async def create_material_document(
     bwart = str(item.get("GoodsMovementType") or "")
     ebeln = item.get("PurchaseOrder") or None
     reversed_of = item.get("ReferenceDocument") or None
+    # Baslik alanlari. Gercek S/4HANA taniomadigi alanlari sessizce dusurmez,
+    # bunlari tanir ve saklar; ayni sadakat burada da.
+    bktxt = str(body.get("MaterialDocumentHeaderText") or "")[:25]
+    xblnr = str(body.get("ReferenceDocument") or "")[:16]
 
     try:
         menge = int(float(item.get("QuantityInEntryUnit")))
@@ -178,10 +182,10 @@ async def create_material_document(
         )
         conn.execute(
             "INSERT INTO mkpf (mblnr, mjahr, bwart, matnr, menge, meins, werks, lgort,"
-            " lgpla, budat, ebeln, reversed_of, created_at)"
-            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " lgpla, budat, ebeln, reversed_of, created_at, bktxt, xblnr)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (mblnr, mjahr, bwart, matnr, menge, row["meins"], werks, lgort,
-             row["lgpla"], budat, ebeln, reversed_of, time.time()),
+             row["lgpla"], budat, ebeln, reversed_of, time.time(), bktxt, xblnr),
         )
         new_level = conn.execute(
             "SELECT labst FROM mard WHERE matnr=? AND werks=? AND lgort=?", (matnr, werks, lgort)
@@ -195,6 +199,8 @@ async def create_material_document(
             "MaterialDocumentYear": mjahr,
             "PostingDate": budat,
             "GoodsMovementCode": expected_gmc,
+            "MaterialDocumentHeaderText": bktxt,
+            "ReferenceDocument": xblnr,
             "to_MaterialDocumentItem": {"results": [{
                 "MaterialDocument": mblnr, "MaterialDocumentYear": mjahr,
                 "MaterialDocumentItem": "0001", "Material": matnr,
@@ -273,4 +279,5 @@ async def list_documents(top: int = Query(10, alias="$top")):
         "ReferenceDocument": r["reversed_of"],
         "Plant": r["werks"], "StorageLocation": r["lgort"], "PurchaseOrder": r["ebeln"],
         "CreationDateTime": r["created_at"],
+        "MaterialDocumentHeaderText": r["bktxt"],
     } for r in rows]}}

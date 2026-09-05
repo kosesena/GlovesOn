@@ -55,7 +55,9 @@ CREATE TABLE IF NOT EXISTS mkpf (
     matnr TEXT NOT NULL, menge INTEGER NOT NULL, meins TEXT NOT NULL,
     werks TEXT NOT NULL, lgort TEXT NOT NULL, lgpla TEXT NOT NULL,
     budat TEXT NOT NULL, ebeln TEXT, reversed_of TEXT,
-    created_at REAL NOT NULL DEFAULT 0
+    created_at REAL NOT NULL DEFAULT 0,
+    bktxt TEXT NOT NULL DEFAULT '',   -- MaterialDocumentHeaderText
+    xblnr TEXT NOT NULL DEFAULT ''    -- basliktaki ReferenceDocument
 );
 CREATE TABLE IF NOT EXISTS ekko (
     ebeln TEXT PRIMARY KEY, lifnr TEXT NOT NULL, matnr TEXT NOT NULL,
@@ -88,6 +90,8 @@ MIGRATIONS = {
         ("mjahr", "TEXT NOT NULL DEFAULT ''"),
         ("reversed_of", "TEXT"),
         ("created_at", "REAL NOT NULL DEFAULT 0"),
+        ("bktxt", "TEXT NOT NULL DEFAULT ''"),
+        ("xblnr", "TEXT NOT NULL DEFAULT ''"),
     ],
 }
 

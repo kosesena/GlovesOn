@@ -134,7 +134,8 @@ def _parse_odata_error(r: httpx.Response) -> tuple[str, str]:
 
 # GoodsMovementCode: 01 siparise karsi mal girisi, 05 siparissiz mal girisi.
 def goods_receipt_payload(material: str, quantity: int, plant: str, storage_location: str,
-                          unit: str, purchase_order: str | None) -> dict[str, Any]:
+                          unit: str, purchase_order: str | None,
+                          session_ref: str | None = None) -> dict[str, Any]:
     movement_type = "101" if purchase_order else "501"
     item: dict[str, Any] = {
         "Material": material,
@@ -148,15 +149,16 @@ def goods_receipt_payload(material: str, quantity: int, plant: str, storage_loca
         item["PurchaseOrder"] = purchase_order
         item["PurchaseOrderItem"] = "00010"
         item["GoodsMovementRefDocType"] = "B"   # B = satinalma siparisi
-    return {
+    return _with_voice_origin({
         "PostingDate": datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00"),
         "GoodsMovementCode": "01" if purchase_order else "05",
         "to_MaterialDocumentItem": [item],
-    }
+    }, session_ref)
 
 
 def reversal_payload(material: str, plant: str, storage_location: str, unit: str,
-                     original_document: str, original_movement_type: str) -> dict[str, Any]:
+                     original_document: str, original_movement_type: str,
+                     session_ref: str | None = None) -> dict[str, Any]:
     """
     SAP'de yanlis belge silinmez, ters kayit atilir. 101'in tersi 102,
     501'in tersi 502. Stok geri iner ama iki belge de tarihte kalir.
@@ -165,7 +167,7 @@ def reversal_payload(material: str, plant: str, storage_location: str, unit: str
     if reverse_of is None:
         raise SapError("NOT_REVERSIBLE",
                        f"Movement type {original_movement_type} cannot be reversed here.")
-    return {
+    return _with_voice_origin({
         "PostingDate": datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00"),
         "GoodsMovementCode": "01" if reverse_of == "102" else "05",
         "to_MaterialDocumentItem": [{
@@ -177,4 +179,24 @@ def reversal_payload(material: str, plant: str, storage_location: str, unit: str
             "QuantityInEntryUnit": "1",     # mock asil belgeden alir
             "ReferenceDocument": original_document,
         }],
-    }
+    }, session_ref)
+
+
+def _with_voice_origin(payload: dict[str, Any], session_ref: str | None) -> dict[str, Any]:
+    """
+    Belgeye kokenini yazar - kimligini DEGIL. MaterialDocumentHeaderText (BKTXT,
+    25 karakter) sesle acildigini soyler; basliktaki ReferenceDocument (XBLNR)
+    oturum referansini tasir, gateway'deki denetim izine oradan gidilir.
+    (Basliktaki XBLNR ile ters kayitta KALEM seviyesinde kullanilan
+    ReferenceDocument ayni ad, ayri alanlardir - SAP'de de oyle.)
+
+    Bilerek bir isim yazilmiyor. "Ben Sena" demek kimlik degildir; soylenen bir
+    ismi belgeye koymak, dogrulanmis alanlarin yanina dogrulanmamis bir alan
+    koymaktir ve okuyan ikisini ayirt edemez. Belgeyi bir insana baglayacak tek
+    durust yol principal propagation, ve o docs/clean-core.md'de acik bir
+    eksik olarak durur.
+    """
+    payload["MaterialDocumentHeaderText"] = "GLOVESON VOICE"
+    if session_ref:
+        payload["ReferenceDocument"] = f"VOICE:{session_ref[:10]}"   # XBLNR 16 kr
+    return payload

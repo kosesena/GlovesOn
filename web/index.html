@@ -410,12 +410,19 @@ async function refreshInventory() {
     ? data.documents.slice(0, 6).map(d => `
       <tr class="${['102','502'].includes(String(d.BWART)) ? 'reversal' : ''}">
         <td>${d.MBLNR}</td><td>${d.BWART}</td><td>${d.MATNR}</td>
-        <td class="num">${d.MENGE} ${d.MEINS}</td></tr>`).join('')
-    : '<tr><td colspan="4" class="empty">No documents yet.</td></tr>';
+        <td class="num">${d.MENGE} ${d.MEINS}</td>
+        <td class="num">${d.created_at ? clock(d.created_at) : ''}</td></tr>`).join('')
+    : '<tr><td colspan="5" class="empty">No documents yet.</td></tr>';
 
   stockBody.innerHTML = data.stock.map(s => `
     <tr><td>${s.MATNR}</td><td>${s.MAKTX}</td><td>${s.LGPLA}</td>
         <td class="num">${s.LABST} ${s.MEINS}</td></tr>`).join('');
+}
+
+// Saat, tarayicinin yerel saatiyle: belgeye bakan kisiyle ayni duvar saati.
+function clock(epoch) {
+  return new Date((epoch || Date.now()/1000) * 1000)
+    .toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 const sse = new EventSource('/events');
@@ -434,14 +441,20 @@ sse.onmessage = (e) => {
     setField('f-menge', `${d.MENGE} ${d.MEINS}`);
     setField('f-maktx', d.MAKTX);
     setField('f-bin', d.LGPLA);
+    // Belge dogrudan geldiginde (get_stock atlanmis olabilir) bu ikisi bos
+    // kaliyordu; belge karti eksik alanla "posted" damgasi tasimamali.
+    if (d.MATNR) setField('f-matnr', String(d.MATNR).padStart(18, '0'));
+    if (d.LGORT) setField('f-werks', `${d.WERKS ?? '1000'} / ${d.LGORT}`);
+    const when = clock(d.posted_at);
+    const sess = d.session_id ? ` · voice session ${d.session_id}` : '';
     if (reversal) {
       F('row-ref').hidden = false;
       setField('f-ref', d.reverses);
       setStamp('REVERSED', 'reversed');
-      dfootEl.textContent = `Reverses ${d.reverses}. Both documents stay in the system — nothing was deleted.`;
+      dfootEl.textContent = `Reverses ${d.reverses} · ${when}${sess}. Both documents stay — nothing was deleted.`;
     } else {
       setStamp('POSTED', 'posted');
-      dfootEl.textContent = 'Posted to SAP after spoken confirmation.';
+      dfootEl.textContent = `Posted to SAP at ${when}${sess}, after spoken confirmation.`;
     }
     countStock(d.new_stock_level, d.MEINS);
     clearPending();
