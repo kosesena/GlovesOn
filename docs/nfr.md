@@ -51,17 +51,38 @@ endpoint is a gap, mitigated only by the shared secret.
 | What fails | Worker experiences | Data risk | Handled |
 |---|---|---|---|
 | Gateway down | Agent apologises, cannot answer | None — no write happens | Yes, tool error surfaces to the model |
-| Gateway slow (> timeout) | Agent reports it could not complete | **Yes — see below** | Partially |
+| Gateway slow (> timeout) | Agent reports it could not complete | Contained — see below | Yes |
 | ERP rejects the write | Agent states the reason | None | Yes |
 | AssemblyAI unavailable | No session at all | None | No fallback exists |
 | Network drops mid-session | Session interrupted | None | `session.resume` exists; not implemented |
 | Model calls the write tool without confirming | Stock changes unasked | **Yes** | Gateway validates inputs but cannot see whether a read-back happened |
 
-**The unresolved one:** a write that times out is ambiguous. The gateway may have
-posted the document and been too slow to say so. The agent reports failure, the
-worker says it again, and stock is now double-counted. The fix is an idempotency key
-per confirmed intent, rejected on replay. Not built. This is the most serious known
-defect in the design and is recorded here rather than left for someone to find.
+**The timed-out write.** A write that times out is ambiguous: the gateway may have
+posted the document and been too slow to say so. The agent reports failure, the worker
+repeats the sentence, and stock is double-counted. This was the most serious defect in
+the design.
+
+It is now handled. The gateway remembers when each material document was posted and
+refuses a second one for the same material, quantity, plant, storage location and
+purchase order inside a 120-second window. Instead of posting, it returns the document
+that already exists and the agent reads it back: *"this already went through forty
+seconds ago as document 4919786625 — is this a second delivery?"* Only an explicit
+confirmation, carried as `allow_duplicate`, opens a second posting.
+
+The design choice worth naming: the ambiguity is not resolved silently. The system
+cannot know whether a repeated sentence is a retry or a real second pallet, so it
+surfaces the question to the person who can know, and does nothing until answered.
+
+**What this does not cover**
+
+- Deduplication is by content and time, not by a client-generated idempotency key. A
+  key minted once per confirmed intent would be stricter; the model cannot be relied
+  on to generate and reuse one correctly, so content plus a window is the pragmatic
+  equivalent for this specific failure.
+- A genuine second identical delivery inside 120 seconds costs one extra question. A
+  false question is cheaper than a silent double count, so the trade is deliberate.
+- The window is a constant (`DUPLICATE_WINDOW_SECONDS`), not tuned against real
+  warehouse timings.
 
 ## 4. Security and data protection
 

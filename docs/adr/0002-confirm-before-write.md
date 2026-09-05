@@ -58,3 +58,12 @@ number.
 - Ambiguous confirmations ("okay", "yeah, and also…") are a real failure mode. The
   prompt treats a bare "okay" mid-sentence as not a confirmation. This needs
   adversarial testing, not reasoning.
+
+## Follow-up
+
+Confirming before a write does not help when the write itself is ambiguous — a posting
+that timed out may or may not have landed, and a worker who repeats the sentence would
+double the stock. The gateway now refuses an identical posting inside a 120-second
+window and hands the already-posted document back to the agent, which reads it out and
+asks whether this is a second delivery. See `docs/nfr.md` for what that still does not
+cover.

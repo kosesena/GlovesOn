@@ -118,7 +118,8 @@ CREATE TABLE IF NOT EXISTS mkpf (
     lgort TEXT NOT NULL,
     lgpla TEXT NOT NULL,
     budat TEXT NOT NULL,
-    ebeln TEXT
+    ebeln TEXT,
+    created_at REAL NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS ekko (
     ebeln TEXT PRIMARY KEY,
@@ -137,11 +138,21 @@ def db() -> sqlite3.Connection:
     return conn
 
 
+# Ayni malzeme + miktar + depo yeri kombinasyonu bu sure icinde ikinci kez
+# gelirse yeni belge acilmaz; ilk belge geri dondurulur. Zaman asimina ugrayan
+# bir yazma isleminden sonra iscinin cumleyi tekrar etmesi bu pencereye duser.
+DUPLICATE_WINDOW_SECONDS = 120
+
+
 def init_db(force: bool = False) -> None:
     if force and DB_PATH.exists():
         DB_PATH.unlink()
     with closing(db()) as conn:
         conn.executescript(SCHEMA)
+        # Yamadan once olusmus veritabanlari icin
+        cols = {r["name"] for r in conn.execute("PRAGMA table_info(mkpf)")}
+        if "created_at" not in cols:
+            conn.execute("ALTER TABLE mkpf ADD COLUMN created_at REAL NOT NULL DEFAULT 0")
         already = conn.execute("SELECT COUNT(*) c FROM mard").fetchone()["c"]
         if not already:
             conn.executemany(
@@ -308,6 +319,7 @@ def post_goods_receipt(
     plant = str(body.get("plant") or "1000")
     storage_location = str(body.get("storage_location") or "0001")
     purchase_order = body.get("purchase_order")
+    allow_duplicate = bool(body.get("allow_duplicate"))
 
     if material is None or quantity is None:
         raise HTTPException(status_code=400, detail="material and quantity are required")
@@ -337,6 +349,40 @@ def post_goods_receipt(
                 ),
             }
 
+        # --- Ayni niyet iki kere kaydedilmesin -------------------------------
+        # Bir yazma islemi zaman asimina ugradiginda belge kaydedilmis ama cevap
+        # geri donmemis olabilir. Isci cumleyi tekrar eder ve stok iki kez artar.
+        # Burada ayni kombinasyon kisa sure icinde tekrar gelirse yeni belge
+        # acmiyor, ilk belgeyi geri donduruyoruz. Karar isciye birakiliyor:
+        # gercekten ikinci bir giris istiyorsa allow_duplicate ile tekrar cagirir.
+        if not allow_duplicate:
+            recent = conn.execute(
+                "SELECT * FROM mkpf WHERE matnr = ? AND menge = ? AND werks = ?"
+                " AND lgort = ? AND IFNULL(ebeln,'') = ? AND created_at >= ?"
+                " ORDER BY created_at DESC LIMIT 1",
+                (
+                    matnr, quantity, plant, storage_location,
+                    purchase_order or "", time.time() - DUPLICATE_WINDOW_SECONDS,
+                ),
+            ).fetchone()
+            if recent is not None:
+                seconds = int(time.time() - recent["created_at"])
+                publish("duplicate_blocked", {"MBLNR": recent["mblnr"]})
+                return {
+                    "posted": False,
+                    "duplicate": True,
+                    "MBLNR": recent["mblnr"],
+                    "seconds_ago": seconds,
+                    "message": (
+                        f"This exact posting already went through {seconds} seconds "
+                        f"ago as material document {recent['mblnr']}: {quantity} "
+                        f"{row['meins']} of {row['maktx']} into bin {row['lgpla']}. "
+                        f"Nothing was posted this time. Ask the worker whether this "
+                        f"is a second, separate delivery. If it is, call again with "
+                        f"allow_duplicate set to true."
+                    ),
+                }
+
         # BWART 101 = satinalma siparisine karsi mal girisi
         # BWART 501 = siparissiz mal girisi
         bwart = "101" if purchase_order else "501"
@@ -350,10 +396,10 @@ def post_goods_receipt(
         )
         conn.execute(
             "INSERT INTO mkpf (mblnr, bwart, matnr, menge, meins, werks, lgort, lgpla,"
-            " budat, ebeln) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            " budat, ebeln, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             (
                 mblnr, bwart, matnr, quantity, row["meins"], plant,
-                storage_location, row["lgpla"], budat, purchase_order,
+                storage_location, row["lgpla"], budat, purchase_order, time.time(),
             ),
         )
         conn.commit()
