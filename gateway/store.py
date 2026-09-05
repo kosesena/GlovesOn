@@ -73,11 +73,39 @@ def db() -> sqlite3.Connection:
     return conn
 
 
+# Sema degistiginde eski veritabani dosyasi kendini guncellemez:
+# CREATE TABLE IF NOT EXISTS var olan tabloya dokunmaz. Eksik kolonlari
+# tek tek ekliyoruz, boylece eski bir gloveson.db yeni kodla calisiyor.
+MIGRATIONS = {
+    "mkpf": [
+        ("mjahr", "TEXT NOT NULL DEFAULT ''"),
+        ("reversed_of", "TEXT"),
+        ("created_at", "REAL NOT NULL DEFAULT 0"),
+    ],
+}
+
+
+def _ensure_columns(conn) -> list[str]:
+    added = []
+    for table, columns in MIGRATIONS.items():
+        existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+        if not existing:
+            continue                      # tablo henuz yok, SCHEMA olusturacak
+        for name, decl in columns:
+            if name not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
+                added.append(f"{table}.{name}")
+    return added
+
+
 def init_db(force: bool = False) -> None:
     if force and DB_PATH.exists():
         DB_PATH.unlink()
     with closing(db()) as conn:
         conn.executescript(SCHEMA)
+        added = _ensure_columns(conn)
+        if added:
+            print(f"  [store] eksik kolonlar eklendi: {', '.join(added)}")
         if not conn.execute("SELECT COUNT(*) c FROM mard").fetchone()["c"]:
             conn.executemany(
                 "INSERT INTO mard (matnr, maktx, meins, werks, lgort, lgpla, labst)"

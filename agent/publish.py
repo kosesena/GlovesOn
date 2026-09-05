@@ -87,9 +87,10 @@ def main() -> None:
 
     if response.status_code >= 400:
         print(f"\n  {url}")
-        print(f"  {response.status_code}: {response.text}\n", file=sys.stderr)
+        print(f"  HTTP {response.status_code}\n", file=sys.stderr)
+        _print_error(response)
         if updating:
-            print("  Ipucu: guncelleme calismazsa --force-new ile yenisini olustur.")
+            print("\n  Ipucu: guncelleme calismazsa --force-new ile yenisini olustur.")
         raise SystemExit(1)
 
     data = response.json()
@@ -101,6 +102,34 @@ def main() -> None:
     print(f"  tools    : {', '.join(t['name'] for t in payload['tools'])}")
     if not updating:
         print(f"\n  Simdi .env icine yaz:  AGENT_ID={agent_id}\n")
+
+
+def _print_error(response) -> None:
+    """
+    Hatayi okunabilir bas. Dogrulama hatalarinda API tum govdeyi geri
+    yansitiyor; icinde bogulmak yerine hangi alanin nesi bozuk onu goster.
+    """
+    try:
+        data = response.json()
+    except Exception:
+        print(f"  {response.text[:400]}", file=sys.stderr)
+        return
+
+    detail = data.get("detail", data)
+    if isinstance(detail, list):
+        for item in detail:
+            loc = ".".join(str(x) for x in item.get("loc", []))
+            print(f"  ALAN : {loc}", file=sys.stderr)
+            print(f"  SORUN: {item.get('msg','')}  [{item.get('type','')}]\n", file=sys.stderr)
+        return
+
+    if isinstance(detail, dict):
+        for key in ("message", "error", "detail", "code"):
+            if key in detail:
+                print(f"  {key}: {detail[key]}", file=sys.stderr)
+        return
+
+    print(f"  {str(detail)[:400]}", file=sys.stderr)
 
 
 if __name__ == "__main__":

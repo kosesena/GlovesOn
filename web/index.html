@@ -523,6 +523,8 @@ async function start() {
 
       case 'input.speech.started':
         stopPlayback();               // barge-in: ajanin sesini kes
+        // Onay bekleyen bir yazma yoksa eski seridi birakma
+        if (!pendingTool) clearPending();
         setStatus('listening to you', true);
         break;
 
