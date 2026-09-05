@@ -120,6 +120,71 @@
 
   /* Ses seviyesi */
   #meter { width: 54px; height: 18px; display: block; }
+
+  /* ---- Belge merkezli sag panel ------------------------------------------
+     Kahraman malzeme belgesi. Koyu terminalin uzerinde beyaz kagit duruyor:
+     kontrast, hangi seyin onemli oldugunu soylemeden soyluyor. */
+  .right { background: #0e131a; }
+  .deskspace { flex: 1; overflow-y: auto; padding: 20px 22px 26px; }
+
+  .doc {
+    position: relative; background: #fbfbf9; color: #1b1e22;
+    border: 1px solid #cfd3d8; border-radius: 3px;
+    box-shadow: 0 1px 0 #fff inset, 0 10px 26px -10px rgba(0,0,0,.65);
+    padding: 20px 22px 16px; font-family: var(--mono);
+  }
+  .doc h3 { margin: 0 0 2px; font: 700 12px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .1em; }
+  .doc .srv { font-size: 9.5px; color: #8a9099; margin-bottom: 15px; letter-spacing: .02em; }
+
+  .frow { display: grid; grid-template-columns: 150px 1fr; gap: 10px;
+          padding: 6px 0; border-bottom: 1px dotted #dcdfe3; font-size: 12px; }
+  .frow:last-of-type { border-bottom: none; }
+  .frow[hidden] { display: none; }
+  .frow span { color: #8a9099; font-size: 9.5px; letter-spacing: .07em;
+               padding-top: 3px; text-transform: uppercase; }
+  .frow b { font-weight: 600; word-break: break-all; }
+  .frow b.empty-slot { color: #b9bec5; font-weight: 400; }
+  .frow b.fresh { animation: inkin .5s ease-out; }
+  @keyframes inkin { from { background: #fff2c8; } to { background: transparent; } }
+
+  .dfoot { margin-top: 14px; padding-top: 10px; border-top: 1px solid #dcdfe3;
+           font-size: 10.5px; color: #8a9099; line-height: 1.5; }
+
+  /* Damga: belgenin durumu tek bakista */
+  .stamp {
+    position: absolute; right: 18px; top: 46px; transform: rotate(-11deg);
+    border: 3px solid #b9bec5; color: #b9bec5; padding: 5px 12px; border-radius: 4px;
+    font: 800 12px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .12em;
+    opacity: .9; white-space: nowrap; transition: color .2s, border-color .2s;
+  }
+  .stamp.waiting  { border-color: #d99b1c; color: #d99b1c; animation: pulse 1.1s ease-in-out infinite; }
+  .stamp.posting  { border-color: #d99b1c; color: #d99b1c; animation: pulse .7s ease-in-out infinite; }
+  .stamp.posted   { border-color: #1f8f6b; color: #1f8f6b; animation: thud .45s cubic-bezier(.2,1.4,.4,1); }
+  .stamp.reversed { border-color: #c0392b; color: #c0392b; animation: thud .45s cubic-bezier(.2,1.4,.4,1); }
+  .stamp.refused  { border-color: #c0392b; color: #c0392b; }
+  @keyframes thud {
+    0%   { transform: rotate(-11deg) scale(2.1); opacity: 0; }
+    60%  { transform: rotate(-11deg) scale(.94); opacity: 1; }
+    100% { transform: rotate(-11deg) scale(1); opacity: .9; }
+  }
+
+  /* Stok, belgenin yaninda kalsin */
+  .stockstrip {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    margin-top: 16px; padding: 12px 15px;
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
+  }
+  .ss-mat b { font-family: var(--mono); font-size: 13px; }
+  .ss-mat span { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .ss-num { text-align: right; }
+  .ss-num b { font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--accent); }
+  .ss-num span { display: block; color: var(--muted); font-size: 10px;
+                 letter-spacing: .08em; margin-top: 2px; }
+
+  table.mini { font-size: 11px; }
+  table.mini td { padding: 6px 10px; }
+  table.mini tr.reversal td { color: var(--danger); }
+  .right .sub { margin-top: 20px; border-top: none; }
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } section + section { border-left: none; border-top: 1px solid var(--line); } }
 </style>
 </head>
@@ -147,25 +212,41 @@
     </div>
   </section>
 
-  <section>
-    <h2>Live ERP state</h2>
+  <section class="right">
+    <h2>Material document</h2>
     <div id="pending" class="pending" hidden>
       <span class="pdot"></span><span id="pendingText"></span>
     </div>
-    <div class="tables">
-      <div class="sub">MARD — Stock per storage location</div>
-      <table>
-        <thead>
-          <tr><th>MATNR</th><th>Description</th><th>LGORT</th><th>Bin</th><th class="num">LABST</th></tr>
-        </thead>
-        <tbody id="stockBody"></tbody>
-      </table>
-      <div class="sub">MKPF — Material documents posted by voice</div>
-      <table>
-        <thead>
-          <tr><th>MBLNR</th><th>BWART</th><th>MATNR</th><th class="num">MENGE</th><th>Bin</th><th>BUDAT</th></tr>
-        </thead>
-        <tbody id="docBody"><tr><td colspan="6" class="empty">No documents yet.</td></tr></tbody>
+
+    <div class="deskspace">
+      <!-- Kahraman: belgenin kendisi. Koyu terminalin uzerinde beyaz kagit. -->
+      <article class="doc" id="doc">
+        <div class="stamp" id="stamp">NO DOCUMENT</div>
+        <h3>MATERIAL DOCUMENT</h3>
+        <div class="srv">API_MATERIAL_DOCUMENT_SRV · A_MaterialDocumentHeader</div>
+
+        <div class="frow"><span>MBLNR</span><b id="f-mblnr">—</b></div>
+        <div class="frow"><span>GoodsMovementCode</span><b id="f-gmc">—</b></div>
+        <div class="frow"><span>GoodsMovementType</span><b id="f-bwart">—</b></div>
+        <div class="frow"><span>Material</span><b id="f-matnr">—</b></div>
+        <div class="frow"><span>Description</span><b id="f-maktx">—</b></div>
+        <div class="frow"><span>QuantityInEntryUnit</span><b id="f-menge">—</b></div>
+        <div class="frow"><span>Plant / StorageLoc</span><b id="f-werks">—</b></div>
+        <div class="frow"><span>StorageBin</span><b id="f-bin">—</b></div>
+        <div class="frow" id="row-ref" hidden><span>ReferenceDocument</span><b id="f-ref">—</b></div>
+
+        <div class="dfoot" id="dfoot">Nothing has been requested yet.</div>
+      </article>
+
+      <!-- Stok, belgenin yanindan kaybolmasin -->
+      <div class="stockstrip" id="stockStrip" hidden>
+        <div class="ss-mat"><b id="ss-matnr">—</b><span id="ss-maktx"></span></div>
+        <div class="ss-num"><b id="ss-labst">—</b><span id="ss-bin"></span></div>
+      </div>
+
+      <div class="sub">Recent documents</div>
+      <table class="mini">
+        <tbody id="docBody"><tr><td colspan="4" class="empty">No documents yet.</td></tr></tbody>
       </table>
     </div>
   </section>
@@ -175,114 +256,167 @@
 // ---------------------------------------------------------------------------
 // Live ERP panel — Server-Sent Events'ten beslenir
 // ---------------------------------------------------------------------------
-const stockBody  = document.getElementById('stockBody');
 const docBody    = document.getElementById('docBody');
 const pendingEl  = document.getElementById('pending');
 const pendingTxt = document.getElementById('pendingText');
-let lastTouched = null;
-let newestDoc = null;
-const knownStock = new Map();   // MATNR-LGORT -> son gorulen LABST
+const stampEl    = document.getElementById('stamp');
+const dfootEl    = document.getElementById('dfoot');
+const stripEl    = document.getElementById('stockStrip');
 
-// Sayiyi eskiden yeniye sayarak degistirir. Yazma anini gorunur kilan sey bu.
-function countTo(cell, from, to, unit) {
+const F = id => document.getElementById(id);
+
+// ---------------------------------------------------------------------------
+// Belge. Sen konustukca doluyor, damgasi durumunu soyluyor.
+// Ekranin anlattigi sey su: onaydan once bu belge YOK.
+// ---------------------------------------------------------------------------
+const EMPTY = '—';
+let lastStock = null;          // { labst, meins } sayarak degistirmek icin
+
+function setField(id, value, fresh = true) {
+  const el = F(id);
+  if (!el) return;
+  const text = (value === undefined || value === null || value === '') ? EMPTY : String(value);
+  if (el.textContent === text) return;
+  el.textContent = text;
+  el.classList.toggle('empty-slot', text === EMPTY);
+  if (fresh && text !== EMPTY) {
+    el.classList.remove('fresh');
+    void el.offsetWidth;
+    el.classList.add('fresh');
+  }
+}
+
+function setStamp(text, kind) {
+  stampEl.textContent = text;
+  stampEl.className = 'stamp' + (kind ? ' ' + kind : '');
+}
+
+function clearDoc() {
+  for (const id of ['f-mblnr','f-gmc','f-bwart','f-matnr','f-maktx','f-menge','f-werks','f-bin','f-ref'])
+    setField(id, EMPTY, false);
+  F('row-ref').hidden = true;
+  setStamp('NO DOCUMENT', '');
+  dfootEl.textContent = 'Nothing has been requested yet.';
+}
+
+// get_stock sonucu geldiginde belgenin bilinen alanlari dolar.
+// Miktar hala bos: onu yalnizca isci soyleyebilir.
+function fillFromStock(r) {
+  const loc = (r.locations && r.locations[0]) || {};
+  setField('f-matnr', String(r.MATNR).padStart(18, '0'));
+  setField('f-maktx', r.MAKTX);
+  setField('f-werks', `${r.WERKS} / ${loc.LGORT ?? '0001'}`);
+  setField('f-bin', loc.LGPLA);
+  setField('f-gmc', '05');
+  setField('f-bwart', '501');
+  if (F('f-menge').textContent === EMPTY) setStamp('NOT POSTED', '');
+  dfootEl.textContent = 'Read from SAP. Nothing has been written.';
+
+  lastStock = { labst: r.total_unrestricted, meins: r.MEINS };
+  F('ss-matnr').textContent = r.MATNR;
+  F('ss-maktx').textContent = r.MAKTX;
+  F('ss-labst').textContent = `${r.total_unrestricted} ${r.MEINS}`;
+  F('ss-bin').textContent = `UNRESTRICTED · ${loc.LGPLA ?? ''}`;
+  stripEl.hidden = false;
+}
+
+function countStock(to, unit) {
+  const cell = F('ss-labst');
+  const from = lastStock ? lastStock.labst : to;
   const t0 = performance.now(), dur = 800;
-  cell.classList.add('count');
   (function step(now) {
     const k = Math.min(1, (now - t0) / dur);
     const eased = 1 - Math.pow(1 - k, 3);
     cell.textContent = `${Math.round(from + (to - from) * eased)} ${unit}`;
     if (k < 1) requestAnimationFrame(step);
-    else setTimeout(() => cell.classList.remove('count'), 900);
   })(t0);
+  lastStock = { labst: to, meins: unit };
 }
 
+// ---------------------------------------------------------------------------
+// Bekleyen yazma seridi
+// ---------------------------------------------------------------------------
+function showPending(text) { pendingTxt.textContent = text; pendingEl.hidden = false; }
+function clearPending() { pendingEl.hidden = true; }
+
+function awaitingConfirmation() {
+  // Damga kisa kalmali: belgenin kenarindan tasmasin, ve "NOT POSTED"
+  // zaten soylenmesi gereken en net sey.
+  setStamp('NOT POSTED', 'waiting');
+  dfootEl.textContent = 'The worker has not confirmed. No document exists yet.';
+  showPending('Awaiting your confirmation — nothing has been written yet');
+}
+
+function showDraftRow(args) {          // yazma ucus halinde
+  setField('f-menge', args.quantity ? `${args.quantity}` : EMPTY);
+  setStamp('POSTING…', 'posting');
+  dfootEl.textContent = 'CSRF token held · POST A_MaterialDocumentHeader in flight.';
+}
+
+// ---------------------------------------------------------------------------
+// Son belgeler
+// ---------------------------------------------------------------------------
 async function refreshInventory() {
   const data = await fetch('/api/inventory').then(r => r.json());
-
-  stockBody.innerHTML = data.stock.map(r => `
-    <tr data-key="${r.MATNR}-${r.LGORT}">
-      <td>${r.MATNR}</td>
-      <td class="desc">${r.MAKTX}</td>
-      <td>${r.LGORT}</td>
-      <td>${r.LGPLA}</td>
-      <td class="num">${r.LABST} ${r.MEINS}</td>
-    </tr>`).join('');
-
   docBody.innerHTML = data.documents.length
-    ? data.documents.map(d => `
-      <tr class="${d.MBLNR === newestDoc ? 'mblnr-new' : ''} ${['102','502'].includes(String(d.BWART)) ? 'reversal' : ''}">
-          <td>${d.MBLNR}</td><td>${d.BWART}</td><td>${d.MATNR}</td>
-          <td class="num">${d.MENGE} ${d.MEINS}</td><td>${d.LGPLA}</td><td>${d.BUDAT}</td></tr>`).join('')
-    : '<tr><td colspan="6" class="empty">No documents yet.</td></tr>';
-  newestDoc = null;
-
-  // Degisen stok satirini sayarak goster
-  for (const r of data.stock) {
-    const key = `${r.MATNR}-${r.LGORT}`;
-    const before = knownStock.get(key);
-    knownStock.set(key, r.LABST);
-    if (before !== undefined && before !== r.LABST) {
-      const cell = stockBody.querySelector(`[data-key="${key}"] td.num`);
-      if (cell) countTo(cell, before, r.LABST, r.MEINS);
-    }
-  }
-
-  if (lastTouched) {
-    const row = stockBody.querySelector(`[data-key="${lastTouched}"]`);
-    if (row) row.classList.add('bump');
-    lastTouched = null;
-  }
-}
-
-// ---- Bekleyen yazma -------------------------------------------------------
-// Amaci sus degil: "onaydan once hicbir sey yazilmadi" cumlesini ekranda
-// gorunur kilmak. Jurinin duymasi gereken seyi ekran soyluyor.
-function showPending(text) {
-  pendingTxt.textContent = text;
-  pendingEl.hidden = false;
-}
-function clearPending() {
-  pendingEl.hidden = true;
-  const draft = docBody.querySelector('tr.draft');
-  if (draft) draft.remove();
-  if (!docBody.querySelector('tr')) {
-    docBody.innerHTML = '<tr><td colspan="6" class="empty">No documents yet.</td></tr>';
-  }
-}
-function showDraftRow(args) {
-  const empty = docBody.querySelector('.empty');
-  if (empty) docBody.innerHTML = '';
-  docBody.querySelector('tr.draft')?.remove();
-  const tr = document.createElement('tr');
-  tr.className = 'draft';
-  tr.innerHTML = `<td>posting…</td><td>—</td><td>${args.material ?? '?'}</td>
-    <td class="num">${args.quantity ?? '?'}</td><td>—</td><td>—</td>`;
-  docBody.prepend(tr);
+    ? data.documents.slice(0, 6).map(d => `
+      <tr class="${['102','502'].includes(String(d.BWART)) ? 'reversal' : ''}">
+        <td>${d.MBLNR}</td><td>${d.BWART}</td><td>${d.MATNR}</td>
+        <td class="num">${d.MENGE} ${d.MEINS}</td></tr>`).join('')
+    : '<tr><td colspan="4" class="empty">No documents yet.</td></tr>';
 }
 
 const sse = new EventSource('/events');
 sse.onmessage = (e) => {
   const evt = JSON.parse(e.data);
-  if (evt.type === 'goods_receipt') {
-    lastTouched = `${evt.data.MATNR}-${evt.data.LGORT}`;
-    newestDoc = evt.data.MBLNR;
+  const d = evt.data || {};
+
+  if (evt.type === 'tool' && d.tool === 'get_stock' && d.ok && d.result) {
+    fillFromStock(d.result);
+
+  } else if (evt.type === 'goods_receipt') {
+    const reversal = !!d.reversal;
+    setField('f-mblnr', d.MBLNR);
+    setField('f-bwart', d.BWART);
+    setField('f-gmc', ['102','502'].includes(String(d.BWART)) ? '01' : '05');
+    setField('f-menge', `${d.MENGE} ${d.MEINS}`);
+    setField('f-maktx', d.MAKTX);
+    setField('f-bin', d.LGPLA);
+    if (reversal) {
+      F('row-ref').hidden = false;
+      setField('f-ref', d.reverses);
+      setStamp('REVERSED', 'reversed');
+      dfootEl.textContent = `Reverses ${d.reverses}. Both documents stay in the system — nothing was deleted.`;
+    } else {
+      setStamp('POSTED', 'posted');
+      dfootEl.textContent = 'Posted to SAP after spoken confirmation.';
+    }
+    countStock(d.new_stock_level, d.MEINS);
     clearPending();
     refreshInventory();
+
   } else if (evt.type === 'duplicate_blocked') {
-    showPending(`Refused — this exact posting already exists as ${evt.data.MBLNR}. Nothing was written.`);
+    setStamp('REFUSED', 'refused');
+    dfootEl.textContent = `An identical posting already exists as ${d.MBLNR}. Nothing was written.`;
+    showPending(`Refused — ${d.MBLNR} already exists. Nothing was written.`);
     setTimeout(clearPending, 6000);
+
   } else if (evt.type === 'reset') {
-    knownStock.clear();
+    lastStock = null;
+    stripEl.hidden = true;
+    clearDoc();
     clearPending();
     refreshInventory();
   }
 };
+clearDoc();
 refreshInventory();
 
 document.getElementById('resetBtn').onclick = async () => {
   await fetch('/api/reset', { method: 'POST' });
   document.getElementById('log').innerHTML =
     '<div class="msg sys">Demo reset. Stock levels restored.</div>';
+  clearDoc();
 };
 
 // ---------------------------------------------------------------------------
@@ -569,7 +703,10 @@ async function start() {
           showDraftRow(args);
           showPending('Writing to the ERP \u2014 not committed until the system confirms');
         } else if (m.name === 'reverse_goods_receipt') {
-          showDraftRow({ material: 'reversal of ' + (args.document ?? '?'), quantity: '' });
+          F('row-ref').hidden = false;
+          setField('f-ref', args.document);
+          setStamp('REVERSING\u2026', 'posting');
+          dfootEl.textContent = 'Posting a reversal. Nothing is deleted \u2014 the original stays.';
           showPending('Posting a reversal \u2014 nothing is deleted, the original stays');
         }
         break;
@@ -585,10 +722,8 @@ async function start() {
         const text = m.text ?? '';
         append('agent', 'gloveson', text);
         endToolPhase();
-        // Ajan onay istiyorsa: henuz hicbir sey yazilmadi, ekranda soyle.
-        if (/confirm\s*\?\s*$/i.test(text.trim())) {
-          showPending('Awaiting your confirmation \u2014 nothing has been written yet');
-        }
+        // Ajan onay istiyorsa belgeyi "onay bekliyor" durumuna al.
+        if (/confirm\s*\?\s*$/i.test(text.trim())) awaitingConfirmation();
         break;
       }
 
@@ -620,6 +755,7 @@ function cleanup() {
   live = false;
   pendingTool = null;
   clearPending();
+  if (stampEl.classList.contains('waiting') || stampEl.classList.contains('posting')) clearDoc();
   if (playCtx) { playCtx.close().catch(() => {}); playCtx = null; }
   playSources = [];
   stopMic();
