@@ -1,0 +1,38 @@
+%% Source for confirmed-write-light.svg and confirmed-write-dark.svg.
+%%
+%% The README shows those files as an <img> rather than a ```mermaid``` block.
+%% GitHub renders Mermaid inside a viewer that floats pan, zoom and copy controls
+%% over the corners of the drawing, and they sat on top of a node. An image
+%% carries no such overlay. The cost is that the picture no longer regenerates
+%% itself when this file changes — re-render both themes after editing:
+%%
+%%   npx -y @mermaid-js/mermaid-cli -i docs/img/confirmed-write.mmd \
+%%     -o docs/img/confirmed-write-light.svg -t default -b transparent
+%%   (and the same with -t dark for the dark one)
+%%
+%% The committed files were rendered in a browser and carry explicit pixel
+%% width and height, which an <img> needs to size itself; mermaid-cli emits
+%% width="100%%", so set the dimensions by hand if you regenerate that way.
+
+sequenceDiagram
+    autonumber
+    actor W as Worker
+    participant A as Voice Agent
+    participant G as Gateway
+    participant S as S/4HANA
+
+    W->>A: "post a goods receipt, twenty pieces of 4711"
+    A->>G: get_stock(4711)
+    G->>S: stock + product description
+    S-->>G: 280 EA · hex bolt M8×40 · bin A-03-02
+    A-->>W: "Twenty pieces of hex bolt M8 by 40,<br/>into bin A-03-02. Confirm?"
+    W->>A: "confirm"
+    A->>G: post_goods_receipt (execution_mode: hold)
+    G->>G: same intent in the last 120 s?
+    G->>S: X-CSRF-Token: Fetch
+    S-->>G: token
+    G->>S: POST A_MaterialDocumentHeader · movement 501
+    S-->>G: document 4900000123
+    G-->>A: posted
+    A-->>W: "Posted. Material document 4900000123."
+    G--)W: live screen updates over SSE

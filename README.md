@@ -26,28 +26,13 @@ Built for the AssemblyAI Voice Agent Hackathon, September 2026.
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    mic["Browser mic<br/><small>PCM16 · 24 kHz</small>"]
-    aai["<b>AssemblyAI Voice Agent API</b><br/><small>STT · turn detection · LLM · TTS · barge-in</small>"]
-    gw["<b>GlovesOn Gateway</b> · FastAPI<br/><small>/erp/* tools · shared secret<br/>read-back · duplicate guard · validation</small>"]
-    sap[("<b>S/4HANA</b><br/><small>OData + CSRF<br/>mock today, real tenant by env var</small>")]
-    screen["<b>Live warehouse screen</b><br/><small>the material document, as it posts</small>"]
-
-    mic -- audio --> aai
-    aai -- "HTTPS tool calls" --> gw
-    gw -- OData --> sap
-    gw -- SSE --> screen
-
-    classDef ours fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#0b1b33
-    classDef ext fill:#ede9fe,stroke:#7c3aed,color:#1e1035
-    classDef erp fill:#dcfce7,stroke:#16a34a,color:#052e16
-    classDef ui fill:#f1f5f9,stroke:#64748b,color:#0f172a
-    class gw ours
-    class aai,mic ext
-    class sap erp
-    class screen ui
-```
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/img/architecture-dark.svg">
+    <img src="docs/img/architecture-light.svg" width="880"
+         alt="Browser microphone feeds the AssemblyAI Voice Agent API, which calls the GlovesOn gateway over HTTPS; the gateway speaks OData to S/4HANA and streams the live warehouse screen over SSE.">
+  </picture>
+</p>
 
 **The agent never sees SAP.** It speaks in warehouse terms (`/erp/stock`,
 `/erp/goods-receipt`); the gateway owns authentication, SAP field translation and every
@@ -59,30 +44,15 @@ rather than a change of code.
 
 ## The part that matters: a confirmed write
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor W as Worker
-    participant A as Voice Agent
-    participant G as Gateway
-    participant S as S/4HANA
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/img/confirmed-write-dark.svg">
+    <img src="docs/img/confirmed-write-light.svg" width="900"
+         alt="Sequence: the worker asks for a goods receipt; the agent looks up stock, reads the line back, waits for a spoken confirmation, then the gateway checks for a duplicate, fetches a CSRF token and posts the material document, which appears on the live screen.">
+  </picture>
+</p>
 
-    W->>A: "post a goods receipt, twenty pieces of 4711"
-    A->>G: get_stock(4711)
-    G->>S: stock + product description
-    S-->>G: 280 EA · hex bolt M8×40 · bin A-03-02
-    A-->>W: "Twenty pieces of hex bolt M8 by 40,<br/>into bin A-03-02. Confirm?"
-    W->>A: "confirm"
-    A->>G: post_goods_receipt (execution_mode: hold)
-    G->>G: same intent in the last 120 s?
-    G->>S: X-CSRF-Token: Fetch
-    S-->>G: token
-    G->>S: POST A_MaterialDocumentHeader · movement 501
-    S-->>G: document 4900000123
-    G-->>A: posted
-    A-->>W: "Posted. Material document 4900000123."
-    G--)W: live screen updates over SSE
-```
+<sub align="center">Click the diagram to open it full size. Source: <a href="docs/img/confirmed-write.mmd"><code>docs/img/confirmed-write.mmd</code></a>.</sub>
 
 Four things in that diagram are deliberate and each one costs something:
 
