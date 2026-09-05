@@ -303,7 +303,117 @@ async def _recent_identical(matnr: str, quantity: int, plant: str, lgort: str,
 
 
 # ---------------------------------------------------------------------------
-# TOOL 4 — satinalma siparisi durumu
+# TOOL 4 — son belgeler
+# ---------------------------------------------------------------------------
+
+@app.get("/erp/recent-documents")
+async def recent_documents(
+    limit: int = Query(5),
+    x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret"),
+) -> dict[str, Any]:
+    require_tool_auth(x_tool_secret)
+    try:
+        docs = await sap().list_documents(min(limit, 10))
+    except SapError as e:
+        return {"count": 0, "documents": [], "message": e.message}
+
+    out = []
+    for d in docs:
+        reversal = d.get("GoodsMovementType") in ("102", "502")
+        out.append({
+            "MBLNR": d["MaterialDocument"],
+            "BWART": d["GoodsMovementType"],
+            "MATNR": pretty_matnr(d["Material"]),
+            "MENGE": int(float(d["QuantityInEntryUnit"])),
+            "MEINS": d["EntryUnit"],
+            "LGPLA": d["StorageBin"],
+            "BUDAT": d["PostingDate"],
+            "is_reversal": reversal,
+            "reverses": d.get("ReferenceDocument"),
+        })
+    publish("tool", {"tool": "recent_documents", "ok": True, "count": len(out)})
+    return {"count": len(out), "documents": out}
+
+
+# ---------------------------------------------------------------------------
+# TOOL 5 — mal girisini iptal et (YAZMA)
+#
+# SAP'de yanlis bir belge SILINMEZ. Ters kayit atilir: 101'in tersi 102,
+# 501'in tersi 502. Stok geri iner ama iki belge de tarihte durur ve
+# denetlenebilir kalir. Bu yuzden "iptal" de tam anlamiyla bir yazma islemi
+# ve mal girisiyle ayni korumalarin arkasinda.
+# ---------------------------------------------------------------------------
+
+@app.post("/erp/reverse-goods-receipt")
+async def reverse_goods_receipt(
+    body: dict = Body(...),
+    x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret"),
+) -> dict[str, Any]:
+    require_tool_auth(x_tool_secret)
+
+    document = str(body.get("document") or "").strip()
+    if not document:
+        raise HTTPException(status_code=400, detail="document is required")
+
+    try:
+        docs = await sap().list_documents(10)
+    except SapError as e:
+        return {"reversed": False, "message": e.message}
+
+    original = next((d for d in docs if d["MaterialDocument"] == document), None)
+    if original is None:
+        return {"reversed": False,
+                "message": f"Material document {document} is not among the recent postings. "
+                           f"Ask the worker to read the number again."}
+
+    if original["GoodsMovementType"] in ("102", "502"):
+        return {"reversed": False,
+                "message": f"Material document {document} is itself a reversal. "
+                           f"It cannot be reversed again."}
+
+    if any(d.get("ReferenceDocument") == document for d in docs):
+        already = next(d["MaterialDocument"] for d in docs if d.get("ReferenceDocument") == document)
+        return {"reversed": False,
+                "message": f"Material document {document} was already reversed by {already}. "
+                           f"The stock has already been corrected."}
+
+    try:
+        desc = await sap().get_description(original["Material"])
+        payload = sap_client.reversal_payload(
+            original["Material"], original["Plant"], original["StorageLocation"],
+            original["EntryUnit"], document, original["GoodsMovementType"])
+        d = await sap().post_material_document(payload)
+    except SapError as e:
+        return {"reversed": False, "message": e.message}
+
+    item = d["to_MaterialDocumentItem"]["results"][0]
+    new_level = int(float(item["MaterialBaseUnitStockQuantity"]))
+    maktx = desc["ProductDescription"] if desc else ""
+    qty = int(float(item["QuantityInEntryUnit"]))
+
+    result = {
+        "reversed": True,
+        "MBLNR": d["MaterialDocument"],
+        "reverses": document,
+        "BWART": item["GoodsMovementType"],
+        "MATNR": pretty_matnr(original["Material"]),
+        "MAKTX": maktx,
+        "MENGE": qty,
+        "MEINS": original["EntryUnit"],
+        "LGORT": original["StorageLocation"],
+        "LGPLA": original["StorageBin"],
+        "new_stock_level": new_level,
+        "message": (f"Material document {d['MaterialDocument']} reverses {document}. "
+                    f"{qty} {original['EntryUnit']} of {maktx} taken back out of bin "
+                    f"{original['StorageBin']}. New stock level is {new_level}. "
+                    f"Both documents stay in the system."),
+    }
+    publish("goods_receipt", {**result, "reversal": True})
+    return result
+
+
+# ---------------------------------------------------------------------------
+# TOOL 6 — satinalma siparisi durumu
 # ---------------------------------------------------------------------------
 
 @app.get("/erp/purchase-order")
