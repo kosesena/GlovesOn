@@ -1,0 +1,7 @@
+.env
+*.db
+__pycache__/
+*.pyc
+
+# Kisisel planlama dosyasi repoya girmez
+PLAN.md

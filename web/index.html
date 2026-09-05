@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VoxERP — Hands-Free Warehouse Terminal</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #111823;
+    --panel-2: #16202e;
+    --line: #22303f;
+    --text: #dce6f0;
+    --muted: #7b8ea3;
+    --accent: #35d0a5;
+    --accent-dim: #1c6e59;
+    --warn: #f2b544;
+    --user: #4ea3f5;
+    --danger: #f2685a;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, sans-serif;
+    height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  .logo { font-weight: 700; letter-spacing: .14em; font-size: 13px; }
+  .logo span { color: var(--accent); }
+  .plant { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .spacer { flex: 1; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #3a4a5c; }
+  .dot.on { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .status { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  button {
+    font: inherit; border: 1px solid var(--line); background: var(--panel-2);
+    color: var(--text); padding: 8px 16px; border-radius: 6px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent-dim); }
+  button.primary { background: var(--accent); color: #06201a; border-color: var(--accent); font-weight: 600; }
+  button.live { background: var(--danger); border-color: var(--danger); color: #fff; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+
+  main { flex: 1; display: grid; grid-template-columns: 1fr 1.15fr; min-height: 0; }
+  section { min-height: 0; display: flex; flex-direction: column; }
+  section + section { border-left: 1px solid var(--line); }
+  h2 {
+    margin: 0; padding: 10px 18px; font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+
+  #log { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 88%; padding: 9px 13px; border-radius: 10px; white-space: pre-wrap; }
+  .msg.user { align-self: flex-end; background: #1b2c3f; border: 1px solid #27425c; }
+  .msg.user.partial { opacity: .5; font-style: italic; }
+  .msg.agent { align-self: flex-start; background: var(--panel-2); border: 1px solid var(--line); }
+  .msg.tool {
+    align-self: center; font-family: var(--mono); font-size: 11px;
+    color: var(--warn); background: #241d0d; border: 1px solid #4a3a14; max-width: 100%;
+  }
+  .msg.sys { align-self: center; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .who { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+
+  .controls { padding: 14px 18px; border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: center; }
+  .hint { font-size: 11px; color: var(--muted); }
+
+  .tables { flex: 1; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+  th {
+    text-align: left; padding: 8px 12px; color: var(--muted); font-weight: 500;
+    font-size: 10px; letter-spacing: .08em; border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; background: var(--panel);
+  }
+  td { padding: 8px 12px; border-bottom: 1px solid #1a2432; }
+  td.num, th.num { text-align: right; }
+  tr.bump td { animation: bump 1.6s ease-out; }
+  @keyframes bump {
+    0%   { background: var(--accent); color: #06201a; }
+    100% { background: transparent; }
+  }
+  .desc { color: var(--muted); }
+  .sub { padding: 10px 12px; font-size: 10px; letter-spacing: .12em;
+         text-transform: uppercase; color: var(--muted); background: #0e141c;
+         border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); }
+  .empty { padding: 16px 12px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } section + section { border-left: none; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">VOX<span>ERP</span></div>
+  <div class="plant">PLANT 1000 · WAREHOUSE TERMINAL</div>
+  <div class="spacer"></div>
+  <div class="dot" id="dot"></div>
+  <div class="status" id="status">idle</div>
+  <button id="resetBtn">Reset demo</button>
+  <button id="talkBtn" class="primary">Start talking</button>
+</header>
+
+<main>
+  <section>
+    <h2>Conversation</h2>
+    <div id="log">
+      <div class="msg sys">Press “Start talking”, then say: “How many of material four seven one one do we have?”</div>
+    </div>
+    <div class="controls">
+      <span class="hint">Headphones recommended · barge-in enabled — you can interrupt the agent</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Live ERP state</h2>
+    <div class="tables">
+      <div class="sub">MARD — Stock per storage location</div>
+      <table>
+        <thead>
+          <tr><th>MATNR</th><th>Description</th><th>LGORT</th><th>Bin</th><th class="num">LABST</th></tr>
+        </thead>
+        <tbody id="stockBody"></tbody>
+      </table>
+      <div class="sub">MKPF — Material documents posted by voice</div>
+      <table>
+        <thead>
+          <tr><th>MBLNR</th><th>BWART</th><th>MATNR</th><th class="num">MENGE</th><th>Bin</th><th>BUDAT</th></tr>
+        </thead>
+        <tbody id="docBody"><tr><td colspan="6" class="empty">No documents yet.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+// ---------------------------------------------------------------------------
+// Live ERP panel — Server-Sent Events'ten beslenir
+// ---------------------------------------------------------------------------
+const stockBody = document.getElementById('stockBody');
+const docBody   = document.getElementById('docBody');
+let lastTouched = null;
+
+async function refreshInventory() {
+  const data = await fetch('/api/inventory').then(r => r.json());
+
+  stockBody.innerHTML = data.stock.map(r => `
+    <tr data-key="${r.MATNR}-${r.LGORT}">
+      <td>${r.MATNR}</td>
+      <td class="desc">${r.MAKTX}</td>
+      <td>${r.LGORT}</td>
+      <td>${r.LGPLA}</td>
+      <td class="num">${r.LABST} ${r.MEINS}</td>
+    </tr>`).join('');
+
+  docBody.innerHTML = data.documents.length
+    ? data.documents.map(d => `
+      <tr><td>${d.MBLNR}</td><td>${d.BWART}</td><td>${d.MATNR}</td>
+          <td class="num">${d.MENGE} ${d.MEINS}</td><td>${d.LGPLA}</td><td>${d.BUDAT}</td></tr>`).join('')
+    : '<tr><td colspan="6" class="empty">No documents yet.</td></tr>';
+
+  if (lastTouched) {
+    const row = stockBody.querySelector(`[data-key="${lastTouched}"]`);
+    if (row) row.classList.add('bump');
+    lastTouched = null;
+  }
+}
+
+const sse = new EventSource('/events');
+sse.onmessage = (e) => {
+  const evt = JSON.parse(e.data);
+  if (evt.type === 'goods_receipt') {
+    lastTouched = `${evt.data.MATNR}-${evt.data.LGORT}`;
+    refreshInventory();
+  } else if (evt.type === 'reset') {
+    refreshInventory();
+  }
+};
+refreshInventory();
+
+document.getElementById('resetBtn').onclick = async () => {
+  await fetch('/api/reset', { method: 'POST' });
+  document.getElementById('log').innerHTML =
+    '<div class="msg sys">Demo reset. Stock levels restored.</div>';
+};
+
+// ---------------------------------------------------------------------------
+// Voice Agent WebSocket
+// ---------------------------------------------------------------------------
+const SAMPLE_RATE = 24000;           // API sozlesmesi: PCM16 mono 24 kHz
+const WS_URL = 'wss://agents.assemblyai.com/v1/ws';
+
+const logEl    = document.getElementById('log');
+const talkBtn  = document.getElementById('talkBtn');
+const statusEl = document.getElementById('status');
+const dotEl    = document.getElementById('dot');
+
+let ws = null, micCtx = null, micNode = null, micStream = null;
+let playCtx = null, playCursor = 0;
+let partialEl = null, live = false;
+
+function setStatus(text, on = false) {
+  statusEl.textContent = text;
+  dotEl.classList.toggle('on', on);
+}
+
+function append(kind, who, text) {
+  const el = document.createElement('div');
+  el.className = `msg ${kind}`;
+  el.innerHTML = who ? `<div class="who">${who}</div>` : '';
+  el.appendChild(document.createTextNode(text));
+  logEl.appendChild(el);
+  logEl.scrollTop = logEl.scrollHeight;
+  return el;
+}
+
+// --- base64 <-> PCM16 -------------------------------------------------------
+function floatToBase64PCM16(float32) {
+  const pcm = new Int16Array(float32.length);
+  for (let i = 0; i < float32.length; i++) {
+    const s = Math.max(-1, Math.min(1, float32[i]));
+    pcm[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+  const bytes = new Uint8Array(pcm.buffer);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function base64ToFloat32(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const pcm = new Int16Array(bytes.buffer);
+  const out = new Float32Array(pcm.length);
+  for (let i = 0; i < pcm.length; i++) out[i] = pcm[i] / 32768;
+  return out;
+}
+
+// --- ajanin sesini calma ----------------------------------------------------
+function playChunk(float32) {
+  if (!playCtx) playCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+  const buf = playCtx.createBuffer(1, float32.length, SAMPLE_RATE);
+  buf.copyToChannel(float32, 0);
+  const src = playCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(playCtx.destination);
+  const now = playCtx.currentTime;
+  playCursor = Math.max(playCursor, now + 0.05);
+  src.start(playCursor);
+  playCursor += buf.duration;
+}
+
+function stopPlayback() {
+  // Kullanici sozunu kestiginde kuyrugu bosalt: eski AudioContext'i kapat.
+  if (playCtx) { playCtx.close(); playCtx = null; }
+  playCursor = 0;
+}
+
+// --- mikrofon ---------------------------------------------------------------
+const WORKLET = `
+class Cap extends AudioWorkletProcessor {
+  process(inputs) {
+    const ch = inputs[0][0];
+    if (ch) this.port.postMessage(new Float32Array(ch));
+    return true;
+  }
+}
+registerProcessor('cap', Cap);
+`;
+
+async function startMic() {
+  micStream = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true },
+  });
+  micCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+  const url = URL.createObjectURL(new Blob([WORKLET], { type: 'application/javascript' }));
+  await micCtx.audioWorklet.addModule(url);
+  micNode = new AudioWorkletNode(micCtx, 'cap');
+  micNode.port.onmessage = (e) => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'input.audio', audio: floatToBase64PCM16(e.data) }));
+    }
+  };
+  micCtx.createMediaStreamSource(micStream).connect(micNode);
+  micNode.connect(micCtx.destination); // sessiz uc - grafi canli tutar
+}
+
+function stopMic() {
+  if (micNode) { micNode.port.onmessage = null; micNode.disconnect(); micNode = null; }
+  if (micCtx)  { micCtx.close(); micCtx = null; }
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+}
+
+// --- oturum -----------------------------------------------------------------
+async function start() {
+  setStatus('connecting…');
+  talkBtn.disabled = true;
+
+  let token, agentId;
+  try {
+    ({ token, agent_id: agentId } = await fetch('/api/voice-token').then(r => {
+      if (!r.ok) throw new Error('token endpoint failed');
+      return r.json();
+    }));
+  } catch (err) {
+    append('sys', '', 'Could not mint a token. Is ASSEMBLYAI_API_KEY set in .env?');
+    setStatus('error'); talkBtn.disabled = false; return;
+  }
+  if (!agentId) {
+    append('sys', '', 'AGENT_ID is empty. Run: python agent/publish.py, then put the id in .env');
+    setStatus('no agent'); talkBtn.disabled = false; return;
+  }
+
+  ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: 'session.update', session: { agent_id: agentId } }));
+  };
+
+  ws.onmessage = async (event) => {
+    const m = JSON.parse(event.data);
+    switch (m.type) {
+      case 'session.ready':
+        await startMic();
+        live = true;
+        talkBtn.disabled = false;
+        talkBtn.textContent = 'End session';
+        talkBtn.classList.replace('primary', 'live');
+        setStatus('listening', true);
+        break;
+
+      case 'input.speech.started':
+        stopPlayback();               // barge-in: ajanin sesini kes
+        setStatus('user speaking', true);
+        break;
+
+      case 'transcript.user.delta':
+        if (!partialEl) partialEl = append('user partial', 'operator', '');
+        partialEl.lastChild.textContent = m.text ?? m.delta ?? '';
+        logEl.scrollTop = logEl.scrollHeight;
+        break;
+
+      case 'transcript.user':
+        if (partialEl) { partialEl.remove(); partialEl = null; }
+        append('user', 'operator', m.text ?? '');
+        setStatus('thinking', true);
+        break;
+
+      case 'tool.call':
+        append('tool', '', `→ ${m.name}(${JSON.stringify(m.arguments ?? {})})`);
+        break;
+
+      case 'reply.audio':
+        if (m.audio) playChunk(base64ToFloat32(m.audio));
+        setStatus('agent speaking', true);
+        break;
+
+      case 'transcript.agent':
+        append('agent', 'voxerp', m.text ?? '');
+        break;
+
+      case 'reply.done':
+        setStatus('listening', true);
+        break;
+
+      case 'session.error':
+        append('sys', '', `Session error [${m.code ?? '?'}]: ${m.message ?? ''}`);
+        break;
+
+      case 'session.ended':
+        setStatus('ended');
+        break;
+    }
+  };
+
+  ws.onclose = () => { cleanup(); };
+  ws.onerror = () => { append('sys', '', 'WebSocket error.'); };
+}
+
+function end() {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'session.end' }));
+  cleanup();
+}
+
+function cleanup() {
+  live = false;
+  stopMic();
+  stopPlayback();
+  if (ws) { ws.onclose = null; ws.close(); ws = null; }
+  talkBtn.textContent = 'Start talking';
+  talkBtn.classList.replace('live', 'primary');
+  talkBtn.disabled = false;
+  setStatus('idle');
+}
+
+talkBtn.onclick = () => (live ? end() : start());
+window.addEventListener('pagehide', () => { if (live) end(); });
+</script>
+</body>
+</html>
