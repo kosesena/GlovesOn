@@ -68,6 +68,7 @@ uvicorn gateway.main:app --reload --port 8000
 # 2) expose it over public HTTPS — AssemblyAI tools cannot reach localhost
 cloudflared tunnel --url http://localhost:8000
 #    → put the https://... address into GATEWAY_PUBLIC_URL in .env
+#    (local development only — see Deployment below)
 
 # 3) publish the agent
 python agent/publish.py
@@ -79,6 +80,21 @@ python agent/publish.py
 > **The tunnel is not optional.** AssemblyAI calls your tool endpoints from its own
 > servers: HTTPS and public hosts only, private and loopback addresses are blocked,
 > redirects are not followed.
+
+## Deployment
+
+The gateway is deployed on **Replit**, which gives it a stable public HTTPS address.
+That address is not a convenience: AssemblyAI invokes tool endpoints from its own
+servers over HTTPS to public hosts only, so a locally-running gateway is unreachable
+no matter what else is configured.
+
+Replit also runs the service as written — FastAPI, SQLite and a long-lived SSE
+connection all work unchanged. A serverless target would have required replacing the
+storage layer and rethinking the event stream for no gain at this scale.
+
+Set `ASSEMBLYAI_API_KEY`, `TOOL_SHARED_SECRET` and `AGENT_ID` as secrets there, point
+`GATEWAY_PUBLIC_URL` at the deployment's own URL, and re-run `agent/publish.py` so the
+tool definitions carry the new address.
 
 ## Try saying
 
