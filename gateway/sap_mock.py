@@ -21,7 +21,6 @@ from __future__ import annotations
 import random
 import secrets
 import time
-from contextlib import closing
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Header, Query, Request, Response
@@ -136,9 +135,9 @@ async def create_material_document(
             f"Movement type {bwart} requires GoodsMovementCode {expected_gmc}.",
         )
 
-    with closing(store.db()) as conn:
+    with store.db() as conn:
         row = conn.execute(
-            "SELECT * FROM mard WHERE matnr=? AND werks=? AND lgort=?", (matnr, werks, lgort)
+            "SELECT * FROM mard WHERE matnr=%s AND werks=%s AND lgort=%s", (matnr, werks, lgort)
         ).fetchone()
         if row is None:
             return _odata_error(
@@ -150,14 +149,14 @@ async def create_material_document(
         # Ters kayit (102): asil belgeyi bul ve stoktan dus
         if bwart in ("102", "502"):
             orig = conn.execute(
-                "SELECT * FROM mkpf WHERE mblnr=?", (str(reversed_of or ""),)
+                "SELECT * FROM mkpf WHERE mblnr=%s", (str(reversed_of or ""),)
             ).fetchone()
             if orig is None:
                 return _odata_error("M7_054", f"Material document {reversed_of} does not exist.")
             if orig["bwart"] in ("102", "502"):
                 return _odata_error("M7_055", f"Material document {reversed_of} is itself a reversal.")
             already = conn.execute(
-                "SELECT mblnr FROM mkpf WHERE reversed_of=?", (str(reversed_of),)
+                "SELECT mblnr FROM mkpf WHERE reversed_of=%s", (str(reversed_of),)
             ).fetchone()
             if already:
                 return _odata_error(
@@ -177,20 +176,19 @@ async def create_material_document(
         budat = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
         conn.execute(
-            "UPDATE mard SET labst = labst + ? WHERE matnr=? AND werks=? AND lgort=?",
+            "UPDATE mard SET labst = labst + %s WHERE matnr=%s AND werks=%s AND lgort=%s",
             (delta, matnr, werks, lgort),
         )
         conn.execute(
             "INSERT INTO mkpf (mblnr, mjahr, bwart, matnr, menge, meins, werks, lgort,"
             " lgpla, budat, ebeln, reversed_of, created_at, bktxt, xblnr)"
-            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (mblnr, mjahr, bwart, matnr, menge, row["meins"], werks, lgort,
              row["lgpla"], budat, ebeln, reversed_of, time.time(), bktxt, xblnr),
         )
         new_level = conn.execute(
-            "SELECT labst FROM mard WHERE matnr=? AND werks=? AND lgort=?", (matnr, werks, lgort)
+            "SELECT labst FROM mard WHERE matnr=%s AND werks=%s AND lgort=%s", (matnr, werks, lgort)
         ).fetchone()["labst"]
-        conn.commit()
 
     return JSONResponse(
         status_code=201,
@@ -222,9 +220,9 @@ async def create_material_document(
 async def material_stock(material: str = Query(..., alias="Material"),
                          plant: str = Query("1000", alias="Plant")):
     matnr = norm_matnr(material)
-    with closing(store.db()) as conn:
+    with store.db() as conn:
         rows = conn.execute(
-            "SELECT * FROM mard WHERE matnr=? AND werks=? ORDER BY lgort", (matnr, plant)
+            "SELECT * FROM mard WHERE matnr=%s AND werks=%s ORDER BY lgort", (matnr, plant)
         ).fetchall()
     return {"d": {"results": [{
         "Material": r["matnr"], "Plant": r["werks"], "StorageLocation": r["lgort"],
@@ -236,14 +234,14 @@ async def material_stock(material: str = Query(..., alias="Material"),
 @router.get("/API_PRODUCT_SRV/A_ProductDescription")
 async def product_description(product: str | None = Query(None, alias="Product"),
                               search: str | None = Query(None, alias="search")):
-    with closing(store.db()) as conn:
+    with store.db() as conn:
         if product:
             rows = conn.execute(
-                "SELECT DISTINCT matnr, maktx, meins FROM mard WHERE matnr=?",
+                "SELECT DISTINCT matnr, maktx, meins FROM mard WHERE matnr=%s",
                 (norm_matnr(product),)).fetchall()
         else:
             rows = conn.execute(
-                "SELECT DISTINCT matnr, maktx, meins FROM mard WHERE LOWER(maktx) LIKE ?"
+                "SELECT DISTINCT matnr, maktx, meins FROM mard WHERE LOWER(maktx) LIKE %s"
                 " ORDER BY maktx LIMIT 5", (f"%{(search or '').lower().strip()}%",)).fetchall()
     return {"d": {"results": [{
         "Product": r["matnr"], "Language": "EN", "ProductDescription": r["maktx"],
@@ -254,11 +252,11 @@ async def product_description(product: str | None = Query(None, alias="Product")
 @router.get("/API_PURCHASEORDER_PROCESS_SRV/A_PurchaseOrder")
 async def purchase_order(order: str = Query(..., alias="PurchaseOrder")):
     ebeln = str(order).strip().replace(" ", "")
-    with closing(store.db()) as conn:
-        row = conn.execute("SELECT * FROM ekko WHERE ebeln=?", (ebeln,)).fetchone()
+    with store.db() as conn:
+        row = conn.execute("SELECT * FROM ekko WHERE ebeln=%s", (ebeln,)).fetchone()
         if row is None:
             return {"d": {"results": []}}
-        mat = conn.execute("SELECT maktx FROM mard WHERE matnr=? LIMIT 1", (row["matnr"],)).fetchone()
+        mat = conn.execute("SELECT maktx FROM mard WHERE matnr=%s LIMIT 1", (row["matnr"],)).fetchone()
     return {"d": {"results": [{
         "PurchaseOrder": row["ebeln"], "Supplier": row["lifnr"], "Material": row["matnr"],
         "ProductDescription": mat["maktx"] if mat else "",
@@ -269,8 +267,8 @@ async def purchase_order(order: str = Query(..., alias="PurchaseOrder")):
 
 @router.get("/API_MATERIAL_DOCUMENT_SRV/A_MaterialDocumentHeader")
 async def list_documents(top: int = Query(10, alias="$top")):
-    with closing(store.db()) as conn:
-        rows = conn.execute("SELECT * FROM mkpf ORDER BY rowid DESC LIMIT ?", (top,)).fetchall()
+    with store.db() as conn:
+        rows = conn.execute("SELECT * FROM mkpf ORDER BY seq DESC LIMIT %s", (top,)).fetchall()
     return {"d": {"results": [{
         "MaterialDocument": r["mblnr"], "MaterialDocumentYear": r["mjahr"],
         "PostingDate": r["budat"], "GoodsMovementType": r["bwart"],

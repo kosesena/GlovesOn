@@ -20,21 +20,17 @@ import json
 import os
 import secrets
 import time
-from contextlib import closing
 from pathlib import Path
 from typing import Any
 
 import httpx
-from dotenv import load_dotenv
 from fastapi import Body, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 
-from . import audit, sap_client, sap_mock, store
+from . import audit, live, sap_client, sap_mock, store
 from .sap_client import SapClient, SapError
 from .store import norm_matnr, pretty_matnr
-
-load_dotenv()
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "web"
@@ -43,8 +39,8 @@ ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
 TOOL_SHARED_SECRET = os.getenv("TOOL_SHARED_SECRET", "").strip()
 AGENT_ID = os.getenv("AGENT_ID", "")
 
-# Uvicorn'a verdigimiz port. Replit dagitimda PORT'u kendisi atar; yerelde
-# serve.sh ayni degiskeni okur, boylece iki taraf ayni sayida anlasir.
+# Yerelde uvicorn'a verdigimiz port. Mock'a artik bu port uzerinden
+# gidilmiyor (bkz. asagisi), sadece serve.sh ile ayni sayida anlasmak icin.
 PORT = int(os.getenv("PORT", "8000"))
 
 # Demo ekranindaki "sifirla" dugmesi mock veritabanini bastan kurar. Tunel
@@ -72,36 +68,55 @@ app.include_router(sap_mock.router, prefix="/sap/opu/odata/sap", tags=["mock-s4h
 
 _sap: SapClient | None = None
 
-# SAP_BASE_URL verilmediginde gateway kendi icindeki mock S/4HANA'ya baglanir.
-# Bu adres bilerek loopback: bir vekil sunucunun (Replit, Cloudflare) arkasinda
-# calisirken kendi *public* adresimize gitmek istegi veri merkezinden cikarip
-# geri sokar ve http -> https yonlendirmesine takilir; SapClient yonlendirme
-# takip etmiyor, dolayisiyla her tool cagrisi sessizce patlardi. Loopback ayni
-# zamanda hala gercek bir HTTP atlamasi - mock disaridan bir sistem gibi
-# cagrilmaya devam ediyor, kisayol yok.
-MOCK_SAP_BASE_URL = os.getenv("MOCK_SAP_BASE_URL", "").rstrip("/") or f"http://127.0.0.1:{PORT}"
+# Mock S/4HANA'ya nasil gidilecegi. Uc olasilik, tek kod yolu:
+#   SAP_BASE_URL      -> gercek bir tenant, normal HTTP
+#   MOCK_SAP_BASE_URL -> mock ayri bir surecte, normal HTTP
+#   ikisi de yoksa    -> mock ayni uygulamada, ASGI tasiyicisiyla
+#
+# Ucuncusu sunucusuz ortamin dayattigi sey: dinleyen bir port olmadigi icin
+# loopback yok, kendi public adresimize gitmek ise istegi veri merkezinden
+# cikarip geri sokar - her ERP cagrisinda bir tur ag gecikmesi ve iki kat
+# fonksiyon cagrisi. ADR-0003'un sarti "mock disaridan bir sistem gibi
+# cagrilsin" idi; OData yolu, CSRF el sikismasi ve hata zarfi aynen duruyor,
+# degisen tek sey baytlarin sokete cikip cikmadigi.
+MOCK_SAP_BASE_URL = os.getenv("MOCK_SAP_BASE_URL", "").rstrip("/")
 
 
 def sap() -> SapClient:
     global _sap
     if _sap is None:
-        _sap = SapClient(sap_client.SAP_BASE_URL or MOCK_SAP_BASE_URL)
+        if sap_client.SAP_BASE_URL:
+            _sap = SapClient(sap_client.SAP_BASE_URL)
+        elif MOCK_SAP_BASE_URL:
+            _sap = SapClient(MOCK_SAP_BASE_URL)
+        else:
+            _sap = SapClient("http://mock-s4hana.internal",
+                             transport=httpx.ASGITransport(app=app))
     return _sap
+
+
+def sap_target() -> str:
+    if sap_client.SAP_BASE_URL:
+        return sap_client.SAP_BASE_URL
+    if MOCK_SAP_BASE_URL:
+        return f"{MOCK_SAP_BASE_URL} (mock S/4HANA, over HTTP)"
+    return "in-process ASGI (mock S/4HANA)"
 
 
 # ---------------------------------------------------------------------------
 # Canli olay akisi (demo ekrani)
 # ---------------------------------------------------------------------------
 
-_subscribers: list[asyncio.Queue] = []
 _shutting_down = asyncio.Event()
 SSE_MAX_LIFETIME_SECONDS = 50
+EVENT_POLL_SECONDS = 0.4
 
 
 @app.on_event("startup")
 async def _on_startup() -> None:
     store.init_db()
     audit.init()
+    live.init()
 
 
 @app.on_event("shutdown")
@@ -112,31 +127,33 @@ async def _on_shutdown() -> None:
 
 
 def publish(event_type: str, payload: dict[str, Any]) -> None:
-    message = json.dumps({"type": event_type, "ts": time.time(), "data": payload})
-    for queue in list(_subscribers):
-        try:
-            queue.put_nowait(message)
-        except asyncio.QueueFull:
-            pass
+    live.publish(event_type, payload)
 
 
 @app.get("/events")
 async def events() -> StreamingResponse:
-    queue: asyncio.Queue = asyncio.Queue(maxsize=100)
-    _subscribers.append(queue)
+    # Akis, olaylari veritabanindan okuyor: ekrani tutan ornek ile yazmayi
+    # yapan ornek ayni olmayabilir. Bkz. live.py.
+    last_id = await asyncio.to_thread(live.latest_id)
 
     async def stream():
+        nonlocal last_id
         deadline = time.monotonic() + SSE_MAX_LIFETIME_SECONDS
-        try:
-            yield "retry: 2000\n\n"
-            while not _shutting_down.is_set() and time.monotonic() < deadline:
-                try:
-                    yield f"data: {await asyncio.wait_for(queue.get(), timeout=5)}\n\n"
-                except asyncio.TimeoutError:
+        idle = 0.0
+        yield "retry: 2000\n\n"
+        while not _shutting_down.is_set() and time.monotonic() < deadline:
+            rows = await asyncio.to_thread(live.since, last_id)
+            if rows:
+                idle = 0.0
+                for event_id, payload in rows:
+                    last_id = event_id
+                    yield f"data: {payload}\n\n"
+            else:
+                idle += EVENT_POLL_SECONDS
+                if idle >= 5:
+                    idle = 0.0
                     yield ": keep-alive\n\n"
-        finally:
-            if queue in _subscribers:
-                _subscribers.remove(queue)
+            await asyncio.sleep(EVENT_POLL_SECONDS)
 
     return StreamingResponse(stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -241,7 +258,7 @@ async def post_goods_receipt(
     # Yoklugu yazmayi DURDURMAZ - izi zenginlestirir, sart kosmaz. Bir yazma
     # kimlik dogrulamaya degil onaya dayanir; bkz. docs/adr/0002.
     utterance = str(body.get("confirmed_utterance") or "")
-    session_id = str(body.get("session_id") or "") or (_voice_session_ref or "") or (_voice_session_ref or "")
+    session_id = str(body.get("session_id") or "") or live.current_session()
 
     try:
         rows = await sap().get_stock(matnr, plant)
@@ -481,36 +498,18 @@ async def purchase_order(
 # genis tutuldu ve sinir asildiginda 429 ile acikca soyluyoruz.
 VOICE_TOKEN_MAX = int(os.getenv("VOICE_TOKEN_MAX_PER_HOUR", "40"))
 
-# Su anki ses oturumunun referansi. Tool cagrilari AssemblyAI'in sunucusundan
-# gelir ve hangi oturumdan dogduklarini soylemez; token bastigimiz anda bir
-# referans uretir, yazmalari ona baglariz. "Bu belge su oturum acikken atildi"
-# demek dogrudur. Ayni anda IKI oturum konusursa ikisi ayni referansi alir -
-# docs/nfr.md'nin kaydettigi tek-oturum tavaninin bir sonucu, cozdugumuz
-# bir sey degil.
-_voice_session_ref: str | None = None
-VOICE_TOKEN_WINDOW_SECONDS = 3600
-_voice_token_grants: list[float] = []
-
-
-def _voice_token_budget() -> int:
-    cutoff = time.time() - VOICE_TOKEN_WINDOW_SECONDS
-    _voice_token_grants[:] = [t for t in _voice_token_grants if t >= cutoff]
-    return VOICE_TOKEN_MAX - len(_voice_token_grants)
-
 
 @app.get("/api/voice-token")
 async def voice_token() -> dict[str, Any]:
     if not ASSEMBLYAI_API_KEY:
         raise HTTPException(status_code=500, detail="ASSEMBLYAI_API_KEY is not set")
-    if _voice_token_budget() <= 0:
+    if await asyncio.to_thread(live.voice_budget_left, VOICE_TOKEN_MAX) <= 0:
         raise HTTPException(
             status_code=429,
             detail=f"This gateway has handed out {VOICE_TOKEN_MAX} voice sessions in the "
                    f"last hour and is holding off. Try again shortly, or raise "
                    f"VOICE_TOKEN_MAX_PER_HOUR.")
-    _voice_token_grants.append(time.time())
-    global _voice_session_ref
-    _voice_session_ref = secrets.token_hex(4)
+    await asyncio.to_thread(live.mint_session, secrets.token_hex(4))
     async with httpx.AsyncClient(timeout=15) as client:
         r = await client.get("https://agents.assemblyai.com/v1/token",
                              params={"expires_in_seconds": 300, "max_session_duration_seconds": 600},
@@ -522,9 +521,9 @@ async def voice_token() -> dict[str, Any]:
 
 @app.get("/api/inventory")
 def inventory() -> dict[str, Any]:
-    with closing(store.db()) as conn:
+    with store.db() as conn:
         rows = conn.execute("SELECT * FROM mard ORDER BY matnr, lgort").fetchall()
-        docs = conn.execute("SELECT * FROM mkpf ORDER BY rowid DESC LIMIT 10").fetchall()
+        docs = conn.execute("SELECT * FROM mkpf ORDER BY seq DESC LIMIT 10").fetchall()
     return {
         "stock": [{"MATNR": pretty_matnr(r["matnr"]), "MAKTX": r["maktx"], "WERKS": r["werks"],
                    "LGORT": r["lgort"], "LGPLA": r["lgpla"], "LABST": r["labst"],
@@ -540,6 +539,8 @@ def reset() -> dict[str, str]:
     if not ENABLE_RESET:
         raise HTTPException(status_code=403, detail="Reset is disabled on this deployment.")
     store.init_db(force=True)
+    audit.init()
+    live.init()
     publish("reset", {})
     return {"status": "reset"}
 
@@ -547,7 +548,7 @@ def reset() -> dict[str, str]:
 @app.get("/health")
 def health() -> dict[str, Any]:
     return {"ok": True, "agent_id": AGENT_ID or None,
-            "sap_base_url": sap_client.SAP_BASE_URL or f"{MOCK_SAP_BASE_URL} (mock S/4HANA)"}
+            "sap_base_url": sap_target()}
 
 
 @app.get("/")

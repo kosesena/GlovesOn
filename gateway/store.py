@@ -1,25 +1,33 @@
 """
-SQLite deposu — mock S/4HANA sisteminin arkasindaki veri.
+Postgres deposu — mock S/4HANA sisteminin arkasindaki veri.
 
 Bu dosya SAP'nin *verisini* tutar, sozlesmesini degil. OData yuzeyi
 sap_mock.py'de. Gercek bir S/4HANA'ya gecildiginde bu dosya tamamen olur.
+
+Neden SQLite degil: gateway artik istek basina uyanan bir fonksiyon olarak
+calisiyor (bkz. docs/adr/0005). Orada kalici disk yok ve iki istek ayni surece
+dusmeyebilir - yani yan yana duran bir dosya, bir cumlede yazilip digerinde
+kaybolan bir veritabani demekti. Bedeli: artik cevrimdisi calisilamiyor,
+en basit testte bile bir Postgres baglantisi gerekiyor.
 """
 
 from __future__ import annotations
 
 import os
-import sqlite3
 import time
-from contextlib import closing
-from pathlib import Path
+from contextlib import contextmanager
 
-# Varsayilan olarak dosya kodun yanindadir. Bir dagitimda kod dizini her
-# yayinda yeniden kurulur, yani veri yayinlar arasi yasamaz; kalici bir disk
-# baglayabilenler GLOVESON_DB_PATH ile onu gosterir. Mock icin kayip veri
-# felaket degil - acilista tohum veri yeniden yazilir - ama bu ayrimi
-# yapilandirmayla soylemek, kod okuyup tahmin ettirmekten iyi.
-DB_PATH = Path(os.getenv("GLOVESON_DB_PATH", "")
-               or Path(__file__).resolve().parent / "gloveson.db")
+import psycopg
+from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
+
+def database_url() -> str:
+    """
+    Calisma aninda okunuyor, import aninda degil: sunucusuz bir ortamda
+    degiskenler surecin omrunden bagimsiz gelir, ve yerelde .env'in ne zaman
+    yuklendigine bagli kalmak istemiyoruz.
+    """
+    return os.getenv("DATABASE_URL", "") or os.getenv("POSTGRES_URL", "")
 
 # Ayni malzeme + miktar + depo yeri bu sure icinde ikinci kez gelirse yeni belge
 # acilmaz. Zaman asimina ugramis bir yazmadan sonra iscinin cumleyi tekrar
@@ -43,6 +51,9 @@ SEED_ORDERS = [
     ("4500001236", "Fuchs Lubricants", "6201", 40, "Delivered", "2026-09-02"),
 ]
 
+# mkpf.seq: SQLite'in rowid'si vardi, Postgres'te yok. Belge sirasi demoda
+# gorunur bir sey - "son belgeler" listesi bununla siralaniyor - o yuzden
+# sirayi sansa birakmayip acikca sayiyoruz.
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS mard (
     matnr TEXT NOT NULL, maktx TEXT NOT NULL, meins TEXT NOT NULL,
@@ -51,19 +62,53 @@ CREATE TABLE IF NOT EXISTS mard (
     PRIMARY KEY (matnr, werks, lgort)
 );
 CREATE TABLE IF NOT EXISTS mkpf (
+    seq BIGSERIAL,
     mblnr TEXT PRIMARY KEY, mjahr TEXT NOT NULL, bwart TEXT NOT NULL,
     matnr TEXT NOT NULL, menge INTEGER NOT NULL, meins TEXT NOT NULL,
     werks TEXT NOT NULL, lgort TEXT NOT NULL, lgpla TEXT NOT NULL,
     budat TEXT NOT NULL, ebeln TEXT, reversed_of TEXT,
-    created_at REAL NOT NULL DEFAULT 0,
-    bktxt TEXT NOT NULL DEFAULT '',   -- MaterialDocumentHeaderText
-    xblnr TEXT NOT NULL DEFAULT ''    -- basliktaki ReferenceDocument
+    created_at DOUBLE PRECISION NOT NULL DEFAULT 0,
+    bktxt TEXT NOT NULL DEFAULT '',
+    xblnr TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS ekko (
     ebeln TEXT PRIMARY KEY, lifnr TEXT NOT NULL, matnr TEXT NOT NULL,
     menge INTEGER NOT NULL, status TEXT NOT NULL, eta TEXT NOT NULL
 );
 """
+
+_pool: ConnectionPool | None = None
+
+
+def pool() -> ConnectionPool:
+    """
+    Havuz bilerek kucuk ve tembel. Bir fonksiyon ornegi birkac istegi birden
+    goruyor, ama yuz tanesini gormuyor; acik tutulan her baglanti Postgres
+    tarafinda bir slot demek ve sunucusuz ortamda ornek sayisi bizim
+    kontrolumuzde degil. Neon'un pooled adresini kullanmak sart.
+    """
+    global _pool
+    if _pool is None:
+        url = database_url()
+        if not url:
+            raise RuntimeError(
+                "DATABASE_URL is not set. The mock S/4HANA keeps its data in Postgres "
+                "(see docs/adr/0005); point DATABASE_URL at your database — locally in "
+                ".env, on Vercel through the storage integration."
+            )
+        _pool = ConnectionPool(url, min_size=0, max_size=4, kwargs={"row_factory": dict_row},
+                               open=True, timeout=10)
+    return _pool
+
+
+@contextmanager
+def db():
+    """
+    Baglanti verir; blok hatasiz biterse commit, hata alirsa rollback eder.
+    Cagiran taraftaki `conn.commit()` cagrilari zararsiz, sadece gereksiz.
+    """
+    with pool().connection() as conn:
+        yield conn
 
 
 def norm_matnr(raw: str | int) -> str:
@@ -76,20 +121,16 @@ def pretty_matnr(matnr: str) -> str:
     return matnr.lstrip("0") or "0"
 
 
-def db() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-# Sema degistiginde eski veritabani dosyasi kendini guncellemez:
-# CREATE TABLE IF NOT EXISTS var olan tabloya dokunmaz. Eksik kolonlari
-# tek tek ekliyoruz, boylece eski bir gloveson.db yeni kodla calisiyor.
+# Sema degistiginde var olan veritabani kendini guncellemez: CREATE TABLE IF
+# NOT EXISTS mevcut tabloya dokunmaz. Eksik kolonlari tek tek ekliyoruz,
+# boylece eski bir veritabani yeni kodla calisiyor. Kolon eklerken bu listeyi
+# de buyut - semadaki degisikligin tek basina yetecegini varsayma.
 MIGRATIONS = {
     "mkpf": [
+        ("seq", "BIGSERIAL"),
         ("mjahr", "TEXT NOT NULL DEFAULT ''"),
         ("reversed_of", "TEXT"),
-        ("created_at", "REAL NOT NULL DEFAULT 0"),
+        ("created_at", "DOUBLE PRECISION NOT NULL DEFAULT 0"),
         ("bktxt", "TEXT NOT NULL DEFAULT ''"),
         ("xblnr", "TEXT NOT NULL DEFAULT ''"),
     ],
@@ -99,7 +140,10 @@ MIGRATIONS = {
 def _ensure_columns(conn) -> list[str]:
     added = []
     for table, columns in MIGRATIONS.items():
-        existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+        rows = conn.execute(
+            "SELECT column_name FROM information_schema.columns"
+            " WHERE table_schema='public' AND table_name=%s", (table,)).fetchall()
+        existing = {r["column_name"] for r in rows}
         if not existing:
             continue                      # tablo henuz yok, SCHEMA olusturacak
         for name, decl in columns:
@@ -110,31 +154,34 @@ def _ensure_columns(conn) -> list[str]:
 
 
 def init_db(force: bool = False) -> None:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    if force and DB_PATH.exists():
-        DB_PATH.unlink()
-    with closing(db()) as conn:
-        conn.executescript(SCHEMA)
+    """
+    force=True demo sifirlamasi: tablolari dusurup tohum veriyi geri yaziyor.
+    Dosya silmek yerine DROP - artik silinecek bir dosya yok.
+    """
+    with db() as conn:
+        if force:
+            conn.execute("DROP TABLE IF EXISTS mard, mkpf, ekko, audit_trail, events")
+        conn.execute(SCHEMA)
         added = _ensure_columns(conn)
         if added:
             print(f"  [store] eksik kolonlar eklendi: {', '.join(added)}")
-        if not conn.execute("SELECT COUNT(*) c FROM mard").fetchone()["c"]:
-            conn.executemany(
+        if not conn.execute("SELECT COUNT(*) AS c FROM mard").fetchone()["c"]:
+            conn.cursor().executemany(
                 "INSERT INTO mard (matnr, maktx, meins, werks, lgort, lgpla, labst)"
-                " VALUES (?,?,?,?,?,?,?)",
+                " VALUES (%s,%s,%s,%s,%s,%s,%s)",
                 [(norm_matnr(m), d, u, w, l, b, q) for m, d, u, w, l, b, q in SEED_MATERIALS],
             )
-            conn.executemany(
-                "INSERT INTO ekko (ebeln, lifnr, matnr, menge, status, eta) VALUES (?,?,?,?,?,?)",
+            conn.cursor().executemany(
+                "INSERT INTO ekko (ebeln, lifnr, matnr, menge, status, eta)"
+                " VALUES (%s,%s,%s,%s,%s,%s)",
                 [(e, li, norm_matnr(m), q, s, eta) for e, li, m, q, s, eta in SEED_ORDERS],
             )
-        conn.commit()
 
 
 def recent_duplicate(conn, matnr: str, menge: int, werks: str, lgort: str, ebeln: str | None):
     return conn.execute(
-        "SELECT * FROM mkpf WHERE matnr=? AND menge=? AND werks=? AND lgort=?"
-        " AND IFNULL(ebeln,'')=? AND bwart NOT IN ('102','502') AND created_at >= ?"
+        "SELECT * FROM mkpf WHERE matnr=%s AND menge=%s AND werks=%s AND lgort=%s"
+        " AND COALESCE(ebeln,'')=%s AND bwart NOT IN ('102','502') AND created_at >= %s"
         " ORDER BY created_at DESC LIMIT 1",
         (matnr, menge, werks, lgort, ebeln or "", time.time() - DUPLICATE_WINDOW_SECONDS),
     ).fetchone()

@@ -41,9 +41,16 @@ class SapClient:
     entegrasyonlarinda yapilan sey birebir budur.
     """
 
-    def __init__(self, base_url: str | None = None):
+    def __init__(self, base_url: str | None = None,
+                 transport: httpx.AsyncBaseTransport | None = None):
         self.base_url = (base_url or SAP_BASE_URL).rstrip("/")
-        self._client = httpx.AsyncClient(timeout=SAP_TIMEOUT, follow_redirects=False)
+        # transport verilirse istek sokete cikmadan mock'un ASGI uygulamasina
+        # gider. Konusulan sey degismiyor - ayni OData yolu, ayni CSRF el
+        # sikismasi, ayni {"d": ...} zarfi - sadece tasiyici degisiyor. Bunu
+        # gerektiren sey ortam: sunucusuz bir fonksiyonda dinleyen bir port
+        # yok, dolayisiyla loopback diye bir sey de yok.
+        self._client = httpx.AsyncClient(timeout=SAP_TIMEOUT, follow_redirects=False,
+                                         transport=transport)
         self._csrf: str | None = None
 
     async def aclose(self) -> None:

@@ -17,7 +17,6 @@ kendi basina duruyor.
 from __future__ import annotations
 
 import time
-from contextlib import closing
 from typing import Any
 
 from . import store
@@ -35,25 +34,23 @@ CREATE INDEX IF NOT EXISTS idx_audit_mblnr ON audit_trail (mblnr);
 
 
 def init() -> None:
-    with closing(store.db()) as conn:
-        conn.executescript(SCHEMA)
-        conn.commit()
+    with store.db() as conn:
+        conn.execute(SCHEMA)
 
 
 def record(mblnr: str, action: str, utterance: str, session_id: str) -> None:
-    with closing(store.db()) as conn:
+    with store.db() as conn:
         conn.execute(
             "INSERT INTO audit_trail (mblnr, action, utterance, session_id, created_at)"
-            " VALUES (?,?,?,?,?)",
+            " VALUES (%s,%s,%s,%s,%s)",
             (mblnr, action, utterance.strip()[:500], session_id.strip()[:64], time.time()),
         )
-        conn.commit()
 
 
 def lookup(mblnr: str) -> dict[str, Any] | None:
-    with closing(store.db()) as conn:
+    with store.db() as conn:
         r = conn.execute(
-            "SELECT * FROM audit_trail WHERE mblnr=? ORDER BY created_at DESC LIMIT 1",
+            "SELECT * FROM audit_trail WHERE mblnr=%s ORDER BY created_at DESC LIMIT 1",
             (mblnr,),
         ).fetchone()
     return dict(r) if r else None
