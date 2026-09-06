@@ -7,6 +7,12 @@
   <img alt="Python 3.11" src="https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square">
   <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?style=flat-square">
   <img alt="MIT" src="https://img.shields.io/badge/License-MIT-green?style=flat-square">
+  <a href="https://github.com/kosesena/GlovesOn/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/kosesena/GlovesOn/actions/workflows/ci.yml/badge.svg"></a>
+</p>
+
+<p align="center">
+  <b><a href="https://gloveson.vercel.app">Live demo</a></b> ·
+  <b><a href="docs/JUDGE-GUIDE.md">Judge guide</a></b> — every claim, the file it lives in, and the command that checks it
 </p>
 
 ---
@@ -180,7 +186,9 @@ options and what the choice costs.
 - **[docs/deploy-vercel.md](docs/deploy-vercel.md)** — the deployment runbook and what a
   redeploy costs you
 
-Start with [ADR-0001](docs/adr/0001-gateway-between-agent-and-erp.md) if you read only one.
+Start with [ADR-0001](docs/adr/0001-gateway-between-agent-and-erp.md) if you read only one,
+or [the judge guide](docs/JUDGE-GUIDE.md) if you would rather check the claims than read about
+them — it maps each one to a file and a command, and ends with what this system does not do.
 
 ---
 
