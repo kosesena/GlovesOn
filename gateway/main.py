@@ -17,10 +17,9 @@ from __future__ import annotations
 
 import asyncio
 import hmac
-import json
-import os
 import secrets
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -60,7 +59,29 @@ if not TOOL_SHARED_SECRET or TOOL_SHARED_SECRET == "degistir-beni-lutfen":
         "environment variables) and make sure ./publish.sh runs with the same value."
     )
 
-app = FastAPI(title="GlovesOn Gateway", version="0.2.0")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """
+    Acilis ve kapanis. Kapanista _sap'i None'a cekmek bir ayrinti degil:
+    onceden sadece aclose() cagriliyordu, yani singleton kapali bir HTTP
+    istemcisiyle ayakta kaliyordu ve uygulama ayni surecte ikinci kez
+    baslatilamiyordu. Uretimde surec basina tek omur oldugu icin hic
+    gorunmedi; testler ilk kosuda ortaya cikardi.
+    """
+    global _sap
+    store.init_db()
+    audit.init()
+    live.init()
+    try:
+        yield
+    finally:
+        _shutting_down.set()
+        if _sap is not None:
+            await _sap.aclose()
+            _sap = None
+
+
+app = FastAPI(title="GlovesOn Gateway", version="0.2.0", lifespan=lifespan)
 
 # Mock S/4HANA KENDI uygulamasinda. Bu bir duzen tercihi degil, bir guvenlik
 # duzeltmesi: mock public uygulamaya bagliyken herkes CSRF token'ini alip
@@ -118,20 +139,6 @@ def sap_target() -> str:
 _shutting_down = asyncio.Event()
 SSE_MAX_LIFETIME_SECONDS = 50
 EVENT_POLL_SECONDS = 0.4
-
-
-@app.on_event("startup")
-async def _on_startup() -> None:
-    store.init_db()
-    audit.init()
-    live.init()
-
-
-@app.on_event("shutdown")
-async def _on_shutdown() -> None:
-    _shutting_down.set()
-    if _sap is not None:
-        await _sap.aclose()
 
 
 def publish(event_type: str, payload: dict[str, Any]) -> None:
@@ -210,7 +217,7 @@ async def get_stock(
         "MAKTX": desc["ProductDescription"] if desc else "",
         "MEINS": rows[0]["MaterialBaseUnit"],
         "WERKS": plant,
-        "total_unrestricted": sum(l["LABST"] for l in locations),
+        "total_unrestricted": sum(loc["LABST"] for loc in locations),
         "locations": locations,
     }
     publish("tool", {"tool": "get_stock", "ok": True, "result": result})

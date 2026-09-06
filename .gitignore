@@ -5,3 +5,8 @@ __pycache__/
 
 # Kisisel planlama dosyasi repoya girmez
 PLAN.md
+
+# pytest / ruff
+.pytest_cache/
+__pycache__/
+.ruff_cache/

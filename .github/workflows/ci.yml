@@ -1,0 +1,49 @@
+# Iddialarin kaniti. Her push'ta calisir ve depoya bakan biri sonucu
+# rozette gorur - "yazma garantileri var" cumlesi ile o cumlenin test
+# edildigi arasindaki fark budur.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Mock S/4HANA verisini Postgres'te tutuyor (docs/adr/0005). Testler sahte
+    # bir veritabanina degil gercegine kosuyor: CSRF el sikismasi, hareket
+    # turu kurallari ve tekrar korumasi ancak orada anlamli.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gloveson_test
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+        ports: ["5432:5432"]
+
+    env:
+      # Dagitimda kullanilan veritabani DEGIL. conftest ikisinin ayni olmasini
+      # reddediyor, cunku her test semayi dusurup yeniden kuruyor.
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gloveson_test
+      TOOL_SHARED_SECRET: ci-secret-not-a-real-one
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+
+      - run: pip install -r requirements.txt pytest ruff
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Tests
+        run: pytest

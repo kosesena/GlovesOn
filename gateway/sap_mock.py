@@ -21,7 +21,7 @@ from __future__ import annotations
 import random
 import secrets
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Header, Query, Request, Response
 from fastapi.responses import JSONResponse
@@ -172,8 +172,8 @@ async def create_material_document(
             delta = menge
 
         mblnr = f"49{random.randint(10_000_000, 99_999_999)}"
-        mjahr = datetime.now(timezone.utc).strftime("%Y")
-        budat = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        mjahr = datetime.now(UTC).strftime("%Y")
+        budat = datetime.now(UTC).strftime("%Y-%m-%d")
 
         conn.execute(
             "UPDATE mard SET labst = labst + %s WHERE matnr=%s AND werks=%s AND lgort=%s",

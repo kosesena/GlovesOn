@@ -1,0 +1,22 @@
+# Vercel'in Python girisi asgi.py; bu dosya paket tanimi degil, arac
+# yapilandirmasi. Bagimliliklar requirements.txt'te kaliyor cunku dagitim
+# onu okuyor ve iki liste tutmak ikisinin de yanlis olmasiyla biter.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# Varsayilanlarin ustune: kullanilmayan import/degisken (F), stil (E/W),
+# sadelestirme (SIM), sirali importlar (I), ve bug yakalayan bugbear (B).
+select = ["E", "W", "F", "I", "B", "SIM", "UP"]
+ignore = [
+    "E501",   # satir uzunlugu ruff format ile zaten korunuyor
+    "B008",   # FastAPI'de Depends/Query/Header cagrilari varsayilan degerdir
+]

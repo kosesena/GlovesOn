@@ -10,10 +10,11 @@ degiskenini degistirmekten ibaret — cunku burada SAP'ye ozgu olan her sey
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
+
 
 def env(name: str, default: str = "") -> str:
     """
@@ -169,7 +170,7 @@ def goods_receipt_payload(material: str, quantity: int, plant: str, storage_loca
         item["PurchaseOrderItem"] = "00010"
         item["GoodsMovementRefDocType"] = "B"   # B = satinalma siparisi
     return _with_voice_origin({
-        "PostingDate": datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00"),
+        "PostingDate": datetime.now(UTC).strftime("%Y-%m-%dT00:00:00"),
         "GoodsMovementCode": "01" if purchase_order else "05",
         "to_MaterialDocumentItem": [item],
     }, session_ref)
@@ -187,7 +188,7 @@ def reversal_payload(material: str, plant: str, storage_location: str, unit: str
         raise SapError("NOT_REVERSIBLE",
                        f"Movement type {original_movement_type} cannot be reversed here.")
     return _with_voice_origin({
-        "PostingDate": datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00"),
+        "PostingDate": datetime.now(UTC).strftime("%Y-%m-%dT00:00:00"),
         "GoodsMovementCode": "01" if reverse_of == "102" else "05",
         "to_MaterialDocumentItem": [{
             "Material": material,

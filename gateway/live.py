@@ -42,7 +42,7 @@ CREATE INDEX IF NOT EXISTS idx_voice_created ON voice_sessions (created_at);
 
 
 def init() -> None:
-    with store.db() as conn:
+    with store.schema_lock() as conn:
         conn.execute(SCHEMA)
 
 

@@ -13,15 +13,14 @@ en basit testte bile bir Postgres baglantisi gerekiyor.
 
 from __future__ import annotations
 
-import os
 import time
 from contextlib import contextmanager
 
-import psycopg
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
 from .sap_client import env
+
 
 def database_url() -> str:
     """
@@ -113,6 +112,22 @@ def db():
         yield conn
 
 
+# Sema kurulumu icin tek bir kilit. "CREATE TABLE IF NOT EXISTS" Postgres'te
+# eszamanli calistiginda idempotent DEGIL: iki oturum ayni anda denerse biri
+# pg_type uzerinde benzersizlik ihlaliyle patlar. Sunucusuz bir dagitimda ayni
+# anda soguk baslayan iki ornek bunu duzenli olarak yapar - testler ilk kosuda
+# gosterdi, uretimde arada bir 500 olarak gorunurdu.
+SCHEMA_LOCK_KEY = 0x67_10_5E
+
+
+@contextmanager
+def schema_lock():
+    """Sema degistiren her yol bunun icinden gecer. Kilit commit'te birakilir."""
+    with db() as conn:
+        conn.execute("SELECT pg_advisory_xact_lock(%s)", (SCHEMA_LOCK_KEY,))
+        yield conn
+
+
 def norm_matnr(raw: str | int) -> str:
     """SAP MATNR 18 karakter, sifirla soldan dolu. Sesle '4711' denir."""
     s = str(raw).strip().upper().replace(" ", "").replace("-", "")
@@ -160,7 +175,7 @@ def init_db(force: bool = False) -> None:
     force=True demo sifirlamasi: tablolari dusurup tohum veriyi geri yaziyor.
     Dosya silmek yerine DROP - artik silinecek bir dosya yok.
     """
-    with db() as conn:
+    with schema_lock() as conn:
         if force:
             conn.execute("DROP TABLE IF EXISTS mard, mkpf, ekko, audit_trail, events")
         conn.execute(SCHEMA)
@@ -171,12 +186,14 @@ def init_db(force: bool = False) -> None:
             conn.cursor().executemany(
                 "INSERT INTO mard (matnr, maktx, meins, werks, lgort, lgpla, labst)"
                 " VALUES (%s,%s,%s,%s,%s,%s,%s)",
-                [(norm_matnr(m), d, u, w, l, b, q) for m, d, u, w, l, b, q in SEED_MATERIALS],
+                [(norm_matnr(m), desc, unit, plant, sloc, bin_, qty)
+                 for m, desc, unit, plant, sloc, bin_, qty in SEED_MATERIALS],
             )
             conn.cursor().executemany(
                 "INSERT INTO ekko (ebeln, lifnr, matnr, menge, status, eta)"
                 " VALUES (%s,%s,%s,%s,%s,%s)",
-                [(e, li, norm_matnr(m), q, s, eta) for e, li, m, q, s, eta in SEED_ORDERS],
+                [(po, supplier, norm_matnr(m), qty, status, eta)
+                 for po, supplier, m, qty, status, eta in SEED_ORDERS],
             )
 
 

@@ -34,7 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_mblnr ON audit_trail (mblnr);
 
 
 def init() -> None:
-    with store.db() as conn:
+    with store.schema_lock() as conn:
         conn.execute(SCHEMA)
 
 
