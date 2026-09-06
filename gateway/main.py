@@ -29,24 +29,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 
 from . import audit, live, sap_client, sap_mock, store
-from .sap_client import SapClient, SapError
+from .sap_client import SapClient, SapError, env
 from .store import norm_matnr, pretty_matnr
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "web"
 
-ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
-TOOL_SHARED_SECRET = os.getenv("TOOL_SHARED_SECRET", "").strip()
-AGENT_ID = os.getenv("AGENT_ID", "")
+ASSEMBLYAI_API_KEY = env("ASSEMBLYAI_API_KEY")
+TOOL_SHARED_SECRET = env("TOOL_SHARED_SECRET")
+AGENT_ID = env("AGENT_ID")
 
 # Yerelde uvicorn'a verdigimiz port. Mock'a artik bu port uzerinden
 # gidilmiyor (bkz. asagisi), sadece serve.sh ile ayni sayida anlasmak icin.
-PORT = int(os.getenv("PORT", "8000"))
+PORT = int(env("PORT", "8000"))
 
 # Demo ekranindaki "sifirla" dugmesi mock veritabanini bastan kurar. Tunel
 # adresi rastgeleyken bunu bulan olmazdi; sabit bir adreste, kimlik istemeyen
 # bir POST demoyu jurinin altindan silebilir. Degiskeni 0 yaparak kapatilir.
-ENABLE_RESET = os.getenv("GLOVESON_ENABLE_RESET", "1") not in ("0", "false", "no")
+ENABLE_RESET = env("GLOVESON_ENABLE_RESET", "1") not in ("0", "false", "no")
 
 # Paylasilan sir eskiden .env.example'daki metne dusuyordu. Yerelde zararsizdi;
 # public bir adreste, dokumante edilmis bir varsayilan sir demek sirsizlik
@@ -79,7 +79,7 @@ _sap: SapClient | None = None
 # fonksiyon cagrisi. ADR-0003'un sarti "mock disaridan bir sistem gibi
 # cagrilsin" idi; OData yolu, CSRF el sikismasi ve hata zarfi aynen duruyor,
 # degisen tek sey baytlarin sokete cikip cikmadigi.
-MOCK_SAP_BASE_URL = os.getenv("MOCK_SAP_BASE_URL", "").rstrip("/")
+MOCK_SAP_BASE_URL = env("MOCK_SAP_BASE_URL").rstrip("/")
 
 
 def sap() -> SapClient:
@@ -496,7 +496,7 @@ async def purchase_order(
 # olmazdi. Sabit bir adreste bulunur, ve bulan kisi bizim faturamiza oturum
 # acar. Bedeli: mesru bir demo da ust sinira carpabilir, o yuzden pencere
 # genis tutuldu ve sinir asildiginda 429 ile acikca soyluyoruz.
-VOICE_TOKEN_MAX = int(os.getenv("VOICE_TOKEN_MAX_PER_HOUR", "40"))
+VOICE_TOKEN_MAX = int(env("VOICE_TOKEN_MAX_PER_HOUR", "40"))
 
 
 @app.get("/api/voice-token")

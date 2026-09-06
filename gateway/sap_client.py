@@ -15,8 +15,20 @@ from typing import Any
 
 import httpx
 
-SAP_BASE_URL = os.getenv("SAP_BASE_URL", "").rstrip("/")
-SAP_TIMEOUT = float(os.getenv("SAP_TIMEOUT_SECONDS", "8"))
+def env(name: str, default: str = "") -> str:
+    """
+    Bos bir degisken, TANIMSIZ bir degisken gibi davranmali.
+
+    os.getenv'in ikinci argumani yalnizca degisken hic yoksa devreye giriyor;
+    "var ama bos" halinde bos string donuyor. Bir dagitim panosu .env.example'i
+    okuyup butun isimleri bos degerlerle olusturdugunda tam olarak bu oluyor -
+    ve float("") uygulamayi import aninda dusuruyor.
+    """
+    return os.getenv(name, "").strip() or default
+
+
+SAP_BASE_URL = env("SAP_BASE_URL").rstrip("/")
+SAP_TIMEOUT = float(env("SAP_TIMEOUT_SECONDS", "8"))
 
 MATERIAL_DOC = "/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV"
 MATERIAL_STOCK = "/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV"

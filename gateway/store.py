@@ -21,13 +21,15 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
+from .sap_client import env
+
 def database_url() -> str:
     """
     Calisma aninda okunuyor, import aninda degil: sunucusuz bir ortamda
     degiskenler surecin omrunden bagimsiz gelir, ve yerelde .env'in ne zaman
     yuklendigine bagli kalmak istemiyoruz.
     """
-    return os.getenv("DATABASE_URL", "") or os.getenv("POSTGRES_URL", "")
+    return env("DATABASE_URL") or env("POSTGRES_URL")
 
 # Ayni malzeme + miktar + depo yeri bu sure icinde ikinci kez gelirse yeni belge
 # acilmaz. Zaman asimina ugramis bir yazmadan sonra iscinin cumleyi tekrar
