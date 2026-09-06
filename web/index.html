@@ -317,6 +317,27 @@
   }
   @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } *,*:before,*:after { animation:none!important; transition:none!important; } }
 
+
+
+  /* The same warehouse, four distinct moments in the working day. */
+  .scenario-bar { max-width:1216px; margin:0 auto 26px; padding:0; border:0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+  .scenario { display:block; padding:0; overflow:hidden; border:1px solid #d9ddd2; border-radius:12px; background:#fafaf6; color:#2a3027; text-align:left; transition:transform .18s,border-color .18s; }
+  .scenario:hover { transform:translateY(-3px); border-color:#b86b42; }
+  .scenario[aria-pressed=true] { background:#fff9f0; border-color:#ce693b; box-shadow:0 0 0 1px #ce693b; }
+  .scenario img { display:block; width:100%; height:auto; aspect-ratio:4/3; object-fit:cover; }
+  .scenario-media { display:block; position:relative; aspect-ratio:4/3; }
+  .scenario-media video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; pointer-events:none; }
+  .scenario-media video.is-playing { opacity:1; }
+  .scenario-copy { display:block; padding:16px 16px 19px; }
+  .scenario small { color:#777e6f; font:9px var(--mono); letter-spacing:.1em; margin-bottom:9px; }
+  .scenario[aria-pressed=true] small { color:#ae5129; }
+  .scenario b { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:15px; letter-spacing:-.025em; font-weight:600; }
+  .scenario b>span { color:#ad5833; }
+  .scenario-desc { display:block; margin-top:8px; font-size:11px; line-height:1.6; color:#727a69; }
+  @media(max-width:1250px) { .scenario-bar { margin-left:22px; margin-right:22px; } }
+  @media(max-width:900px) { .scenario-bar { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media(max-width:600px) { .scenario-bar { margin:0 14px 22px; gap:12px; } .scenario-copy { padding:12px; } .scenario b { font-size:13px; } .scenario-desc { font-size:10px; } .scenario small { font-size:8px; } }
+
 </style>
 </head>
 <body>
@@ -338,6 +359,12 @@
 </div>
 <div class="trust-line"><span>VOICE POWERED BY <strong>AssemblyAI</strong></span><span>GOODS RECEIPT · STOCK · REVERSAL</span><span><strong>SAP OData</strong> · Demo environment</span></div>
 <div class="demo-intro" id="demo"><div><div class="eyebrow">Step onto the receiving floor</div><h2>Your voice. A recorded result.</h2></div><p>Choose a scenario, then start talking. Follow your conversation through to the material document.</p></div>
+<div class="scenario-bar" role="group" aria-label="Choose a guided voice scenario">
+<button class="scenario" data-scenario="receive" aria-pressed="true"><img src="/assets/receiving.png" alt="A worker inspecting bolts in an incoming delivery." width="1448" height="1086" loading="lazy" /><span class="scenario-copy"><small>01 / RECEIVE</small><b>Receive a delivery<span aria-hidden="true">↗</span></b><span class="scenario-desc">From arrival to recorded stock.</span></span></button>
+<button class="scenario" data-scenario="correct" aria-pressed="false"><img src="/assets/counting.png" alt="A worker counting small bolts on a receiving bench." width="1448" height="1086" loading="lazy" /><span class="scenario-copy"><small>02 / CORRECT</small><b>Get the quantity right<span aria-hidden="true">↗</span></b><span class="scenario-desc">Correct the count before confirming.</span></span></button>
+<button class="scenario" data-scenario="stock" aria-pressed="false"><img src="/assets/stock.png" alt="A worker locating ball bearings in a shelf bin." width="1448" height="1086" loading="lazy" /><span class="scenario-copy"><small>03 / FIND</small><b>Find it on the shelf<span aria-hidden="true">↗</span></b><span class="scenario-desc">Ask where your material belongs.</span></span></button>
+<button class="scenario" data-scenario="reverse" aria-pressed="false"><img src="/assets/reversal.png" alt="A worker setting a box aside in a marked holding area." width="1448" height="1086" loading="lazy" /><span class="scenario-copy"><small>04 / REVERSE</small><b>Undo a receipt<span aria-hidden="true">↗</span></b><span class="scenario-desc">Reverse the entry. Keep the record.</span></span></button>
+</div>
 <div class="console-wrap">
 
 
@@ -352,18 +379,14 @@
   <button id="talkBtn" class="primary">Start talking</button>
 </header>
 
-<div class="scenario-bar" role="group" aria-label="Choose a guided voice scenario">
-<button class="scenario" data-scenario="receive" aria-pressed="true"><small>01 / RECEIVE</small><b>Receive a delivery ↗</b></button>
-<button class="scenario" data-scenario="correct" aria-pressed="false"><small>02 / CORRECT</small><b>Change the quantity ↗</b></button>
-<button class="scenario" data-scenario="reverse" aria-pressed="false"><small>03 / REVERSE</small><b>Reverse a receipt ↗</b></button>
-</div>
+
 <main>
   <section>
     <h2>Conversation</h2>
     <!-- #log'un DISINDA duruyor: "Reset demo" gunlugun icerigini komple
          degistiriyor, primer orada olsaydi onunla birlikte silinirdi. -->
     <div id="primer" class="primer">
-      <div class="pr-lead">Press <b>Start talking</b>, then say one of these.</div>
+      <div class="pr-lead">Press <b>Start talking</b>, then try this request.</div>
       <ul class="pr-list" id="scenarioPrompt"><li><q>Post a goods receipt, twenty pieces of four seven one one.</q><span>Listen to the material, quantity and destination. Say <b>confirm</b> when the details are right.</span></li></ul>
       <div class="pr-foot" id="scenarioNote">A new delivery of hex bolts. Follow the receipt from your spoken request to a document and an updated stock level.</div>
     </div>
@@ -1020,10 +1043,61 @@ function cleanup() {
 }
 
 const scenarios = {
+  stock: ['Where are the ball bearings stored?', 'Listen for the material description, storage location and available stock. You can ask a follow-up question about the quantity.', 'Find a material by description. This is a stock lookup; it does not create a receipt or change inventory.'],
   receive: ['Post a goods receipt, twenty pieces of four seven one one.', 'Listen to the material, quantity and destination. Say confirm when the details are right.', 'A new delivery of hex bolts. Follow the receipt from your spoken request to a document and an updated stock level.'],
   correct: ['Post a goods receipt, twenty pieces of four seven one one.', 'During the read-back, say: “Actually, twelve pieces.” Wait for the corrected details, then confirm.', 'Try correcting a quantity before posting. The final document should contain twelve pieces.'],
   reverse: ['Show me the most recent material documents.', 'Choose a receipt, then ask to reverse that document number. Listen to the details and confirm.', 'First post a receipt if the list is empty. A reversal creates a second document and adjusts the stock; the original stays visible.']
 };
+// Load scenario clips only on interaction; keep photos as the fallback.
+const scenarioVideos = {
+  correct: 'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260906_174136_83736ed6-1fcf-461d-869b-c61d36b1e052.mp4',
+  stock: 'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260906_174140_8095a95f-cf08-4fc7-8693-0f70636e0153.mp4',
+  reverse: 'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260906_174154_80903f8a-ddd5-4997-b76f-997c2d571be4.mp4',
+  receive: 'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260906_173433_09319dad-969f-40c0-a78e-620532502085.mp4'
+};
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+document.querySelectorAll('[data-scenario]').forEach(button => {
+  const photo = button.querySelector('img');
+  const media = document.createElement('span');
+  media.className = 'scenario-media';
+  photo.replaceWith(media);
+  media.append(photo);
+  const video = document.createElement('video');
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'none';
+  video.setAttribute('aria-hidden', 'true');
+  media.append(video);
+  let active = false;
+  const stop = () => {
+    active = false;
+    video.pause();
+    video.classList.remove('is-playing');
+    if (video.readyState) video.currentTime = 0;
+  };
+  const play = () => {
+    const url = scenarioVideos[button.dataset.scenario];
+    if (!url || reducedMotion.matches) return;
+    document.querySelectorAll('.scenario video').forEach(other => {
+      if (other !== video) { other.pause(); other.classList.remove('is-playing'); }
+    });
+    active = true;
+    if (!video.getAttribute('src')) video.src = url;
+    video.play().catch(stop);
+  };
+  video.addEventListener('playing', () => {
+    if (active) video.classList.add('is-playing');
+    else video.pause();
+  });
+  video.addEventListener('error', stop);
+  button.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') play(); });
+  button.addEventListener('pointerleave', stop);
+  button.addEventListener('focus', play);
+  button.addEventListener('blur', stop);
+  button.addEventListener('click', play);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
+  reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) stop(); });
+});
 document.querySelectorAll('[data-scenario]').forEach(button => {
   button.onclick = () => {
     document.querySelectorAll('[data-scenario]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
