@@ -411,7 +411,12 @@
   .warehouse-room { isolation:isolate; }
   .warehouse-entry, .warehouse-entry:hover, .warehouse-entry:active, .warehouse-entry:focus { background:transparent; box-shadow:none; transform:none; opacity:1; mix-blend-mode:multiply; -webkit-tap-highlight-color:transparent; }
 
-  body > .shift, body > .scenario-bar, body > .console-wrap, body > .demo-intro { display:none; }
+  /* Konsol ve girisi ACILIS SAYFASINDA kaliyor. Onceden ikisi de burada
+     gizliydi: ilk ekranda SAP, ERP, mal girisi ya da AssemblyAI gecmiyordu ve
+     calisan urun iki tik geridedeydi. On dakikasi olan bir juri icin bu, urunu
+     hic gormeden ayrilmak demek. Depo akisi bir SECENEK; kanit ise ilk
+     ekranda, kaydirma mesafesinde durmali. */
+  body > .shift, body > .scenario-bar { display:none; }
   /* footer ve .trust-line listeden cikti: AssemblyAI atfi ve hackathon
      satiri HTML'de vardi ama hicbir durumda ekrana gelmiyordu. */
   body > .how { display:none; } body > .how:target { display:grid; }
