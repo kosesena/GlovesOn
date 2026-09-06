@@ -368,13 +368,40 @@
   @media(max-width:1250px) { .shift { margin-left:22px; margin-right:22px; } }
   @media(max-width:600px) { .floor { gap:8px; padding:10px; } .zone { padding:10px; min-height:120px; } .zone b { font-size:13px; } .zone small { font-size:10px; } .shift-heading h3 { font-size:19px; } }
 
+
+  [hidden] { display:none!important; }
+  .warehouse-shell { color:#293027; min-height:80vh; max-width:1400px; margin:auto; padding:24px; }
+  .warehouse-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:28px; }
+  .warehouse-toolbar button,.warehouse-choice button { background:#26332a; color:#fff; border-radius:24px; padding:12px 20px; }
+  .warehouse-toolbar span { font:11px var(--mono); color:#697565; }
+  .warehouse-title { text-align:center; margin:35px 0; }
+  .warehouse-title h1 { font-size:clamp(30px,4vw,52px); letter-spacing:-.05em; margin:0 0 12px; }
+  .warehouse-title p { color:#6a7568; }
+  .warehouse-room { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:5%; padding:50px 7% 95px; overflow:hidden; border-radius:24px; background:linear-gradient(#e4e7de 0 68%,#cfd4c7 68% 70%,#e8e6da 70%); }
+  .warehouse-room:before { content:''; position:absolute; inset:70% -30% -70%; background:repeating-linear-gradient(90deg,transparent 0 110px,#b6b9a744 111px 113px); transform:perspective(180px) rotateX(30deg); pointer-events:none; }
+  .warehouse-entry { position:relative; background:transparent; border:0; color:#293027; padding:0; text-align:center; transition:transform .2s; }
+  .warehouse-entry:hover { transform:translateY(-7px); }
+  .warehouse-entry:focus-visible { outline:3px solid #ce693b; outline-offset:8px; }
+  .warehouse-entry svg { display:block; width:100%; height:auto; filter:drop-shadow(0 12px 6px #29302722); }
+  .warehouse-entry b { display:block; font-size:19px; margin:22px 0 8px; }
+  .warehouse-entry small { font-size:12px; color:#636d5d; }
+  .warehouse-entry em { display:block; margin-top:14px; color:#a64b27; font:11px var(--mono); font-style:normal; }
+  .warehouse-choice { max-width:850px; margin:40px auto; display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .warehouse-choice article { padding:30px; background:#fffdf7; border:1px solid #d7dccc; border-radius:16px; }
+  .warehouse-choice h2 { color:#293027; font-size:24px; margin:16px 0; }
+  .warehouse-choice p { font-size:14px; line-height:1.7; color:#6b7566; }
+  .warehouse-choice small { font:11px var(--mono); color:#ad5833; }
+  body.in-warehouse > .hero,body.in-warehouse > .trust-line,body.in-warehouse > .demo-intro,body.in-warehouse > .how,body.in-warehouse > footer { display:none; }
+  .warehouse-shell .console-wrap { margin-top:24px; }
+  @media(max-width:600px) { .warehouse-shell { padding:14px; } .warehouse-room { gap:12px; padding:30px 12px 50px; } .warehouse-entry b { font-size:13px; } .warehouse-entry small { font-size:10px; } .warehouse-choice { grid-template-columns:1fr; } .warehouse-toolbar span { display:none; } }
+
 </style>
 </head>
 <body>
 
 <nav class="site-nav" aria-label="Main navigation">
   <a class="brand" href="#top" aria-label="GlovesOn home"><span class="brand-mark" aria-hidden="true">↗</span>GlovesOn</a>
-  <div class="nav-links"><a href="#demo">The demo</a><a href="#how">How it works</a><a class="nav-cta" href="#demo">Enter warehouse ↗</a></div>
+  <div class="nav-links"><a href="#demo">The demo</a><a href="#how">How it works</a><a class="nav-cta" href="#warehouse">Enter warehouse ↗</a></div>
 </nav>
 <div class="hero" id="top">
   <img class="hero-image" src="/assets/warehouse-hero.png" alt="A warehouse worker wearing gloves and a headset carries a box with both hands." width="1672" height="941" fetchpriority="high" />
@@ -389,6 +416,12 @@
 </div>
 <div class="trust-line"><span>VOICE POWERED BY <strong>AssemblyAI</strong></span><span>GOODS RECEIPT · STOCK · REVERSAL</span><span><strong>SAP OData</strong> · Demo environment</span></div>
 <div class="demo-intro" id="demo"><div><div class="eyebrow">Step onto the receiving floor</div><h2>Your voice. A recorded result.</h2></div><p>Choose a scenario, then start talking. Follow your conversation through to the material document.</p></div>
+<section class="warehouse-shell" id="warehouseShell" hidden aria-label="Interactive warehouse">
+<div class="warehouse-toolbar"><button id="warehouseBack">← Back to site</button><span id="warehouseCrumb">PLANT 1000 / WAREHOUSE</span><button id="warehouseCreate">+ Create task</button></div>
+<div id="warehouseLobby"><div class="warehouse-title"><div class="eyebrow">YOUR SHIFT / PLANT 1000</div><h1>Where are you working today?</h1><p>Step into an area to pick up your next task.</p></div><div class="warehouse-room"><button class="warehouse-entry" data-enter="receiving"><svg viewBox="0 0 240 250" aria-hidden="true"><rect x="25" y="20" width="190" height="210" rx="5" fill="#46594c"/><rect x="40" y="35" width="160" height="175" fill="#acb7a4"/><path d="M40 60h160M40 85h160M40 110h160M40 135h160M40 160h160M40 185h160" stroke="#758771" stroke-width="5"/><rect x="75" y="155" width="90" height="65" fill="#c79760"/><path d="M120 155v65" stroke="#efd6ad" stroke-width="9"/><path d="M20 235h200" stroke="#c66636" stroke-width="12"/></svg><b>Receiving bay</b><small>Deliveries & quantity checks</small><em>2 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="storage"><svg viewBox="0 0 240 250" aria-hidden="true"><path d="M30 25v205M210 25v205" stroke="#526351" stroke-width="12"/><path d="M25 90h190M25 155h190M25 220h190" stroke="#c56839" stroke-width="10"/><g fill="#abb7a4" stroke="#62775e" stroke-width="3"><path d="M45 48h55v37H45zM135 48h55v37h-55zM45 110h55v40H45zM135 110h55v40h-55zM45 175h55v40H45zM135 175h55v40h-55z"/></g><path d="M55 60h35M145 122h35M55 187h35" stroke="#f3eddc" stroke-width="8"/></svg><b>Storage aisles</b><small>Locate materials & stock</small><em>1 guided task ↗</em></button><button class="warehouse-entry" data-enter="review"><svg viewBox="0 0 240 250" aria-hidden="true"><rect x="55" y="30" width="130" height="115" rx="5" fill="#506451"/><rect x="65" y="40" width="110" height="95" fill="#eeeedd"/><path d="M80 65h70M80 85h55M80 105h65" stroke="#9baa8d" stroke-width="6"/><path d="M30 170h180M45 175v55M195 175v55" stroke="#526351" stroke-width="12"/><path d="M90 150h65l15 15H75z" fill="#f8f3df"/><rect x="170" y="122" width="27" height="40" fill="#bf7950"/></svg><b>Review desk</b><small>Check receipts & reverse entries</small><em>1 guided task ↗</em></button></div></div>
+<div id="warehouseArea" hidden><div class="warehouse-title"><h1 id="warehouseAreaTitle"></h1><p>Take the next guided task, or open the task folder.</p></div><div class="warehouse-choice"><article><small>01 / TAKE A TASK</small><h2>Next on your shift</h2><p id="nextTaskDescription"></p><button id="takeNextTask">Take this task ↗</button></article><article><small>02 / TASK FOLDER</small><h2>Choose your task</h2><p>Browse the guided scenarios and the tasks you have created for this area.</p><button id="browseTasks">Open task folder ↗</button></article></div></div>
+<div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><div id="warehouseBrief" style="max-width:1216px;margin:0 auto;display:flex;gap:20px;align-items:center"><img id="warehouseBriefImage" alt="" style="width:150px;border-radius:12px"/><div><h2 id="warehouseBriefTitle" style="color:#293027"></h2><p id="warehouseBriefText"></p></div></div></div>
+</section>
 <section class="shift" aria-label="Warehouse shift">
   <div class="shift-heading"><div><h3>Your shift starts here.</h3><p>Choose an area. Pick a task. Work by voice.</p></div><button id="newScenario">+ Create scenario</button></div>
   <div class="floor" role="group" aria-label="Warehouse areas">
@@ -1249,6 +1282,78 @@ document.getElementById('heroStart').onclick = () => {
   if (!live && !talkBtn.disabled) start();
 };
 talkBtn.onclick = () => (live ? end() : start());
+
+const warehouseShell = document.getElementById('warehouseShell');
+const shiftSection = document.querySelector('.shift');
+const scenarioBar = document.querySelector('.scenario-bar');
+const consoleSection = document.querySelector('.console-wrap');
+const shiftAnchor = document.createComment('shift'); shiftSection.before(shiftAnchor);
+const cardsAnchor = document.createComment('cards'); scenarioBar.before(cardsAnchor);
+const consoleAnchor = document.createComment('console'); consoleSection.before(consoleAnchor);
+const areaTitles = {receiving:'Receiving bay',storage:'Storage aisles',review:'Review desk'};
+let warehouseStage = 'lobby';
+let warehouseAreaKey = 'receiving';
+function showWarehouseStage(stage) {
+  warehouseStage = stage;
+  for (const [id,key] of [['warehouseLobby','lobby'],['warehouseArea','area'],['warehouseTasks','tasks'],['warehouseWork','work']]) document.getElementById(id).hidden = stage !== key;
+  document.getElementById('warehouseBack').textContent = stage === 'lobby' ? '← Back to site' : stage === 'area' ? '← Warehouse' : '← '+areaTitles[warehouseAreaKey];
+  document.getElementById('warehouseCrumb').textContent = 'PLANT 1000 / '+(stage === 'lobby' ? 'WAREHOUSE' : areaTitles[warehouseAreaKey].toUpperCase());
+  window.scrollTo({top:0,behavior:'instant'});
+}
+function applyWarehouseRoute() {
+  const active = location.hash === '#warehouse';
+  document.body.classList.toggle('in-warehouse',active); warehouseShell.hidden = !active;
+  if (active) {
+    document.getElementById('warehouseTasks').append(shiftSection,scenarioBar);
+    document.getElementById('warehouseWork').append(consoleSection);
+    shiftSection.querySelector('.floor').hidden = true;
+    showWarehouseStage('lobby');
+  } else {
+    shiftAnchor.after(shiftSection); cardsAnchor.after(scenarioBar); consoleAnchor.after(consoleSection);
+    shiftSection.querySelector('.floor').hidden = false;
+  }
+}
+function enterWarehouseArea(key) {
+  warehouseAreaKey = key;
+  selectedArea = null;
+  document.querySelector(`[data-zone="${key}"]`).click();
+  document.getElementById('warehouseAreaTitle').textContent = areaTitles[key];
+  const first = [...document.querySelectorAll('[data-scenario]')].find(b => areaFor[b.dataset.scenario] === key);
+  document.getElementById('nextTaskDescription').textContent = first.querySelector('.scenario-desc').textContent;
+  showWarehouseStage('area');
+}
+document.querySelectorAll('[data-enter]').forEach(b => b.onclick = () => enterWarehouseArea(b.dataset.enter));
+document.getElementById('browseTasks').onclick = () => showWarehouseStage('tasks');
+document.getElementById('takeNextTask').onclick = () => {
+  const task = [...document.querySelectorAll('[data-scenario]')].find(b => areaFor[b.dataset.scenario] === warehouseAreaKey);
+  task.click();
+};
+scenarioBar.addEventListener('click',event => {
+  if (location.hash === '#warehouse' && event.target.closest('[data-scenario]')) {
+    const card = event.target.closest('[data-scenario]');
+    document.getElementById('warehouseBrief').hidden = false;
+    document.getElementById('warehouseBriefImage').src = card.querySelector('img').src;
+    document.getElementById('warehouseBriefTitle').textContent = card.querySelector('b').textContent;
+    document.getElementById('warehouseBriefText').textContent = card.querySelector('.scenario-desc').textContent;
+    showWarehouseStage('work');
+  }
+});
+document.getElementById('customTasks').addEventListener('click',event => {
+  if (location.hash === '#warehouse' && event.target.closest('button')) { document.getElementById('warehouseBrief').hidden = true; showWarehouseStage('work'); }
+});
+document.getElementById('warehouseBack').onclick = () => {
+  if (warehouseStage === 'lobby') location.hash = 'top';
+  else showWarehouseStage(warehouseStage === 'area' ? 'lobby' : 'area');
+};
+document.getElementById('warehouseCreate').onclick = () => scenarioDialog.showModal();
+scenarioForm.addEventListener('submit',() => {
+  if (location.hash === '#warehouse' && !scenarioDialog.open) {
+    warehouseAreaKey = selectedArea || 'receiving'; showWarehouseStage('tasks');
+  }
+});
+window.addEventListener('hashchange',applyWarehouseRoute);
+applyWarehouseRoute();
+
 window.addEventListener('pagehide', () => { if (live) end(); });
 </script>
 </body>
