@@ -380,7 +380,7 @@
   .warehouse-room { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:5%; padding:50px 7% 95px; overflow:hidden; border-radius:24px; background:linear-gradient(#e4e7de 0 68%,#cfd4c7 68% 70%,#e8e6da 70%); }
   .warehouse-room:before { content:''; position:absolute; inset:70% -30% -70%; background:repeating-linear-gradient(90deg,transparent 0 110px,#b6b9a744 111px 113px); transform:perspective(180px) rotateX(30deg); pointer-events:none; }
   .warehouse-entry { position:relative; background:transparent; border:0; color:#293027; padding:0; text-align:center; transition:transform .2s; }
-  .warehouse-entry:hover { transform:translateY(-7px); }
+  .warehouse-entry:hover { transform:none; }
   .warehouse-entry:focus-visible { outline:3px solid #ce693b; outline-offset:8px; }
   .warehouse-entry svg { display:block; width:100%; height:auto; filter:drop-shadow(0 12px 6px #29302722); }
   .warehouse-entry b { display:block; font-size:19px; margin:22px 0 8px; }
@@ -398,10 +398,13 @@
 
   .warehouse-room { background:#e1e4d8; }
   .warehouse-room:before { display:none; }
-  .warehouse-art { display:block; width:100%; aspect-ratio:1; background-image:url('/assets/warehouse-3d.png?v=2'); background-repeat:no-repeat; background-size:300% 100%; filter:brightness(1.06); mix-blend-mode:multiply; }
+  .warehouse-art { display:block; width:100%; aspect-ratio:1; background-image:url('/assets/warehouse-3d.png?v=2'); background-repeat:no-repeat; background-size:300% 100%; filter:brightness(1.06); }
   .warehouse-art-receiving { background-position:0% center; }
   .warehouse-art-storage { background-position:50% center; }
   .warehouse-art-review { background-position:100% center; }
+
+  .warehouse-room { isolation:isolate; }
+  .warehouse-entry, .warehouse-entry:hover, .warehouse-entry:active, .warehouse-entry:focus { background:transparent; box-shadow:none; transform:none; opacity:1; mix-blend-mode:multiply; -webkit-tap-highlight-color:transparent; }
 </style>
 </head>
 <body>
