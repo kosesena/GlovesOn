@@ -405,21 +405,32 @@
 
   .warehouse-room { isolation:isolate; }
   .warehouse-entry, .warehouse-entry:hover, .warehouse-entry:active, .warehouse-entry:focus { background:transparent; box-shadow:none; transform:none; opacity:1; mix-blend-mode:multiply; -webkit-tap-highlight-color:transparent; }
+
+  body > .shift, body > .scenario-bar, body > .console-wrap, body > .demo-intro, body > .trust-line, body > footer { display:none; }
+  body > .how { display:none; } body > .how:target { display:grid; }
+  .hero { min-height:560px; height:calc(100svh - 110px); max-height:820px; background:#f7f3ea; }
+  .hero-image { left:auto; right:0; width:54%; height:100%; object-fit:contain; object-position:center; mix-blend-mode:multiply; }
+  .hero:after { display:none; }
+  .hero-copy { width:52%; padding:36px 5%; }
+  .hero-caption,.hero-note { display:none; }
+  .scenario { background:#e1e4d8; }
+  .scenario .warehouse-art { mix-blend-mode:multiply; }
+  @media(max-width:600px) { .hero { height:auto; min-height:0; } .hero-copy { width:100%; padding:24px; } .hero h1 { font-size:44px; } .hero-image { position:relative; width:100%; height:320px; } }
 </style>
 </head>
 <body>
 
 <nav class="site-nav" aria-label="Main navigation">
   <a class="brand" href="#top" aria-label="GlovesOn home"><span class="brand-mark" aria-hidden="true">↗</span>GlovesOn</a>
-  <div class="nav-links"><a href="#demo">The demo</a><a href="#how">How it works</a><a class="nav-cta" href="#warehouse">Enter warehouse ↗</a></div>
+  <div class="nav-links"><a href="#how">How it works</a><a class="nav-cta" href="#warehouse">Enter warehouse ↗</a></div>
 </nav>
 <div class="hero" id="top">
-  <img class="hero-image" src="/assets/warehouse-hero.png" alt="A warehouse worker wearing gloves and a headset carries a box with both hands." width="1672" height="941" fetchpriority="high" />
+  <img class="hero-image" src="/assets/worker-3d.png" alt="A warehouse worker wearing gloves and a headset carries a box with both hands." width="1254" height="1254" fetchpriority="high" />
   <div class="hero-copy">
     <div class="eyebrow">Built for hands that are busy</div>
     <h1>Gloves on.<br>Hands full.<br><em>Just speak.</em></h1>
-    <p>Receive goods without reaching for a keyboard. Tell GlovesOn what arrived. Review it by voice. Keep the warehouse moving.</p>
-    <div class="hero-actions"><button class="hero-start" id="heroStart">Start talking ↗</button><a href="#demo">Explore the demo ↓</a></div>
+    <p>Your hands do the work. Your voice handles the rest.</p>
+    <div class="hero-actions"><button class="hero-start" id="heroStart">Start your shift ↗</button></div>
     <div class="hero-note">Headset on. Keyboard away. You’re ready.</div>
   </div>
   <div class="hero-caption">01 / THE RECEIVING FLOOR</div>
@@ -430,7 +441,7 @@
 <div class="warehouse-toolbar"><button id="warehouseBack">← Back to site</button><span id="warehouseCrumb">PLANT 1000 / WAREHOUSE</span><button id="warehouseCreate">+ Create task</button></div>
 <div id="warehouseLobby"><div class="warehouse-title"><div class="eyebrow">YOUR SHIFT / PLANT 1000</div><h1>Where are you working today?</h1><p>Step into an area to pick up your next task.</p></div><div class="warehouse-room"><button class="warehouse-entry" data-enter="receiving"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><b>Receiving bay</b><small>Deliveries & quantity checks</small><em>2 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="storage"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><b>Storage aisles</b><small>Locate materials & stock</small><em>1 guided task ↗</em></button><button class="warehouse-entry" data-enter="review"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><b>Review desk</b><small>Check receipts & reverse entries</small><em>1 guided task ↗</em></button></div></div>
 <div id="warehouseArea" hidden><div class="warehouse-title"><h1 id="warehouseAreaTitle"></h1><p>Take the next guided task, or open the task folder.</p></div><div class="warehouse-choice"><article><small>01 / TAKE A TASK</small><h2>Next on your shift</h2><p id="nextTaskDescription"></p><button id="takeNextTask">Take this task ↗</button></article><article><small>02 / TASK FOLDER</small><h2>Choose your task</h2><p>Browse the guided scenarios and the tasks you have created for this area.</p><button id="browseTasks">Open task folder ↗</button></article></div></div>
-<div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><div id="warehouseBrief" style="max-width:1216px;margin:0 auto;display:flex;gap:20px;align-items:center"><img id="warehouseBriefImage" alt="" style="width:150px;border-radius:12px"/><div><h2 id="warehouseBriefTitle" style="color:#293027"></h2><p id="warehouseBriefText"></p></div></div></div>
+<div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><div id="warehouseBrief" style="max-width:1216px;margin:0 auto;display:flex;gap:20px;align-items:center"><span id="warehouseBriefImage" class="warehouse-art" aria-hidden="true" style="width:150px;flex-shrink:0"></span><div><h2 id="warehouseBriefTitle" style="color:#293027"></h2><p id="warehouseBriefText"></p></div></div></div>
 </section>
 <section class="shift" aria-label="Warehouse shift">
   <div class="shift-heading"><div><h3>Your shift starts here.</h3><p>Choose an area. Pick a task. Work by voice.</p></div><button id="newScenario">+ Create scenario</button></div>
@@ -455,10 +466,10 @@
 <div class="dialog-actions"><button type="button" id="cancelScenario">Cancel</button><button type="submit">Create task</button></div>
 </form></dialog>
 <div class="scenario-bar" role="group" aria-label="Choose a guided voice scenario">
-<button class="scenario" data-scenario="receive" aria-pressed="true"><img src="/assets/receiving.png" alt="A worker inspecting bolts in an incoming delivery." width="1448" height="1086" loading="lazy" /><span class="scenario-copy"><small>01 / RECEIVE</small><b>Receive a delivery<span aria-hidden="true">↗</span></b><span class="scenario-desc">From arrival to recorded stock.</span></span></button>
-<button class="scenario" data-scenario="correct" aria-pressed="false"><img src="/assets/counting.png" alt="A worker counting small bolts on a receiving bench." width="1448" height="1086" loading="lazy" /><span class="scenario-copy"><small>02 / CORRECT</small><b>Get the quantity right<span aria-hidden="true">↗</span></b><span class="scenario-desc">Correct the count before confirming.</span></span></button>
-<button class="scenario" data-scenario="stock" aria-pressed="false"><img src="/assets/stock.png" alt="A worker locating ball bearings in a shelf bin." width="1448" height="1086" loading="lazy" /><span class="scenario-copy"><small>03 / FIND</small><b>Find it on the shelf<span aria-hidden="true">↗</span></b><span class="scenario-desc">Ask where your material belongs.</span></span></button>
-<button class="scenario" data-scenario="reverse" aria-pressed="false"><img src="/assets/reversal.png" alt="A worker setting a box aside in a marked holding area." width="1448" height="1086" loading="lazy" /><span class="scenario-copy"><small>04 / REVERSE</small><b>Undo a receipt<span aria-hidden="true">↗</span></b><span class="scenario-desc">Reverse the entry. Keep the record.</span></span></button>
+<button class="scenario" data-scenario="receive" aria-pressed="true"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><span class="scenario-copy"><small>01 / RECEIVE</small><b>Receive a delivery<span aria-hidden="true">↗</span></b><span class="scenario-desc">From arrival to recorded stock.</span></span></button>
+<button class="scenario" data-scenario="correct" aria-pressed="false"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><span class="scenario-copy"><small>02 / CORRECT</small><b>Get the quantity right<span aria-hidden="true">↗</span></b><span class="scenario-desc">Correct the count before confirming.</span></span></button>
+<button class="scenario" data-scenario="stock" aria-pressed="false"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><span class="scenario-copy"><small>03 / FIND</small><b>Find it on the shelf<span aria-hidden="true">↗</span></b><span class="scenario-desc">Ask where your material belongs.</span></span></button>
+<button class="scenario" data-scenario="reverse" aria-pressed="false"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><span class="scenario-copy"><small>04 / REVERSE</small><b>Undo a receipt<span aria-hidden="true">↗</span></b><span class="scenario-desc">Reverse the entry. Keep the record.</span></span></button>
 </div>
 <div class="console-wrap">
 
@@ -1143,82 +1154,7 @@ const scenarios = {
   correct: ['Post a goods receipt, twenty pieces of four seven one one.', 'During the read-back, say: “Actually, twelve pieces.” Wait for the corrected details, then confirm.', 'Try correcting a quantity before posting. The final document should contain twelve pieces.'],
   reverse: ['Show me the most recent material documents.', 'Choose a receipt, then ask to reverse that document number. Listen to the details and confirm.', 'First post a receipt if the list is empty. A reversal creates a second document and adjusts the stock; the original stays visible.']
 };
-// Load scenario clips only on interaction; keep photos as the fallback.
-const scenarioVideos = {
-  correct: 'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260906_174136_83736ed6-1fcf-461d-869b-c61d36b1e052.mp4',
-  stock: 'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260906_174140_8095a95f-cf08-4fc7-8693-0f70636e0153.mp4',
-  reverse: 'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260906_174154_80903f8a-ddd5-4997-b76f-997c2d571be4.mp4',
-  receive: 'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260906_173433_09319dad-969f-40c0-a78e-620532502085.mp4'
-};
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const heroVideo = document.createElement('video');
-heroVideo.className = 'hero-video';
-heroVideo.muted = true;
-heroVideo.playsInline = true;
-heroVideo.preload = 'none';
-heroVideo.setAttribute('aria-hidden', 'true');
-document.querySelector('.hero-image').after(heroVideo);
-let heroStarted = false;
-const heroObserver = new IntersectionObserver(entries => {
-  const visible = entries[0].isIntersecting;
-  if (!visible || document.hidden || reducedMotion.matches) { heroVideo.pause(); return; }
-  if (heroVideo.ended) return;
-  if (!heroStarted) {
-    heroStarted = true;
-    heroVideo.src = 'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260906_180546_4282cba3-bb75-4102-9f3d-29d8ff1068b5.mp4';
-  }
-  heroVideo.play().catch(() => {});
-}, {threshold:0.2});
-heroObserver.observe(document.querySelector('.hero'));
-heroVideo.addEventListener('playing', () => heroVideo.classList.add('is-playing'));
-heroVideo.addEventListener('error', () => heroVideo.classList.remove('is-playing'));
-document.addEventListener('visibilitychange', () => { if (document.hidden) heroVideo.pause(); });
-reducedMotion.addEventListener('change', () => {
-  if (reducedMotion.matches) { heroVideo.pause(); heroVideo.classList.remove('is-playing'); }
-});
-
-document.querySelectorAll('[data-scenario]').forEach(button => {
-  const photo = button.querySelector('img');
-  const media = document.createElement('span');
-  media.className = 'scenario-media';
-  photo.replaceWith(media);
-  media.append(photo);
-  const video = document.createElement('video');
-  video.muted = true;
-  video.playsInline = true;
-  video.preload = 'none';
-  video.setAttribute('aria-hidden', 'true');
-  media.append(video);
-  let active = false;
-  const stop = () => {
-    active = false;
-    video.pause();
-    video.classList.remove('is-playing');
-    if (video.readyState) video.currentTime = 0;
-  };
-  const play = () => {
-    const url = scenarioVideos[button.dataset.scenario];
-    if (!url || reducedMotion.matches) return;
-    document.querySelectorAll('.scenario video').forEach(other => {
-      if (other !== video) { other.pause(); other.classList.remove('is-playing'); }
-    });
-    active = true;
-    if (!video.getAttribute('src')) video.src = url;
-    video.play().catch(stop);
-  };
-  video.addEventListener('playing', () => {
-    if (active) video.classList.add('is-playing');
-    else video.pause();
-  });
-  video.addEventListener('error', stop);
-  button.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') play(); });
-  button.addEventListener('pointerleave', stop);
-  button.addEventListener('focus', play);
-  button.addEventListener('blur', stop);
-  button.addEventListener('click', play);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
-  reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) stop(); });
-});
 document.querySelectorAll('[data-scenario]').forEach(button => {
   button.onclick = () => {
     document.querySelectorAll('[data-scenario]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
@@ -1257,7 +1193,7 @@ function renderTasks() {
 document.querySelectorAll('[data-zone]').forEach(button => button.onclick = () => {
   selectedArea = selectedArea === button.dataset.zone ? null : button.dataset.zone;
   document.querySelectorAll('[data-zone]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.zone === selectedArea)));
-  document.querySelectorAll('[data-scenario]').forEach(b => { b.hidden = !!selectedArea && areaFor[b.dataset.scenario] !== selectedArea; if (b.hidden) { const v=b.querySelector('video'); v.pause(); v.classList.remove('is-playing'); } });
+  document.querySelectorAll('[data-scenario]').forEach(b => { b.hidden = !!selectedArea && areaFor[b.dataset.scenario] !== selectedArea;  });
   document.getElementById('floorHint').textContent = selectedArea ? `${button.querySelector('b').textContent} · Choose a task below. Select the area again to show all.` : 'All areas · Select an area to explore its tasks.';
   renderTasks();
 });
@@ -1287,10 +1223,7 @@ scenarioForm.onsubmit = event => {
 };
 renderTasks();
 
-document.getElementById('heroStart').onclick = () => {
-  document.getElementById('demo').scrollIntoView({behavior:'smooth'});
-  if (!live && !talkBtn.disabled) start();
-};
+document.getElementById('heroStart').onclick = () => { location.hash = 'warehouse'; };
 talkBtn.onclick = () => (live ? end() : start());
 
 const warehouseShell = document.getElementById('warehouseShell');
@@ -1311,6 +1244,7 @@ function showWarehouseStage(stage) {
   window.scrollTo({top:0,behavior:'instant'});
 }
 function applyWarehouseRoute() {
+  if (location.hash === '#demo') { location.hash = 'warehouse'; return; }
   const active = location.hash === '#warehouse';
   document.body.classList.toggle('in-warehouse',active); warehouseShell.hidden = !active;
   if (active) {
@@ -1342,7 +1276,7 @@ scenarioBar.addEventListener('click',event => {
   if (location.hash === '#warehouse' && event.target.closest('[data-scenario]')) {
     const card = event.target.closest('[data-scenario]');
     document.getElementById('warehouseBrief').hidden = false;
-    document.getElementById('warehouseBriefImage').src = card.querySelector('img').src;
+    document.getElementById('warehouseBriefImage').className = card.querySelector('.warehouse-art').className;
     document.getElementById('warehouseBriefTitle').textContent = card.querySelector('b').textContent;
     document.getElementById('warehouseBriefText').textContent = card.querySelector('.scenario-desc').textContent;
     showWarehouseStage('work');
