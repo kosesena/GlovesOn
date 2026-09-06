@@ -597,3 +597,9 @@ def health() -> dict[str, Any]:
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(WEB_DIR / "index.html")
+
+
+@app.get("/assets/warehouse-hero.png", include_in_schema=False)
+def warehouse_hero() -> FileResponse:
+    return FileResponse(WEB_DIR / "assets" / "warehouse-hero.png",
+                        headers={"Cache-Control": "public, max-age=86400"})

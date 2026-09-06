@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GlovesOn — Hands-Free Warehouse Terminal</title>
+<title>GlovesOn — Your hands work. Your voice handles the rest.</title>
+<meta name="description" content="A voice-operated warehouse receiving demo. Look up stock, confirm a goods receipt, and trace every material document with GlovesOn." />
 <style>
   :root {
     --bg: #0b0f14;
@@ -218,13 +219,131 @@
   table.mini tr.reversal td { color: var(--danger); }
   .right .sub { margin-top: 20px; border-top: none; }
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } section + section { border-left: none; border-top: 1px solid var(--line); } }
+
+  /* GlovesOn: a receiving floor, from conversation to recorded stock. */
+  html { scroll-behavior:smooth; scroll-padding-top:24px; }
+  body { height:auto; display:block; background:#f4f3ef; color:#20241f; }
+  :root { --bg:#151b18; --panel:#19201c; --panel-2:#222c25; --line:#344039;
+    --text:#edf1e8; --muted:#a1ada3; --accent:#b9edc9; --accent-dim:#648e71; --warn:#edba72; }
+  a { color:inherit; text-decoration:none; }
+  button,a { -webkit-tap-highlight-color:transparent; }
+  button:focus-visible,a:focus-visible { outline:3px solid #f07844; outline-offset:5px; }
+  .site-nav { max-width:1440px; margin:auto; padding:25px 4%; display:flex; align-items:center; justify-content:space-between; }
+  .brand { display:flex; align-items:center; gap:10px; font-size:23px; font-weight:780; letter-spacing:-1px; }
+  .brand-mark { display:grid; place-items:center; width:34px; height:34px; background:#e96935; color:white; border-radius:9px 9px 3px 9px; font-size:22px; transform:rotate(-6deg); }
+  .nav-links { display:flex; align-items:center; gap:32px; font-size:13px; color:#61675f; }
+  .nav-cta { background:#222820; color:#fff; padding:12px 21px; border-radius:28px; }
+  .hero { position:relative; max-width:1440px; min-height:650px; margin:0 auto; overflow:hidden; border-radius:24px; display:flex; align-items:center; }
+  .hero-image { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:65% center; }
+  .hero:after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,rgba(247,246,240,.99) 0%,rgba(247,246,240,.93) 24%,rgba(247,246,240,.70) 43%,rgba(247,246,240,0) 66%); }
+  .hero-copy { position:relative; z-index:1; width:60%; padding:65px 6%; }
+  .eyebrow { font:10px/1.5 var(--mono); letter-spacing:.15em; text-transform:uppercase; display:flex; align-items:center; gap:10px; }
+  .eyebrow:before { content:''; width:7px; height:7px; background:#e96935; border-radius:50%; flex:none; }
+  .hero h1 { font-size:clamp(48px,6.5vw,88px); line-height:.99; letter-spacing:-.065em; font-weight:650; margin:28px 0; }
+  .hero h1 em { color:#ce5428; font-style:normal; }
+  .hero-copy>p { max-width:360px; color:#555e54; font-size:16px; line-height:1.7; }
+  .hero-actions { display:flex; gap:12px; margin-top:30px; flex-wrap:wrap; }
+  .hero-actions button,.hero-actions a { border-radius:30px; padding:14px 24px; font-size:13px; font-weight:600; }
+  .hero-start { background:#222820; border-color:#222820; color:white; }
+  .hero-actions a { background:#ffffffa8; border:1px solid #b9bdb2; }
+  .hero-note { margin-top:16px; font-size:10px; color:#697063; }
+  .hero-caption { position:absolute; z-index:1; bottom:24px; right:28px; background:#182119c9; color:#fff; padding:10px 16px; border-radius:6px; font:10px var(--mono); letter-spacing:.1em; }
+  .trust-line { max-width:1260px; margin:0 auto; padding:25px 22px; display:flex; align-items:center; justify-content:space-between; gap:16px; color:#71776e; font:10px var(--mono); letter-spacing:.06em; border-bottom:1px solid #d9ddd3; }
+  .trust-line strong { color:#343c32; font-weight:500; }
+  .demo-intro { max-width:1260px; margin:70px auto 24px; padding:0 22px; display:flex; align-items:end; justify-content:space-between; gap:30px; }
+  .demo-intro h2 { background:none; border:0; padding:0; color:#242c23; text-transform:none; font-size:38px; font-weight:550; letter-spacing:-.045em; margin-top:12px; }
+  .demo-intro p { max-width:320px; font-size:13px; color:#71776e; }
+  .console-wrap { max-width:1216px; margin:0 auto 64px; background:var(--bg); color:var(--text); border-radius:20px; overflow:hidden; box-shadow:0 22px 55px #25322216; }
+  .console-wrap header { padding:20px 24px; background:#151b18; flex-wrap:wrap; }
+  .logo { letter-spacing:.02em; font-size:16px; }
+  .plant { font-size:10px; }
+  #resetBtn { font-size:10px; background:transparent; padding:7px 10px; }
+  #talkBtn { border-radius:24px; font-size:12px; }
+  .scenario-bar { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:20px 24px; border-bottom:1px solid var(--line); }
+  .scenario { text-align:left; padding:13px 16px; background:transparent; border:1px solid var(--line); border-radius:9px; }
+  .scenario[aria-pressed=true] { background:#29372d; border-color:#82a58b; }
+  .scenario small { display:block; font:9px var(--mono); color:var(--muted); margin-bottom:5px; letter-spacing:.08em; }
+  .scenario b { font-size:12px; font-weight:550; }
+  main { min-height:650px; grid-template-columns:.95fr 1.05fr; }
+  main>section:first-child { min-width:0; }
+  main h2 { background:transparent; padding:20px 24px; font-size:9px; border-bottom:0; }
+  .right { background:#1b231e; min-width:0; }
+  .primer { padding:18px 28px; gap:24px; }
+  .pr-lead { line-height:1.8; }
+  .pr-list q { font-size:22px; line-height:1.4; letter-spacing:-.025em; }
+  .pr-list span { font-size:11px; line-height:1.7; margin-top:13px; }
+  .pr-list li { padding-left:18px; border-color:#e38a59; }
+  .pr-foot { line-height:1.9; border-top:0; }
+  #log { min-height:90px; max-height:430px; padding:20px 28px; }
+  .controls { margin-top:auto; padding:20px 28px; }
+  .hint { font-size:10px; }
+  .deskspace { padding:0 24px 24px; overflow:visible; }
+  .doc { padding:25px 24px 20px; border:0; background:#f5f3ea; border-radius:8px; box-shadow:0 12px 28px #0002; }
+  .doc .srv { margin-bottom:32px; color:#6f776e; }
+  .frow { grid-template-columns:125px 1fr; padding:7px 0; }
+  .frow span { color:#6e776b; }
+  .frow b { word-break:normal; overflow-wrap:anywhere; }
+  .stamp { top:53px; font-size:10px; right:20px; }
+  .dfoot { color:#6a7466; }
+  td { border-color:var(--line); }
+  .sub { background:transparent; }
+  .how { max-width:1216px; margin:0 auto 65px; display:grid; grid-template-columns:repeat(3,1fr); gap:36px; padding:0 12px; }
+  .how article { border-top:1px solid #cfd5c9; padding-top:20px; }
+  .how small { color:#a04f2c; font:10px var(--mono); }
+  .how h3 { font-size:21px; font-weight:550; letter-spacing:-.03em; }
+  .how p { color:#687162; font-size:13px; line-height:1.8; }
+  footer { max-width:1216px; margin:auto; border-top:1px solid #d9ddd3; padding:24px 12px 30px; display:flex; justify-content:space-between; font-size:11px; color:#737b6c; }
+  @media(min-width:1500px) { .hero { min-height:700px; } }
+  @media(max-width:1250px) { .hero { margin:0 16px; } .console-wrap { margin-left:22px; margin-right:22px; } .how { padding:0 30px; } }
+  @media(max-width:900px) { .hero { min-height:570px; } .hero-copy { width:67%; padding:40px 5%; } .hero h1 { font-size:64px; } main { grid-template-columns:1fr; } main>section:first-child { min-height:340px; } .demo-intro { margin-top:48px; } .nav-links { gap:18px; } }
+  @media(max-width:600px) {
+    .site-nav { padding:20px; } .brand { font-size:21px; } .nav-links>a:not(.nav-cta) { display:none; }
+    .hero { display:flex; flex-direction:column; min-height:0; border-radius:16px; background:#ebece4; }
+    .hero-copy { width:100%; padding:32px 24px; order:0; }
+    .hero h1 { font-size:57px; margin:22px 0; }
+    .hero-copy>p { font-size:14px; max-width:100%; }
+    .hero-image { position:relative; order:1; height:300px; object-position:78% center; }
+    .hero:after { display:none; } .hero-caption { bottom:14px; right:14px; font-size:8px; }
+    .hero-actions { gap:8px; } .hero-actions button,.hero-actions a { padding:12px 19px; }
+    .trust-line { flex-wrap:wrap; justify-content:center; font-size:8px; padding:20px; }
+    .demo-intro { display:block; margin-top:36px; } .demo-intro h2 { font-size:32px; }
+    .console-wrap { margin:0 12px 40px; border-radius:14px; } .console-wrap header { padding:16px; gap:10px; }
+    .plant { width:100%; order:3; } #resetBtn { margin-left:auto; } #meter { display:none; }
+    .scenario-bar { padding:12px; gap:6px; } .scenario { padding:10px 8px; } .scenario b { font-size:10px; } .scenario small { font-size:8px; }
+    .deskspace { padding:0 14px 18px; } .doc { padding:22px 16px 16px; } .frow { grid-template-columns:100px 1fr; font-size:11px; }
+    table.mini { font-size:9px; } table.mini td { padding:8px 5px; overflow-wrap:anywhere; }
+    .how { grid-template-columns:1fr; gap:20px; padding:0 24px; margin-bottom:35px; } .how h3 { margin:12px 0; }
+    footer { padding:20px 24px; gap:18px; font-size:9px; }
+  }
+  @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } *,*:before,*:after { animation:none!important; transition:none!important; } }
+
 </style>
 </head>
 <body>
 
+<nav class="site-nav" aria-label="Main navigation">
+  <a class="brand" href="#top" aria-label="GlovesOn home"><span class="brand-mark" aria-hidden="true">↗</span>GlovesOn</a>
+  <div class="nav-links"><a href="#demo">The demo</a><a href="#how">How it works</a><a class="nav-cta" href="#demo">Enter warehouse ↗</a></div>
+</nav>
+<div class="hero" id="top">
+  <img class="hero-image" src="/assets/warehouse-hero.png" alt="A warehouse worker wearing gloves and a headset carries a box with both hands." width="1672" height="941" fetchpriority="high" />
+  <div class="hero-copy">
+    <div class="eyebrow">Built for hands that are busy</div>
+    <h1>Gloves on.<br>Hands full.<br><em>Just speak.</em></h1>
+    <p>Receive goods without reaching for a keyboard. Tell GlovesOn what arrived. Review it by voice. Keep the warehouse moving.</p>
+    <div class="hero-actions"><button class="hero-start" id="heroStart">Start talking ↗</button><a href="#demo">Explore the demo ↓</a></div>
+    <div class="hero-note">Headset on. Keyboard away. You’re ready.</div>
+  </div>
+  <div class="hero-caption">01 / THE RECEIVING FLOOR</div>
+</div>
+<div class="trust-line"><span>VOICE POWERED BY <strong>AssemblyAI</strong></span><span>GOODS RECEIPT · STOCK · REVERSAL</span><span><strong>SAP OData</strong> · Demo environment</span></div>
+<div class="demo-intro" id="demo"><div><div class="eyebrow">Step onto the receiving floor</div><h2>Your voice. A recorded result.</h2></div><p>Choose a scenario, then start talking. Follow your conversation through to the material document.</p></div>
+<div class="console-wrap">
+
+
 <header>
   <div class="logo">GLOVES<span>ON</span></div>
-  <div class="plant">PLANT 1000 · WAREHOUSE TERMINAL</div>
+  <div class="plant">PLANT 1000 / RECEIVING · MOCK ERP</div>
   <div class="spacer"></div>
   <canvas id="meter" width="108" height="36" aria-hidden="true"></canvas>
   <div class="dot" id="dot"></div>
@@ -233,6 +352,11 @@
   <button id="talkBtn" class="primary">Start talking</button>
 </header>
 
+<div class="scenario-bar" role="group" aria-label="Choose a guided voice scenario">
+<button class="scenario" data-scenario="receive" aria-pressed="true"><small>01 / RECEIVE</small><b>Receive a delivery ↗</b></button>
+<button class="scenario" data-scenario="correct" aria-pressed="false"><small>02 / CORRECT</small><b>Change the quantity ↗</b></button>
+<button class="scenario" data-scenario="reverse" aria-pressed="false"><small>03 / REVERSE</small><b>Reverse a receipt ↗</b></button>
+</div>
 <main>
   <section>
     <h2>Conversation</h2>
@@ -240,21 +364,8 @@
          degistiriyor, primer orada olsaydi onunla birlikte silinirdi. -->
     <div id="primer" class="primer">
       <div class="pr-lead">Press <b>Start talking</b>, then say one of these.</div>
-      <ul class="pr-list">
-        <li><q>How many of material four seven one one do we have?</q>
-            <span>quantity, unit, description and the bin it sits in</span></li>
-        <li><q>Where are the ball bearings stored?</q>
-            <span>finds the material from its description, not its number</span></li>
-        <li><q>Post a goods receipt, twenty pieces of four seven one one</q>
-            <span>the agent reads the line back — then say <b>confirm</b></span></li>
-        <li><q>Reverse material document four nine zero zero zero zero zero one two three</q>
-            <span>posts a 102 against the 101 — both documents stay</span></li>
-      </ul>
-      <div class="pr-foot">
-        Neither write happens without a spoken read-back and an unmistakable
-        <b>yes</b>. Say the same receipt twice and the second one is refused,
-        not posted.
-      </div>
+      <ul class="pr-list" id="scenarioPrompt"><li><q>Post a goods receipt, twenty pieces of four seven one one.</q><span>Listen to the material, quantity and destination. Say <b>confirm</b> when the details are right.</span></li></ul>
+      <div class="pr-foot" id="scenarioNote">A new delivery of hex bolts. Follow the receipt from your spoken request to a document and an updated stock level.</div>
     </div>
 
     <div id="log"></div>
@@ -274,17 +385,17 @@
       <article class="doc" id="doc">
         <div class="stamp" id="stamp">NO DOCUMENT</div>
         <h3>MATERIAL DOCUMENT</h3>
-        <div class="srv">API_MATERIAL_DOCUMENT_SRV · A_MaterialDocumentHeader</div>
+        <div class="srv">Goods receipt / Warehouse 1000</div>
 
-        <div class="frow"><span>MBLNR</span><b id="f-mblnr">—</b></div>
-        <div class="frow"><span>GoodsMovementCode</span><b id="f-gmc">—</b></div>
-        <div class="frow"><span>GoodsMovementType</span><b id="f-bwart">—</b></div>
+        <div class="frow"><span>Document no.</span><b id="f-mblnr">—</b></div>
+        <div class="frow"><span>Movement code</span><b id="f-gmc">—</b></div>
+        <div class="frow"><span>Movement type</span><b id="f-bwart">—</b></div>
         <div class="frow"><span>Material</span><b id="f-matnr">—</b></div>
         <div class="frow"><span>Description</span><b id="f-maktx">—</b></div>
-        <div class="frow"><span>QuantityInEntryUnit</span><b id="f-menge">—</b></div>
-        <div class="frow"><span>Plant / StorageLoc</span><b id="f-werks">—</b></div>
-        <div class="frow"><span>StorageBin</span><b id="f-bin">—</b></div>
-        <div class="frow" id="row-ref" hidden><span>ReferenceDocument</span><b id="f-ref">—</b></div>
+        <div class="frow"><span>Quantity</span><b id="f-menge">—</b></div>
+        <div class="frow"><span>Plant / Location</span><b id="f-werks">—</b></div>
+        <div class="frow"><span>Storage bin</span><b id="f-bin">—</b></div>
+        <div class="frow" id="row-ref" hidden><span>Reverses document</span><b id="f-ref">—</b></div>
 
         <div class="dfoot" id="dfoot">Nothing has been requested yet.</div>
       </article>
@@ -310,6 +421,13 @@
     </div>
   </section>
 </main>
+</div>
+<div class="how" id="how">
+<article><small>01 / SAY IT</small><h3>Tell us what arrived.</h3><p>A material and a quantity. GlovesOn looks up the description, unit and storage details for the receipt.</p></article>
+<article><small>02 / CHECK IT</small><h3>A moment to get it right.</h3><p>The agent reads the details back. Correct a quantity or interrupt a misunderstanding before you confirm.</p></article>
+<article><small>03 / TRACE IT</small><h3>Every receipt leaves a record.</h3><p>See the document and the updated stock. Need to undo a receipt? A reversal keeps both records visible.</p></article>
+</div>
+<footer><span>GlovesOn · Built for the receiving floor.</span><span>AssemblyAI Voice Agent Hackathon / 2026</span></footer>
 
 <script>
 // ---------------------------------------------------------------------------
@@ -901,6 +1019,25 @@ function cleanup() {
   setStatus('idle');
 }
 
+const scenarios = {
+  receive: ['Post a goods receipt, twenty pieces of four seven one one.', 'Listen to the material, quantity and destination. Say confirm when the details are right.', 'A new delivery of hex bolts. Follow the receipt from your spoken request to a document and an updated stock level.'],
+  correct: ['Post a goods receipt, twenty pieces of four seven one one.', 'During the read-back, say: “Actually, twelve pieces.” Wait for the corrected details, then confirm.', 'Try correcting a quantity before posting. The final document should contain twelve pieces.'],
+  reverse: ['Show me the most recent material documents.', 'Choose a receipt, then ask to reverse that document number. Listen to the details and confirm.', 'First post a receipt if the list is empty. A reversal creates a second document and adjusts the stock; the original stays visible.']
+};
+document.querySelectorAll('[data-scenario]').forEach(button => {
+  button.onclick = () => {
+    document.querySelectorAll('[data-scenario]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
+    const [prompt, instruction, note] = scenarios[button.dataset.scenario];
+    document.querySelector('#scenarioPrompt q').textContent = prompt;
+    document.querySelector('#scenarioPrompt span').textContent = instruction;
+    document.getElementById('scenarioNote').textContent = note;
+    primerEl.hidden = false;
+  };
+});
+document.getElementById('heroStart').onclick = () => {
+  document.getElementById('demo').scrollIntoView({behavior:'smooth'});
+  if (!live && !talkBtn.disabled) start();
+};
 talkBtn.onclick = () => (live ? end() : start());
 window.addEventListener('pagehide', () => { if (live) end(); });
 </script>

@@ -84,6 +84,17 @@ deployment keeps the values it was built with. After connecting the database or
 editing a secret, redeploy — a push does it, and so does *Redeploy* on the latest
 deployment.
 
+**Do not put a bare `pyproject.toml` at the root.** Vercel takes its presence as a
+signal to build with `uv`, which then fails on `No project table found` if the file
+carries only tool configuration. Two deployments broke this way while the health check
+kept answering — the *previous* build was still serving. Tool settings live in
+`pytest.ini` and `ruff.toml` for that reason, and dependencies stay in
+`requirements.txt`.
+
+**A green CI badge does not mean the deployment succeeded.** They are different systems:
+CI ran the tests on the same commit that Vercel refused to build. Check the deployment
+state, or ask the live URL for something only the new code answers.
+
 **The demo database is shared by every deployment.** Preview deployments and
 production point at the same Neon database unless you branch it. A `/api/reset` from a
 preview URL wipes what production is showing.

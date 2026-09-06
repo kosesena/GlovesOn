@@ -1,0 +1,10 @@
+# Bkz. pytest.ini: yapilandirma bilerek pyproject.toml'da degil.
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = ["E", "W", "F", "I", "B", "SIM", "UP"]
+ignore = [
+    "E501",   # satir uzunlugu formatlayicinin isi
+    "B008",   # FastAPI'de Depends/Query/Header varsayilan deger olarak kullanilir
+]
