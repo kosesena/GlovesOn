@@ -65,9 +65,12 @@ def test_reset_is_refused_without_the_flag_and_without_the_secret(client):
 # --- what an anonymous caller learns ----------------------------------------
 
 def test_health_does_not_hand_out_the_agent_id(client):
+    # The agent id is half of what it takes to open a voice session against our
+    # agent, and /health is anonymous. Whether one is configured is fine to say;
+    # which one it is, is not.
     body = client.get("/health").json()
     assert "agent_id" not in body
-    assert body["agent_configured"] is True
+    assert body["agent_configured"] is True     # AGENT_ID is pinned in conftest
 
 
 def test_no_wildcard_cors_header_is_returned(client):

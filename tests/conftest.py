@@ -45,6 +45,9 @@ os.environ["GLOVESON_ENABLE_RESET"] = "0"
 os.environ["ASSEMBLYAI_API_KEY"] = ""
 os.environ["SAP_BASE_URL"] = ""
 os.environ["MOCK_SAP_BASE_URL"] = ""
+# Pinned so the tests do not depend on whether the developer running them
+# happens to have published an agent. CI has no .env at all.
+os.environ["AGENT_ID"] = "test-agent-id"
 
 from fastapi.testclient import TestClient  # noqa: E402
 
