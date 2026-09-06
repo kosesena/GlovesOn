@@ -23,7 +23,9 @@ the first syllable back. Everything below adds up inside that gap.
 | **Total, write with hold** | **≤ 2500 ms p95** | | `execution_mode: "hold"` — agent waits |
 
 The gateway is the only segment this project owns, so it is the only one with a hard
-budget. SQLite reads are sub-millisecond; against a real OData service this segment
+budget. The mock's reads are now Postgres round trips rather than sub-millisecond file
+reads (ADR-0005), so this table is due a re-measurement; against a real OData service
+this segment
 becomes the dominant risk and the budget will need revisiting.
 
 **Design consequence:** tool timeouts are set at 10 s for reads and 20 s for the
@@ -37,7 +39,9 @@ the worker in silence.
 | Concurrent voice sessions | 1 (demo) · 10 (plausible small site) | Untested above 1 |
 | Gateway requests/sec | ~2 per active session | Speech is slow; this is a low-throughput system |
 
-**Known ceiling:** the mock uses SQLite with a single writer. Concurrent goods
+**Known ceiling:** the mock now uses Postgres, so the single-writer limit is gone, but
+the gateway calls it synchronously from async handlers — each query briefly blocks the
+event loop of its instance. Demo scale, not production shape. Concurrent goods
 receipts against the same material would serialise, and beyond a handful of writers
 would start failing on lock contention. Acceptable for a mock; disqualifying for
 production. A real ERP behind the gateway removes this entirely — the gateway itself

@@ -214,14 +214,16 @@ open **http://localhost:8000 in Chrome** — Safari does not reliably give the
 
 ## Deployment
 
-The gateway is built to run on **Replit as a Reserved VM** — FastAPI, SQLite and a
-long-lived SSE connection all work there unchanged. Not Autoscale: it scales to zero,
-which loses the database between one spoken sentence and the next and cuts the stream
-feeding the live screen. Reserved VM costs money; that is the price of a demo whose state
-and screen both stay up.
+The gateway runs on **Vercel**, with the mock's data in **Postgres** (Neon). That
+combination is not the shape this system was first written in: Vercel runs requests, not
+processes, so the state that used to live in a SQLite file and in memory — the mock's
+data, the live event stream, the voice-session counter — had to move into the database.
+[ADR-0005](docs/adr/0005-serverless-deployment-and-shared-state.md) records why that
+trade was made, what it costs, and the cheaper options that were turned down.
 
-Steps, secrets and the three things that bite are in
-[docs/deploy-replit.md](docs/deploy-replit.md).
+Steps, secrets and the things that bite are in
+[docs/deploy-vercel.md](docs/deploy-vercel.md). The code still runs unchanged on an
+always-on host if that trade ever stops being worth it.
 
 ---
 
@@ -243,7 +245,8 @@ agent/publish.py        publishes it; fills placeholders from .env
 gateway/main.py         tool endpoints, SSE feed, token minting, write guardrails
 gateway/sap_client.py   the only thing that speaks SAP — OData + CSRF
 gateway/sap_mock.py     the mock S/4HANA, reached over HTTP like a real one
-gateway/store.py        the mock's SQLite
+gateway/store.py        the mock's data, in Postgres
+gateway/live.py         live events + voice-session counter, also in Postgres
 web/index.html          voice client + live ERP screen — one file, no dependencies
 docs/                   ADRs, NFRs, Clean Core assessment, deploy runbook
 ```

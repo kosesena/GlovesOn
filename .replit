@@ -1,3 +1,7 @@
+# Replit yapilandirmasi - ARTIK KULLANILMIYOR.
+# Dagitim Vercel'e gecti (docs/adr/0005, docs/deploy-vercel.md). Bu dosya
+# duruyor cunku Vercel'den donmek gerekirse Reserved VM yolu hazir olsun:
+# kod bir surec olarak da calisiyor, degisen tek sey DATABASE_URL.
 # Replit yapilandirmasi — GlovesOn gateway
 #
 # ONEMLI: Deploy ederken "Reserved VM" sec, "Autoscale" DEGIL.
