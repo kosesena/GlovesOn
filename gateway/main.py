@@ -617,15 +617,17 @@ def index() -> FileResponse:
     return FileResponse(WEB_DIR / "index.html")
 
 
-@app.get("/assets/warehouse-hero.png", include_in_schema=False)
-def warehouse_hero() -> FileResponse:
-    return FileResponse(WEB_DIR / "assets" / "warehouse-hero.png",
+@app.get("/assets/{scene}.webp", include_in_schema=False)
+def scene_webp(scene: str) -> FileResponse:
+    if scene not in {"worker-3d"}:
+        raise HTTPException(status_code=404, detail="Image not found")
+    return FileResponse(WEB_DIR / "assets" / f"{scene}.webp",
                         headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.get("/assets/{scene}.png", include_in_schema=False)
 def scenario_image(scene: str) -> FileResponse:
-    if scene not in {"receiving", "counting", "stock", "reversal", "warehouse-3d", "worker-3d"}:
+    if scene not in {"warehouse-3d"}:
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(WEB_DIR / "assets" / f"{scene}.png",
                         headers={"Cache-Control": "public, max-age=86400"})

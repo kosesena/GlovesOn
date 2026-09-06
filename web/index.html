@@ -439,7 +439,12 @@
      satiri HTML'de vardi ama hicbir durumda ekrana gelmiyordu. */
   body > .how { display:none; } body > .how:target { display:grid; }
   .hero { min-height:560px; height:calc(100svh - 110px); max-height:820px; background:#f7f3ea; }
-  .hero-image { left:auto; right:0; width:54%; height:100%; object-fit:contain; object-position:center; mix-blend-mode:multiply; }
+  /* Gorselin zemini artik yok: kaynak PNG'nin bej fonu kesildi (radyal vinyet
+     iki boyutlu bir yuzeyle modellenip kenarlardan bagli bilesen alinarak),
+     ayaklarin altindaki golge korundu. Onceden karakter sayfaya konmus bir
+     dikdortgenin icinde duruyordu; multiply o beji koyulastirmaktan baska bir
+     sey yapmiyordu. Yan fayda: 1.6 MB PNG -> 68 KB WebP. */
+  .hero-image { left:auto; right:0; width:54%; height:100%; object-fit:contain; object-position:center; }
   .hero:after { display:none; }
   .hero-copy { width:52%; padding:36px 5%; }
   .hero-caption,.hero-note { display:none; }
@@ -455,7 +460,7 @@
   <div class="nav-links"><a href="#how">How it works</a><a class="nav-cta" href="#warehouse">Enter warehouse ↗</a></div>
 </nav>
 <div class="hero" id="top">
-  <img class="hero-image" src="/assets/worker-3d.png" alt="A warehouse worker wearing gloves and a headset carries a box with both hands." width="1254" height="1254" fetchpriority="high" />
+  <img class="hero-image" src="/assets/worker-3d.webp" alt="A warehouse worker wearing gloves and a headset carries a box with both hands." width="742" height="1165" fetchpriority="high" />
   <div class="hero-copy">
     <div class="eyebrow">Built for hands that are busy</div>
     <h1>Gloves on.<br>Hands full.<br><em>Just speak.</em></h1>
