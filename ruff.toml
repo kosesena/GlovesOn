@@ -1,4 +1,6 @@
 # Bkz. pytest.ini: yapilandirma bilerek pyproject.toml'da degil.
+# .agents/ ucuncu taraf skill kodu (Higgsfield), bizim standardimiza tabi degil.
+exclude = [".agents"]
 line-length = 100
 target-version = "py312"
 

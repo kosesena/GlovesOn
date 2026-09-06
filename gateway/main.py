@@ -176,7 +176,13 @@ async def events() -> StreamingResponse:
 
 def require_tool_auth(secret: str | None) -> None:
     # compare_digest: esitligi karakter karakter kisa devre yapmadan olcer.
-    if not secret or not hmac.compare_digest(secret, TOOL_SHARED_SECRET):
+    # compare_digest ASCII disi bir baslikta TypeError firlatir; yakalamazsak
+    # 401 yerine 500 doner - kapali kalir ama hatayi yanlis anlatir.
+    try:
+        ok = bool(secret) and hmac.compare_digest(secret, TOOL_SHARED_SECRET)
+    except TypeError:
+        ok = False
+    if not ok:
         raise HTTPException(status_code=401, detail="Invalid tool secret")
 
 
@@ -259,8 +265,19 @@ async def post_goods_receipt(
     material, quantity = body.get("material"), body.get("quantity")
     if material is None or quantity is None:
         raise HTTPException(status_code=400, detail="material and quantity are required")
+    # "Tam sayi" derken tam sayi. int(20.5) -> 20 sessizce kabul ediliyordu:
+    # isci "yirmi buçuk" duyup onaylıyor, belgeye 20 dusuyordu - hem de tam
+    # onayin korumasi gereken yerde, onaydan SONRA. Bir yazmanin okunan
+    # cumleden farkli olmasi bu projenin varlik sebebine aykiri.
     try:
-        quantity = int(quantity)
+        if isinstance(quantity, bool):
+            raise ValueError
+        as_float = float(quantity)
+        if as_float != int(as_float):
+            return {"posted": False,
+                    "message": (f"{quantity} is not a whole number of units. Ask the worker "
+                                f"for a whole number and read the line back again.")}
+        quantity = int(as_float)
     except (TypeError, ValueError):
         return {"posted": False, "message": "Quantity must be a whole number."}
     if quantity <= 0:
@@ -443,6 +460,7 @@ async def reverse_goods_receipt(
         payload = sap_client.reversal_payload(
             original["Material"], original["Plant"], original["StorageLocation"],
             original["EntryUnit"], document, original["GoodsMovementType"],
+            quantity=int(float(original["QuantityInEntryUnit"])),
             session_ref=session_id or None)
         d = await sap().post_material_document(payload)
     except SapError as e:

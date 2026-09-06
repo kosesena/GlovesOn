@@ -178,7 +178,7 @@ def goods_receipt_payload(material: str, quantity: int, plant: str, storage_loca
 
 def reversal_payload(material: str, plant: str, storage_location: str, unit: str,
                      original_document: str, original_movement_type: str,
-                     session_ref: str | None = None) -> dict[str, Any]:
+                     quantity: int, session_ref: str | None = None) -> dict[str, Any]:
     """
     SAP'de yanlis belge silinmez, ters kayit atilir. 101'in tersi 102,
     501'in tersi 502. Stok geri iner ama iki belge de tarihte kalir.
@@ -196,7 +196,12 @@ def reversal_payload(material: str, plant: str, storage_location: str, unit: str
             "StorageLocation": storage_location,
             "GoodsMovementType": reverse_of,
             "EntryUnit": unit,
-            "QuantityInEntryUnit": "1",     # mock asil belgeden alir
+            # Asil belgenin miktari. Onceden burada sabit "1" vardi ve mock
+            # sessizce dogrusuyla degistirdigi icin hicbir sey bozulmus
+            # gorunmuyordu; gercek bir S/4HANA 20 adetlik bir girisi 1 adet
+            # ters kayitla kapatir ve stok 19 fazla kalirdi. Mock'un duzeltmesi
+            # bir kolaylikti, ADR-0003'un tam olarak istemedigi sey.
+            "QuantityInEntryUnit": str(quantity),
             "ReferenceDocument": original_document,
         }],
     }, session_ref)

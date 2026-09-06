@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS audit_trail (
     action     TEXT NOT NULL,          -- goods_receipt | reversal
     utterance  TEXT NOT NULL,          -- isciye okunup onaylanan cumle
     session_id TEXT NOT NULL,          -- ses oturumu referansi
-    created_at REAL NOT NULL           -- UTC epoch, gateway saati
+    created_at DOUBLE PRECISION NOT NULL -- UTC epoch, gateway saati
 );
 CREATE INDEX IF NOT EXISTS idx_audit_mblnr ON audit_trail (mblnr);
 """
@@ -36,6 +36,11 @@ CREATE INDEX IF NOT EXISTS idx_audit_mblnr ON audit_trail (mblnr);
 def init() -> None:
     with store.schema_lock() as conn:
         conn.execute(SCHEMA)
+        # REAL (float4) epoch saniyelerini 128 saniyelik kovalara yuvarliyor:
+        # 1788723673.14 -> 1788723712.0, 39 saniye sapma. Denetim izinin saati
+        # kanitin kendisi oldugu icin bu sessiz bir yanlislik. CREATE TABLE IF
+        # NOT EXISTS var olan tabloyu duzeltmez, kolonu ayrica cevirmek gerek.
+        conn.execute("ALTER TABLE audit_trail ALTER COLUMN created_at TYPE DOUBLE PRECISION")
 
 
 def record(mblnr: str, action: str, utterance: str, session_id: str) -> None:

@@ -8,9 +8,12 @@ is the point of testing these and not, say, the JSON shape of a stock reply.
 
 from __future__ import annotations
 
+import pytest
 from conftest import AUTH, post_receipt, stock_level
+from fastapi import HTTPException
 
-from gateway import audit, store
+from gateway import audit, sap_client, store
+from gateway.main import require_tool_auth
 
 # --- a write needs the secret ------------------------------------------------
 
@@ -131,7 +134,13 @@ def test_an_unknown_document_is_refused_in_words_a_worker_can_act_on(client):
 # --- the gateway validates, whatever the model sends -------------------------
 
 def test_a_quantity_that_is_not_a_whole_number_is_refused(client):
+    # Both shapes, because only the string was covered before and the number
+    # was the one that got through: int(20.5) is 20, so a worker who heard
+    # "twenty point five" read back had 20 posted — after the confirmation.
     assert post_receipt(client, quantity="twenty").json()["posted"] is False
+    fractional = post_receipt(client, quantity=20.5).json()
+    assert fractional["posted"] is False
+    assert "whole number" in fractional["message"].lower()
 
 
 def test_a_zero_or_negative_quantity_is_refused(client):
@@ -239,12 +248,39 @@ def test_an_unknown_document_has_no_provenance(client):
     assert client.get("/api/provenance/4900000000").status_code == 404
 
 
-def test_the_reference_document_field_respects_sap_s_width(client):
+def test_the_reference_document_field_respects_sap_s_width():
     # XBLNR is 16 characters in SAP. "VOICE:" takes six, so a session
     # reference longer than ten is truncated rather than sent whole — a real
     # tenant would reject the field, and the truncation is the faithful
     # behaviour, not a bug to "fix" by widening it.
-    receipt = post_receipt(client, session_id="far-too-long-to-fit").json()
-    p = client.get(f"/api/provenance/{receipt['MBLNR']}").json()
-    assert p["XBLNR"] == "VOICE:far-too-lo"     # six for the marker, ten for the reference
-    assert len(p["XBLNR"]) == 16
+    # Asserted on the payload the gateway builds, not on what the mock stored:
+    # the mock truncates to 16 itself, so reading it back would pass even if
+    # the gateway stopped truncating — the test would be measuring the mock.
+    payload = sap_client.goods_receipt_payload(
+        "000000000000004711", 20, "1000", "0001", "EA", None,
+        session_ref="far-too-long-to-fit")
+    assert payload["ReferenceDocument"] == "VOICE:far-too-lo"
+    assert len(payload["ReferenceDocument"]) == 16
+
+
+def test_a_reversal_sends_the_original_quantity_not_a_placeholder(client):
+    # The payload used to carry a hard-coded "1" and the mock quietly replaced
+    # it with the original quantity, so nothing looked wrong here. A real
+    # S/4HANA would have closed a twenty-piece receipt with one piece and left
+    # nineteen behind. Assert on the payload, where the mock cannot help.
+    payload = sap_client.reversal_payload(
+        "000000000000004711", "1000", "0001", "EA", "4900000123", "501", quantity=20)
+    item = payload["to_MaterialDocumentItem"][0]
+    assert item["QuantityInEntryUnit"] == "20"
+    assert item["GoodsMovementType"] == "502"
+
+
+def test_a_non_ascii_secret_is_refused_rather_than_crashing():
+    # hmac.compare_digest raises TypeError on a non-ASCII str; unhandled, a
+    # wrong secret became a 500 instead of a 401 — closed either way, but
+    # reporting the wrong thing. Tested at the function rather than over HTTP
+    # because httpx refuses to build such a header, while a raw client can
+    # send the bytes and Starlette decodes them to exactly this string.
+    with pytest.raises(HTTPException) as e:
+        require_tool_auth("gizli-şifre")
+    assert e.value.status_code == 401

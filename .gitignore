@@ -10,3 +10,7 @@ PLAN.md
 .pytest_cache/
 __pycache__/
 .ruff_cache/
+
+# Yerel arac zinciri (Higgsfield skills), urunun parcasi degil
+.agents/
+skills-lock.json
