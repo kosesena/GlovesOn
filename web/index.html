@@ -341,6 +341,33 @@
   @media(max-width:900px) { .scenario-bar { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   @media(max-width:600px) { .scenario-bar { margin:0 14px 22px; gap:12px; } .scenario-copy { padding:12px; } .scenario b { font-size:13px; } .scenario-desc { font-size:10px; } .scenario small { font-size:8px; } }
 
+
+  .shift { max-width:1216px; margin:0 auto 24px; color:#293027; }
+  .shift-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
+  .shift-heading h3 { margin:0; font-size:22px; letter-spacing:-.04em; }
+  .shift-heading p,.shift-hint { color:#6c7468; font-size:12px; }
+  .shift-heading button { background:#222820; color:white; padding:12px 18px; border-radius:24px; }
+  .floor { display:grid; grid-template-columns:1.1fr 1.4fr 1fr; gap:18px; padding:22px; border:1px solid #d9ddd2; border-radius:16px; background:repeating-linear-gradient(0deg,transparent,transparent 31px,#d9ddd233 32px),#eeeee6; }
+  .zone { min-height:126px; border:1px solid #c9cec1; background:#fafaf6; border-radius:10px; color:#293027; padding:18px; text-align:left; }
+  .zone[aria-pressed=true] { border-color:#ce693b; box-shadow:0 0 0 1px #ce693b; background:#fff5e9; }
+  .zone span { display:block; font:10px var(--mono); color:#a5532c; margin-bottom:15px; }
+  .zone b { display:block; font-size:17px; } .zone small { display:block; margin-top:8px; color:#747c6b; }
+  .shift-hint { margin:12px 0 0; }
+  .scenario[hidden] { display:none; }
+  .custom-tasks { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .custom-tasks button { background:#fafaf6; color:#293027; border:1px solid #c9cec1; border-radius:8px; padding:12px; }
+  .scenario-dialog { width:min(500px,calc(100% - 32px)); max-height:85vh; overflow:auto; background:#fafaf6; color:#293027; border:1px solid #d9ddd2; border-radius:18px; padding:26px; }
+  .scenario-dialog::backdrop { background:#18211988; }
+  .scenario-dialog h2 { color:#293027; font-size:24px; margin:0 0 10px; }
+  .scenario-dialog p { font-size:12px; color:#6c7468; line-height:1.6; }
+  .scenario-dialog label { display:block; font-size:12px; margin:14px 0; }
+  .scenario-dialog input,.scenario-dialog select,.scenario-dialog textarea { display:block; box-sizing:border-box; width:100%; padding:10px; margin-top:6px; border:1px solid #c9cec1; border-radius:7px; background:white; color:#293027; font:inherit; }
+  .dialog-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+  .dialog-actions button { padding:11px 17px; border-radius:20px; background:#e9ebe2; color:#293027; }
+  .dialog-actions button[type=submit] { background:#222820; color:white; }
+  @media(max-width:1250px) { .shift { margin-left:22px; margin-right:22px; } }
+  @media(max-width:600px) { .floor { gap:8px; padding:10px; } .zone { padding:10px; min-height:120px; } .zone b { font-size:13px; } .zone small { font-size:10px; } .shift-heading h3 { font-size:19px; } }
+
 </style>
 </head>
 <body>
@@ -362,6 +389,28 @@
 </div>
 <div class="trust-line"><span>VOICE POWERED BY <strong>AssemblyAI</strong></span><span>GOODS RECEIPT · STOCK · REVERSAL</span><span><strong>SAP OData</strong> · Demo environment</span></div>
 <div class="demo-intro" id="demo"><div><div class="eyebrow">Step onto the receiving floor</div><h2>Your voice. A recorded result.</h2></div><p>Choose a scenario, then start talking. Follow your conversation through to the material document.</p></div>
+<section class="shift" aria-label="Warehouse shift">
+  <div class="shift-heading"><div><h3>Your shift starts here.</h3><p>Choose an area. Pick a task. Work by voice.</p></div><button id="newScenario">+ Create scenario</button></div>
+  <div class="floor" role="group" aria-label="Warehouse areas">
+    <button class="zone" data-zone="receiving" aria-pressed="false"><span>01 / LOADING BAY</span><b>Receiving</b><small>Deliveries & quantity checks</small></button>
+    <button class="zone" data-zone="storage" aria-pressed="false"><span>02 / STORAGE AISLES</span><b>Shelves</b><small>Materials & stock locations</small></button>
+    <button class="zone" data-zone="review" aria-pressed="false"><span>03 / HOLDING AREA</span><b>Review desk</b><small>Receipts & reversals</small></button>
+  </div>
+  <p class="shift-hint" id="floorHint" aria-live="polite">All areas · Select an area to explore its tasks. Select it again to show all.</p>
+  <div class="custom-tasks" id="customTasks" aria-label="Your scenarios"></div>
+</section>
+<dialog class="scenario-dialog" id="scenarioDialog" aria-labelledby="scenarioDialogTitle">
+<form id="scenarioForm">
+<h2 id="scenarioDialogTitle">Create a warehouse task</h2><p>Build a voice task with the demo materials. Saved in this browser. Inventory changes only through the voice agent after confirmation.</p>
+<label>Task title<input name="title" required maxlength="70" placeholder="A short delivery at the loading bay"></label>
+<label>Worker role<select name="role"><option>Warehouse operator</option><option>Maintenance technician</option><option>Receiving supervisor</option></select></label>
+<label>Situation<textarea name="situation" required maxlength="400" rows="2" placeholder="A delivery has arrived. Check and record the quantity."></textarea></label>
+<label>Expected action<select name="action"><option value="receive">Receive a delivery</option><option value="correct">Correct a quantity before confirming</option><option value="stock">Find material and stock</option><option value="reverse">Reverse a receipt</option></select></label>
+<label>Material<select name="material"><option value="4711">4711 · Hex bolts</option><option value="4712">4712 · Hex nuts</option><option value="4713">4713 · Hydraulic hose</option><option value="5100">5100 · Ball bearings</option><option value="5101">5101 · Timing belt</option></select></label>
+<label id="quantityField">Quantity<input name="quantity" type="number" min="1" max="10000" step="1" value="20" required></label>
+<label id="correctedField" hidden>Corrected quantity<input name="corrected" type="number" min="1" max="10000" step="1" value="12"></label>
+<div class="dialog-actions"><button type="button" id="cancelScenario">Cancel</button><button type="submit">Create task</button></div>
+</form></dialog>
 <div class="scenario-bar" role="group" aria-label="Choose a guided voice scenario">
 <button class="scenario" data-scenario="receive" aria-pressed="true"><img src="/assets/receiving.png" alt="A worker inspecting bolts in an incoming delivery." width="1448" height="1086" loading="lazy" /><span class="scenario-copy"><small>01 / RECEIVE</small><b>Receive a delivery<span aria-hidden="true">↗</span></b><span class="scenario-desc">From arrival to recorded stock.</span></span></button>
 <button class="scenario" data-scenario="correct" aria-pressed="false"><img src="/assets/counting.png" alt="A worker counting small bolts on a receiving bench." width="1448" height="1086" loading="lazy" /><span class="scenario-copy"><small>02 / CORRECT</small><b>Get the quantity right<span aria-hidden="true">↗</span></b><span class="scenario-desc">Correct the count before confirming.</span></span></button>
@@ -1137,6 +1186,64 @@ document.querySelectorAll('[data-scenario]').forEach(button => {
     primerEl.hidden = false;
   };
 });
+
+const areaFor = {receive:'receiving', correct:'receiving', stock:'storage', reverse:'review'};
+let selectedArea = null;
+let savedTasks = [];
+try { const stored = JSON.parse(localStorage.getItem('gloveson-scenarios-v1') || '[]'); if (Array.isArray(stored)) savedTasks = stored.filter(t => t && typeof t.title === 'string' && typeof t.situation === 'string' && typeof t.role === 'string' && Object.hasOwn(areaFor,t.action) && ['4711','4712','4713','5100','5101'].includes(t.material) && Number.isInteger(t.quantity) && t.quantity>0 && Number.isInteger(t.corrected) && t.corrected>0).slice(0,30); } catch {}
+function selectTask(prompt, instruction, note) {
+  document.querySelector('#scenarioPrompt q').textContent = prompt;
+  document.querySelector('#scenarioPrompt span').textContent = instruction;
+  document.getElementById('scenarioNote').textContent = note;
+  primerEl.hidden = false;
+  document.querySelector('.console-wrap').scrollIntoView({behavior:reducedMotion.matches?'instant':'smooth',block:'start'});
+}
+function renderTasks() {
+  const list = document.getElementById('customTasks'); list.replaceChildren();
+  savedTasks.filter(t => !selectedArea || areaFor[t.action] === selectedArea).forEach(t => {
+    const button = document.createElement('button'); button.textContent = t.title;
+    button.onclick = () => {
+      document.querySelectorAll('[data-scenario]').forEach(b => b.setAttribute('aria-pressed','false'));
+      const prompt = t.action === 'stock' ? `Where is material ${t.material} stored and how much is available?` : t.action === 'reverse' ? 'Show me the most recent material documents.' : `Post a goods receipt, ${t.quantity} pieces of material ${t.material}.`;
+      const instruction = t.action === 'correct' ? `During the read-back, correct the quantity to ${t.corrected}. Confirm only when the details are right.` : scenarios[t.action][1];
+      selectTask(prompt,instruction,`${t.role} · ${t.situation} Expected result: ${t.action === 'stock' ? 'Material location and current stock.' : t.action === 'reverse' ? 'A reversal document linked to the original receipt. Select the intended receipt before confirming.' : 'A confirmed material document and updated stock.'}`);
+    };
+    list.append(button);
+  });
+}
+document.querySelectorAll('[data-zone]').forEach(button => button.onclick = () => {
+  selectedArea = selectedArea === button.dataset.zone ? null : button.dataset.zone;
+  document.querySelectorAll('[data-zone]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.zone === selectedArea)));
+  document.querySelectorAll('[data-scenario]').forEach(b => { b.hidden = !!selectedArea && areaFor[b.dataset.scenario] !== selectedArea; if (b.hidden) { const v=b.querySelector('video'); v.pause(); v.classList.remove('is-playing'); } });
+  document.getElementById('floorHint').textContent = selectedArea ? `${button.querySelector('b').textContent} · Choose a task below. Select the area again to show all.` : 'All areas · Select an area to explore its tasks.';
+  renderTasks();
+});
+const scenarioDialog = document.getElementById('scenarioDialog');
+const scenarioForm = document.getElementById('scenarioForm');
+document.getElementById('newScenario').onclick = () => scenarioDialog.showModal();
+document.getElementById('cancelScenario').onclick = () => scenarioDialog.close();
+scenarioForm.elements.action.onchange = () => {
+  const action = scenarioForm.elements.action.value;
+  document.getElementById('quantityField').hidden = ['stock','reverse'].includes(action);
+  document.getElementById('correctedField').hidden = action !== 'correct';
+};
+scenarioForm.onsubmit = event => {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(scenarioForm));
+  data.title = data.title.trim(); data.situation = data.situation.trim();
+  if (!data.title || !data.situation) return;
+  data.quantity = Number(data.quantity); data.corrected = Number(data.corrected);
+  savedTasks.push(data); savedTasks = savedTasks.slice(-30);
+  let persisted = true;
+  try { localStorage.setItem('gloveson-scenarios-v1',JSON.stringify(savedTasks)); } catch { persisted = false; }
+  selectedArea = areaFor[data.action];
+  document.querySelectorAll('[data-zone]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.zone === selectedArea)));
+  document.querySelectorAll('[data-scenario]').forEach(b => b.hidden = areaFor[b.dataset.scenario] !== selectedArea);
+  renderTasks(); scenarioDialog.close(); scenarioForm.reset(); scenarioForm.elements.action.onchange();
+  document.getElementById('floorHint').textContent = persisted ? 'Task created · Choose it above to begin. Saved in this browser.' : 'Task created for this visit. Browser storage is unavailable.';
+};
+renderTasks();
+
 document.getElementById('heroStart').onclick = () => {
   document.getElementById('demo').scrollIntoView({behavior:'smooth'});
   if (!live && !talkBtn.disabled) start();
