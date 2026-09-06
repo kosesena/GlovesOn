@@ -376,15 +376,19 @@
 
   [hidden] { display:none!important; }
   .warehouse-shell { color:#293027; min-height:80vh; max-width:1400px; margin:auto; padding:24px; }
-  .warehouse-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:28px; }
+  .warehouse-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
   .warehouse-toolbar button,.warehouse-choice button { background:#26332a; color:#fff; border-radius:24px; padding:12px 20px; }
   .warehouse-toolbar span { font:11px var(--mono); color:#697565; }
-  /* Lobi tek ekrana sigmali: asagi kaydirmadan gorulemeyen bir secim
-     ekrani, secenegi olmayan bir secim ekranidir. Olculer buna gore. */
-  .warehouse-title { text-align:center; margin:22px 0 18px; }
-  .warehouse-title h1 { font-size:clamp(26px,3.4vw,42px); letter-spacing:-.05em; margin:0 0 8px; }
+  /* Lobi tek ekrana sigmali: asagi kaydirmadan gorulemeyen bir secim ekrani,
+     secenegi olmayan bir secim ekranidir. Ama gorseli sabit bir sayiyla
+     kucultmek yanlis olurdu - kisa ekranda hala tasar, uzun ekranda bosuna
+     kucuk kalir. Odanin genisligi bu yuzden ekran YUKSEKLIGINE bagli
+     (max-width:155vh): sprite genislikle olceklendigi icin bu, gorseli
+     "sigan en buyuk boyut" yapiyor. */
+  .warehouse-title { text-align:center; margin:10px 0 14px; }
+  .warehouse-title h1 { font-size:clamp(26px,3.4vw,44px); letter-spacing:-.05em; margin:0 0 6px; }
   .warehouse-title p { color:#6a7568; }
-  .warehouse-room { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:4%; padding:26px 6% 40px; max-width:940px; margin:0 auto; overflow:hidden; border-radius:24px; background:linear-gradient(#e4e7de 0 68%,#cfd4c7 68% 70%,#e8e6da 70%); }
+  .warehouse-room { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:4%; padding:22px 5% 30px; max-width:min(1340px, 155vh); margin:0 auto; overflow:hidden; border-radius:24px; background:linear-gradient(#e4e7de 0 68%,#cfd4c7 68% 70%,#e8e6da 70%); }
   .warehouse-room:before { content:''; position:absolute; inset:70% -30% -70%; background:repeating-linear-gradient(90deg,transparent 0 110px,#b6b9a744 111px 113px); transform:perspective(180px) rotateX(30deg); pointer-events:none; }
   .warehouse-entry { position:relative; background:transparent; border:0; color:#293027; padding:0; text-align:center; transition:transform .2s; }
   .warehouse-entry:hover { transform:none; }
@@ -398,7 +402,7 @@
     .warehouse-title { margin:14px 0 12px; }
     .warehouse-title h1 { font-size:30px; }
     .warehouse-title p { font-size:14px; }
-    .warehouse-room { padding:18px 6% 28px; max-width:820px; }
+    .warehouse-room { padding:14px 5% 22px; }
     .warehouse-entry b { margin:10px 0 4px; font-size:16px; }
     .warehouse-entry em { margin-top:6px; }
   }
@@ -408,6 +412,9 @@
   .warehouse-choice p { font-size:14px; line-height:1.7; color:#6b7566; }
   .warehouse-choice small { font:11px var(--mono); color:#ad5833; }
   body.in-warehouse > .hero,body.in-warehouse > .trust-line,body.in-warehouse > .demo-intro,body.in-warehouse > .how,body.in-warehouse > footer { display:none; }
+  /* Site menusu de gizleniyor: icerideyken "Enter warehouse" anlamsiz ve
+     "Back to site" zaten arac cubugunda. Kazanilan 94 piksel gorselin. */
+  body.in-warehouse > .site-nav { display:none; }
   .warehouse-shell .console-wrap { margin-top:24px; }
   @media(max-width:600px) { .warehouse-shell { padding:14px; } .warehouse-room { gap:12px; padding:30px 12px 50px; } .warehouse-entry b { font-size:13px; } .warehouse-entry small { font-size:10px; } .warehouse-choice { grid-template-columns:1fr; } .warehouse-toolbar span { display:none; } }
 
