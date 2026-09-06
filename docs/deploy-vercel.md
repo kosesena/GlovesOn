@@ -71,6 +71,19 @@ on your laptop.
 
 ## Things worth knowing before they surprise you
 
+**An imported variable is not a filled-in variable.** Vercel reads `.env.example`
+on import and creates every name it finds with an empty value. An empty value is not
+the same as an absent one — `os.getenv(name, default)` hands back the empty string and
+the default never runs — which crashed the first deployment on `float('')`. The code
+now treats blank as absent, but `DATABASE_URL` still has to hold a real string:
+delete the empty one and let the Neon integration's *Connect to Project* write it,
+rather than leaving a name that looks configured and is not.
+
+**Changing an environment variable does nothing until you redeploy.** The running
+deployment keeps the values it was built with. After connecting the database or
+editing a secret, redeploy — a push does it, and so does *Redeploy* on the latest
+deployment.
+
 **The demo database is shared by every deployment.** Preview deployments and
 production point at the same Neon database unless you branch it. A `/api/reset` from a
 preview URL wipes what production is showing.
