@@ -14,7 +14,7 @@ the first syllable back. Everything below adds up inside that gap.
 
 | Segment | Budget | Measured | Note |
 |---|---|---|---|
-| End of speech → turn detected | — | | Adaptive by default; owned by the platform |
+| End of speech → turn detected | — | | `min_silence: 800` / `max_silence: 2000`; adaptive pacing deliberately off |
 | Transcription finalised | — | | Platform |
 | LLM first token | — | | Platform |
 | **Tool round trip (gateway)** | **≤ 150 ms p95** | | **Ours. The only segment we control** |
@@ -126,7 +126,7 @@ until they are.
 
 | | Position |
 |---|---|
-| Noise | Voice focus / noise suppression enabled; tested against warehouse-floor audio |
+| Noise | **Untested, and nothing is enabled.** `agent/agent.json` carries no `voice_focus` block, and `web/index.html` sets the browser's own `noiseSuppression: false`. The transcription prompt names forklift noise; nothing has been measured. Incumbent voice systems are better at this — `docs/market.md` §5 |
 | Interruption | Barge-in on; the client flushes queued agent audio on `input.speech.started` |
 | Hands-free | Session start still needs a button press — the one non-hands-free moment |
 | Accents and non-native speakers | Untested. A real warehouse floor is multilingual; this is a significant gap for the stated user |
