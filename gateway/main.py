@@ -521,7 +521,10 @@ async def voice_token() -> dict[str, Any]:
     await asyncio.to_thread(live.mint_session, secrets.token_hex(4))
     async with httpx.AsyncClient(timeout=15) as client:
         r = await client.get("https://agents.assemblyai.com/v1/token",
-                             params={"expires_in_seconds": 300, "max_session_duration_seconds": 600},
+                             # Kisa omur, calinan ya da kotuye kullanilan bir
+                             # token'in ise yaradigi pencereyi daraltir. Bir
+                             # demo oturumu bes dakikayi gecmiyor.
+                             params={"expires_in_seconds": 120, "max_session_duration_seconds": 300},
                              headers={"Authorization": f"Bearer {ASSEMBLYAI_API_KEY}"})
     if r.status_code != 200:
         raise HTTPException(status_code=502, detail=f"Token error: {r.text}")
@@ -544,9 +547,15 @@ def inventory() -> dict[str, Any]:
 
 
 @app.post("/api/reset")
-def reset() -> dict[str, str]:
+def reset(x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret")) -> dict[str, str]:
+    # Bayrak yetki degildir. Onceden burasi kimlik sormuyordu ve varsayilan
+    # aciklti: adresi bilen herkes demoyu silebiliyordu - canli adreste
+    # denendi, 200 dondu. Ustelik ozel baslik tasimayan bir POST oldugu icin
+    # tarayici bunu on-kontrolsuz gonderir; bakimciyi kotu bir sayfaya
+    # dusurmek yetiyordu. Simdi hem bayrak hem sir gerekiyor.
     if not ENABLE_RESET:
         raise HTTPException(status_code=403, detail="Reset is disabled on this deployment.")
+    require_tool_auth(x_tool_secret)
     store.init_db(force=True)
     audit.init()
     live.init()
@@ -556,7 +565,10 @@ def reset() -> dict[str, str]:
 
 @app.get("/health")
 def health() -> dict[str, Any]:
-    return {"ok": True, "agent_id": AGENT_ID or None,
+    # agent_id burada durmuyor artik: ses oturumu acmak icin gereken ikinci
+    # parca oydu ve bu ucu herkes cagirabiliyor. Tarayici zaten onu
+    # /api/voice-token cevabindan aliyor.
+    return {"ok": True, "agent_configured": bool(AGENT_ID),
             "sap_base_url": sap_target()}
 
 

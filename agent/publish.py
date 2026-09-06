@@ -104,6 +104,17 @@ def main() -> None:
         print(f"\n  Simdi .env icine yaz:  AGENT_ID={agent_id}\n")
 
 
+def _redact(text: str) -> str:
+    """
+    Dogrulama hatalarinda API gonderdigimiz govdeyi geri yansitiyor - ve o
+    govdenin icinde alti tool basliginda TOOL_SHARED_SECRET var. Terminalde
+    zararsiz gorunur; bir CI logunda ya da paylasilan bir kabukta, yazma
+    uclarini koruyan tek sey oraya dusmus olur.
+    """
+    secret = os.getenv("TOOL_SHARED_SECRET", "").strip()
+    return text.replace(secret, "***") if secret else text
+
+
 def _print_error(response) -> None:
     """
     Hatayi okunabilir bas. Dogrulama hatalarinda API tum govdeyi geri
@@ -112,7 +123,7 @@ def _print_error(response) -> None:
     try:
         data = response.json()
     except Exception:
-        print(f"  {response.text[:400]}", file=sys.stderr)
+        print(f"  {_redact(response.text[:400])}", file=sys.stderr)
         return
 
     detail = data.get("detail", data)

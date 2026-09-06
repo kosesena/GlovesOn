@@ -94,9 +94,13 @@ surfaces the question to the person who can know, and does nothing until answere
 |---|---|
 | ERP credentials | Never leave the gateway. The agent platform holds only a shared secret (ADR-0001) |
 | API key exposure | Never reaches the browser; short-lived session tokens are minted server-side |
-| Tool endpoint auth | Shared secret header, stored encrypted by the platform. **Single factor — a leaked secret is full write access** |
+| Tool endpoint auth | Shared secret header, compared with `hmac.compare_digest`, stored encrypted by the platform. **Single factor — a leaked secret is full write access** |
+| The mock is not reachable from outside | It runs in its own ASGI app that no external route reaches. It was briefly mounted on the public app, where an anonymous CSRF fetch plus one POST wrote a material document with no secret, no read-back and no audit row; that is fixed and is why the separation is now structural rather than conventional |
+| Destructive endpoints | `/api/reset` needs the shared secret **and** `GLOVESON_ENABLE_RESET=1`, which is off by default |
 | Transport | HTTPS only; the platform refuses private and loopback hosts and does not follow redirects |
 | Worker identity | **Not implemented.** Anyone who can reach the page can post stock. Production needs per-worker authorisation |
+| The public demo is an open microphone | `/api/voice-token` mints a session token for anonymous callers — that is how the API key stays on the server — and returns the agent id the browser needs. So anyone who finds the deployed URL can talk to the agent and, after a read-back and a spoken yes, cause a real posting. The read-back is a **mistake** control, not an **authorisation** control: it protects a worker from posting the wrong document, not the system from a stranger. Acceptable only because the data is a mock; a real deployment closes it with authentication in front of the page and principal propagation behind it (`docs/clean-core.md`) |
+| Blast radius of a leaked session token | Short-lived: 120 s to open, 300 s of session. Not scoped to our agent, because the token API has no agent scope — the client names the agent |
 | Voice recordings | Sessions are retained by the platform. Under GDPR/KVKK a worker's voice is personal data: retention, purpose and consent are unresolved and would block a real deployment |
 | Company data | No employer system is connected, by decision (ADR-0003) |
 
