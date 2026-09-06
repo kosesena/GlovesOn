@@ -16,6 +16,7 @@ Calistirma:
 from __future__ import annotations
 
 import asyncio
+import hmac
 import json
 import os
 import secrets
@@ -25,7 +26,6 @@ from typing import Any
 
 import httpx
 from fastapi import Body, FastAPI, Header, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 
 from . import audit, live, sap_client, sap_mock, store
@@ -43,10 +43,11 @@ AGENT_ID = env("AGENT_ID")
 # gidilmiyor (bkz. asagisi), sadece serve.sh ile ayni sayida anlasmak icin.
 PORT = int(env("PORT", "8000"))
 
-# Demo ekranindaki "sifirla" dugmesi mock veritabanini bastan kurar. Tunel
-# adresi rastgeleyken bunu bulan olmazdi; sabit bir adreste, kimlik istemeyen
-# bir POST demoyu jurinin altindan silebilir. Degiskeni 0 yaparak kapatilir.
-ENABLE_RESET = env("GLOVESON_ENABLE_RESET", "1") not in ("0", "false", "no")
+# Demo ekranindaki "sifirla" dugmesi mock veritabanini bastan kurar ve kimlik
+# sormaz. Varsayilan artik KAPALI: acik bir varsayilan, adresi bilen herkesin
+# demoyu jurinin altindan silebilecegi anlamina geliyordu - canli adreste
+# denendi ve calisti. Provada acmak icin GLOVESON_ENABLE_RESET=1.
+ENABLE_RESET = env("GLOVESON_ENABLE_RESET", "0") in ("1", "true", "yes")
 
 # Paylasilan sir eskiden .env.example'daki metne dusuyordu. Yerelde zararsizdi;
 # public bir adreste, dokumante edilmis bir varsayilan sir demek sirsizlik
@@ -60,11 +61,18 @@ if not TOOL_SHARED_SECRET or TOOL_SHARED_SECRET == "degistir-beni-lutfen":
     )
 
 app = FastAPI(title="GlovesOn Gateway", version="0.2.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# Mock S/4HANA'yi ayni surecte servis et. Gateway ona yine de HTTP ile,
-# disaridan bir sistemmis gibi baglanir - kisayol yok.
-app.include_router(sap_mock.router, prefix="/sap/opu/odata/sap", tags=["mock-s4hana"])
+# Mock S/4HANA KENDI uygulamasinda. Bu bir duzen tercihi degil, bir guvenlik
+# duzeltmesi: mock public uygulamaya bagliyken herkes CSRF token'ini alip
+# dogrudan A_MaterialDocumentHeader'a POST edebiliyordu - paylasilan sir yok,
+# sesli onay yok, tekrar korumasi yok, denetim izi yok. Yani "her yazma
+# onaylanir" iddiasi internetten tek komutla curutulebiliyordu.
+#
+# Gateway ona yine HTTP ile, disaridan bir sistemmis gibi baglaniyor; degisen
+# tek sey isteklerin bu ikinci uygulamaya gitmesi ve disaridan hicbir yolun
+# oraya cikmamasi. SAP'ye giden tek kapi /erp/* uclari, onlar da sirli.
+mock_app = FastAPI(title="Mock S/4HANA", version="0.2.0")
+mock_app.include_router(sap_mock.router, prefix="/sap/opu/odata/sap", tags=["mock-s4hana"])
 
 _sap: SapClient | None = None
 
@@ -91,7 +99,7 @@ def sap() -> SapClient:
             _sap = SapClient(MOCK_SAP_BASE_URL)
         else:
             _sap = SapClient("http://mock-s4hana.internal",
-                             transport=httpx.ASGITransport(app=app))
+                             transport=httpx.ASGITransport(app=mock_app))
     return _sap
 
 
@@ -160,7 +168,8 @@ async def events() -> StreamingResponse:
 
 
 def require_tool_auth(secret: str | None) -> None:
-    if secret != TOOL_SHARED_SECRET:
+    # compare_digest: esitligi karakter karakter kisa devre yapmadan olcer.
+    if not secret or not hmac.compare_digest(secret, TOOL_SHARED_SECRET):
         raise HTTPException(status_code=401, detail="Invalid tool secret")
 
 

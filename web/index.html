@@ -478,7 +478,15 @@ clearDoc();
 refreshInventory();
 
 document.getElementById('resetBtn').onclick = async () => {
-  await fetch('/api/reset', { method: 'POST' });
+  // Sifirlama artik varsayilan olarak kapali: kimlik istemeyen bir POST,
+  // adresi bilen herkesin demoyu silmesi demekti. Cevabi okumadan ekrani
+  // temizlersek, silinmemis veriyi silinmis gibi gosteririz.
+  const r = await fetch('/api/reset', { method: 'POST' });
+  if (!r.ok) {
+    append('sys', '', 'Reset is disabled on this deployment. '
+                    + 'Set GLOVESON_ENABLE_RESET=1 to enable it for a rehearsal.');
+    return;
+  }
   document.getElementById('log').innerHTML =
     '<div class="msg sys">Demo reset. Stock levels restored.</div>';
   clearDoc();
