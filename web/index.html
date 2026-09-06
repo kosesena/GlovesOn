@@ -379,18 +379,29 @@
   .warehouse-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:28px; }
   .warehouse-toolbar button,.warehouse-choice button { background:#26332a; color:#fff; border-radius:24px; padding:12px 20px; }
   .warehouse-toolbar span { font:11px var(--mono); color:#697565; }
-  .warehouse-title { text-align:center; margin:35px 0; }
-  .warehouse-title h1 { font-size:clamp(30px,4vw,52px); letter-spacing:-.05em; margin:0 0 12px; }
+  /* Lobi tek ekrana sigmali: asagi kaydirmadan gorulemeyen bir secim
+     ekrani, secenegi olmayan bir secim ekranidir. Olculer buna gore. */
+  .warehouse-title { text-align:center; margin:22px 0 18px; }
+  .warehouse-title h1 { font-size:clamp(26px,3.4vw,42px); letter-spacing:-.05em; margin:0 0 8px; }
   .warehouse-title p { color:#6a7568; }
-  .warehouse-room { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:5%; padding:50px 7% 95px; overflow:hidden; border-radius:24px; background:linear-gradient(#e4e7de 0 68%,#cfd4c7 68% 70%,#e8e6da 70%); }
+  .warehouse-room { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:4%; padding:26px 6% 40px; max-width:940px; margin:0 auto; overflow:hidden; border-radius:24px; background:linear-gradient(#e4e7de 0 68%,#cfd4c7 68% 70%,#e8e6da 70%); }
   .warehouse-room:before { content:''; position:absolute; inset:70% -30% -70%; background:repeating-linear-gradient(90deg,transparent 0 110px,#b6b9a744 111px 113px); transform:perspective(180px) rotateX(30deg); pointer-events:none; }
   .warehouse-entry { position:relative; background:transparent; border:0; color:#293027; padding:0; text-align:center; transition:transform .2s; }
   .warehouse-entry:hover { transform:none; }
   .warehouse-entry:focus-visible { outline:3px solid #ce693b; outline-offset:8px; }
   .warehouse-entry svg { display:block; width:100%; height:auto; filter:drop-shadow(0 12px 6px #29302722); }
-  .warehouse-entry b { display:block; font-size:19px; margin:22px 0 8px; }
+  .warehouse-entry b { display:block; font-size:18px; margin:14px 0 6px; }
   .warehouse-entry small { font-size:12px; color:#636d5d; }
-  .warehouse-entry em { display:block; margin-top:14px; color:#a64b27; font:11px var(--mono); font-style:normal; }
+  .warehouse-entry em { display:block; margin-top:9px; color:#a64b27; font:11px var(--mono); font-style:normal; }
+  /* Kisa ekranlarda (dizustu, tarayici cubuklariyla ~700px) daha da sik. */
+  @media(max-height:820px) {
+    .warehouse-title { margin:14px 0 12px; }
+    .warehouse-title h1 { font-size:30px; }
+    .warehouse-title p { font-size:14px; }
+    .warehouse-room { padding:18px 6% 28px; max-width:820px; }
+    .warehouse-entry b { margin:10px 0 4px; font-size:16px; }
+    .warehouse-entry em { margin-top:6px; }
+  }
   .warehouse-choice { max-width:850px; margin:40px auto; display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   .warehouse-choice article { padding:30px; background:#fffdf7; border:1px solid #d7dccc; border-radius:16px; }
   .warehouse-choice h2 { color:#293027; font-size:24px; margin:16px 0; }
