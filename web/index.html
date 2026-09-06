@@ -203,6 +203,18 @@
 
   table.mini { font-size: 11px; }
   table.mini td { padding: 6px 10px; }
+  table.mini tr.clickable { cursor: pointer; }
+  table.mini tr.clickable:hover td { background: var(--panel-2); }
+  table.mini tr.open td { background: var(--panel-2); }
+
+  /* Kanit zinciri. Bir denetim izi ancak gosterilebiliyorsa denetim izidir -
+     yazilip hicbir yerden okunmayan bir tablo, olmayan bir tablodur. */
+  .prov { padding: 12px 14px; background: var(--panel-2); border-left: 2px solid var(--accent-dim); }
+  .prov .pline { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .prov q { display: block; font-size: 14px; color: var(--text); margin: 8px 0; }
+  .prov .pnote { font-family: var(--mono); font-size: 10px; line-height: 1.6; color: var(--muted);
+                 border-top: 1px solid var(--line); padding-top: 8px; margin-top: 8px; }
+  .prov b { color: var(--accent); font-weight: 600; }
   table.mini tr.reversal td { color: var(--danger); }
   .right .sub { margin-top: 20px; border-top: none; }
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } section + section { border-left: none; border-top: 1px solid var(--line); } }
@@ -408,7 +420,8 @@ async function refreshInventory() {
   const data = await fetch('/api/inventory').then(r => r.json());
   docBody.innerHTML = data.documents.length
     ? data.documents.slice(0, 6).map(d => `
-      <tr class="${['102','502'].includes(String(d.BWART)) ? 'reversal' : ''}">
+      <tr class="clickable ${['102','502'].includes(String(d.BWART)) ? 'reversal' : ''}"
+          data-mblnr="${d.MBLNR}">
         <td>${d.MBLNR}</td><td>${d.BWART}</td><td>${d.MATNR}</td>
         <td class="num">${d.MENGE} ${d.MEINS}</td>
         <td class="num">${d.created_at ? clock(d.created_at) : ''}</td></tr>`).join('')
@@ -423,6 +436,50 @@ async function refreshInventory() {
 function clock(epoch) {
   return new Date((epoch || Date.now()/1000) * 1000)
     .toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// Belgeye tiklayinca kokeni acilir: hangi cumle, hangi oturum, hangi saniye.
+// Jurinin "bu belge neden var" sorusunu tiklayarak cevaplayabilmesi icin -
+// ve cevabin sinirini da ayni yerde soylemek icin.
+docBody.addEventListener('click', async (e) => {
+  const row = e.target.closest('tr[data-mblnr]');
+  if (!row) return;
+
+  const open = docBody.querySelector('tr.prov-row');
+  const same = open && open.previousElementSibling === row;
+  if (open) { open.remove(); docBody.querySelectorAll('tr.open').forEach(r => r.classList.remove('open')); }
+  if (same) return;
+
+  const p = await fetch(`/api/provenance/${row.dataset.mblnr}`).then(r => r.ok ? r.json() : null);
+  if (!p) return;
+
+  const voice = p.voice
+    ? `<q>${escapeHtml(p.voice.utterance)}</q>
+       <div class="pline">confirmed in voice session <b>${escapeHtml(p.voice.session_id || '—')}</b>
+       · recorded ${clock(p.voice.recorded_at)}</div>`
+    : `<div class="pline">No spoken sentence recorded — this document was posted by a
+       direct tool call, not through a voice session.</div>`;
+
+  const tr = document.createElement('tr');
+  tr.className = 'prov-row';
+  tr.innerHTML = `<td colspan="5"><div class="prov">
+      <div class="pline">${p.MBLNR} · movement ${p.BWART} · ${p.MENGE} ${p.MEINS}
+        · bin ${p.LGPLA} · posted ${clock(p.posted_at)}
+        ${p.reverses ? '· reverses ' + p.reverses : ''}</div>
+      ${voice}
+      <div class="pline">in SAP: MaterialDocumentHeaderText <b>${escapeHtml(p.BKTXT || '—')}</b>
+        · ReferenceDocument <b>${escapeHtml(p.XBLNR || '—')}</b></div>
+      <div class="pnote">The session reference is not an identity. A spoken name is not
+        authentication, so none is written to the document; proving <i>who</i> spoke needs
+        principal propagation, which this system does not have — see docs/clean-core.md.</div>
+    </div></td>`;
+  row.classList.add('open');
+  row.after(tr);
+});
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 const sse = new EventSource('/events');

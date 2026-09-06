@@ -47,6 +47,45 @@ def record(mblnr: str, action: str, utterance: str, session_id: str) -> None:
         )
 
 
+def provenance(mblnr: str) -> dict[str, Any] | None:
+    """
+    Bir belgenin kokeni: SAP'nin sakladigi baslik alanlari ve bizim tuttugumuz
+    iz, tek cevapta. Ikisi ayri sistemlerde durur ve ayri seyler soyler - biri
+    "bu belge sesle acildi", digeri "sesle soylenen cumle suydu".
+
+    Bu ucun var olmasinin sebebi: yazilan ama hicbir yerden okunmayan bir
+    denetim izi, olmayan bir denetim izidir. Kanit ancak gosterilebiliyorsa
+    kanittir.
+    """
+    with store.db() as conn:
+        doc = conn.execute(
+            "SELECT mblnr, bwart, matnr, menge, meins, lgpla, budat, created_at,"
+            " bktxt, xblnr, reversed_of FROM mkpf WHERE mblnr=%s", (mblnr,)).fetchone()
+        if doc is None:
+            return None
+        trail = conn.execute(
+            "SELECT action, utterance, session_id, created_at FROM audit_trail"
+            " WHERE mblnr=%s ORDER BY created_at DESC LIMIT 1", (mblnr,)).fetchone()
+
+    return {
+        "MBLNR": doc["mblnr"], "BWART": doc["bwart"],
+        "MATNR": store.pretty_matnr(doc["matnr"]), "MENGE": doc["menge"],
+        "MEINS": doc["meins"], "LGPLA": doc["lgpla"], "BUDAT": doc["budat"],
+        "posted_at": doc["created_at"],
+        "BKTXT": doc["bktxt"], "XBLNR": doc["xblnr"],
+        "reverses": doc["reversed_of"],
+        # Iz yoksa bu bir eksiklik degil, bir bilgi: belge sesle degil, dogrudan
+        # bir tool cagrisiyla acilmis olabilir. Sessizce bos gostermek yerine
+        # soylemek daha dogru.
+        "voice": {
+            "action": trail["action"],
+            "utterance": trail["utterance"],
+            "session_id": trail["session_id"],
+            "recorded_at": trail["created_at"],
+        } if trail else None,
+    }
+
+
 def lookup(mblnr: str) -> dict[str, Any] | None:
     with store.db() as conn:
         r = conn.execute(

@@ -191,3 +191,60 @@ def test_the_document_carries_its_voice_origin_into_sap(client):
                            (receipt["MBLNR"],)).fetchone()
     assert row["bktxt"] == "GLOVESON VOICE"
     assert row["xblnr"] == "VOICE:abc123"
+
+
+# --- the trail is readable, not only writable --------------------------------
+
+def test_a_document_can_be_traced_back_to_the_sentence_that_caused_it(client):
+    # A trail nothing reads is not a trail. This is the endpoint the screen
+    # calls when a judge clicks a document, so the evidence is visible rather
+    # than merely stored.
+    # A real session reference is secrets.token_hex(4) — eight characters.
+    receipt = post_receipt(client, confirmed_utterance="Twenty pieces of hex bolt M8x40",
+                           session_id="a1b2c3d4").json()
+
+    p = client.get(f"/api/provenance/{receipt['MBLNR']}").json()
+
+    assert p["MBLNR"] == receipt["MBLNR"]
+    assert p["MENGE"] == 20
+    assert p["BKTXT"] == "GLOVESON VOICE"
+    assert p["XBLNR"] == "VOICE:a1b2c3d4"
+    assert p["voice"]["utterance"] == "Twenty pieces of hex bolt M8x40"
+    assert p["voice"]["session_id"] == "a1b2c3d4"
+    assert p["voice"]["action"] == "goods_receipt"
+
+
+def test_provenance_says_so_when_no_sentence_was_recorded(client):
+    # Silence is information: the document was posted by a direct tool call.
+    # Showing an empty quote would imply someone said nothing out loud.
+    body = client.post("/erp/goods-receipt",
+                       json={"material": "4711", "quantity": 20}, headers=AUTH).json()
+    p = client.get(f"/api/provenance/{body['MBLNR']}").json()
+    assert p["voice"] is None or p["voice"]["utterance"] == ""
+
+
+def test_a_reversal_points_at_the_document_it_reverses(client):
+    receipt = post_receipt(client).json()
+    reversal = client.post("/erp/reverse-goods-receipt",
+                           json={"document": receipt["MBLNR"],
+                                 "confirmed_utterance": "Reverse it"},
+                           headers=AUTH).json()
+
+    p = client.get(f"/api/provenance/{reversal['MBLNR']}").json()
+    assert p["reverses"] == receipt["MBLNR"]
+    assert p["voice"]["action"] == "reversal"
+
+
+def test_an_unknown_document_has_no_provenance(client):
+    assert client.get("/api/provenance/4900000000").status_code == 404
+
+
+def test_the_reference_document_field_respects_sap_s_width(client):
+    # XBLNR is 16 characters in SAP. "VOICE:" takes six, so a session
+    # reference longer than ten is truncated rather than sent whole — a real
+    # tenant would reject the field, and the truncation is the faithful
+    # behaviour, not a bug to "fix" by widening it.
+    receipt = post_receipt(client, session_id="far-too-long-to-fit").json()
+    p = client.get(f"/api/provenance/{receipt['MBLNR']}").json()
+    assert p["XBLNR"] == "VOICE:far-too-lo"     # six for the marker, ten for the reference
+    assert len(p["XBLNR"]) == 16

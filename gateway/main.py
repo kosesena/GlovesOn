@@ -553,6 +553,21 @@ def inventory() -> dict[str, Any]:
     }
 
 
+@app.get("/api/provenance/{mblnr}")
+def provenance(mblnr: str) -> dict[str, Any]:
+    """
+    "Bu belge neden var?" — ekranin sordugu ve cevabini gosterdigi soru.
+
+    Sirsiz, cunku tarayici sirri hicbir zaman gormemeli ve burasi yalniz
+    okuyor. Gosterdigi sey mock verisi; gercek bir dagitimda bu ucun onunde
+    kimlik dogrulama olurdu, tipki ekranin kendisinde olacagi gibi.
+    """
+    row = audit.provenance(mblnr.strip())
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"No material document {mblnr}.")
+    return row
+
+
 @app.post("/api/reset")
 def reset(x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret")) -> dict[str, str]:
     # Bayrak yetki degildir. Onceden burasi kimlik sormuyordu ve varsayilan
