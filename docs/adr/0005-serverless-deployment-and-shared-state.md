@@ -20,8 +20,10 @@ already being paid for other projects; every alternative was new money.
 
 **A. Replit Reserved VM.** An always-on machine: the code runs exactly as written,
 no changes at all. Requires Replit Core at ~$20/month on top of Vercel. Rejected on
-cost, after being recommended and prepared for — `docs/deploy-replit.md` and the
-loopback work in this repository are the residue of that path.
+cost, after being recommended and prepared for: a runbook and a `.replit` file existed
+and were deleted once this decision was taken, because a repository that carries the
+configuration of two platforms invites someone to follow the wrong one. Both are in
+the history if that day comes.
 
 **B. Fly.io or Render.** Also always-on processes, also zero code changes,
 ~$2–7/month. Technically the cheapest correct answer. Rejected because it adds a

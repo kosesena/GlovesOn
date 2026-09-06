@@ -177,7 +177,7 @@ options and what the choice costs.
   security posture, cost model, known defects
 - **[docs/clean-core.md](docs/clean-core.md)** — where this complies with SAP Clean Core
   and, at greater length, where it does not
-- **[docs/deploy-replit.md](docs/deploy-replit.md)** — the deployment runbook and what a
+- **[docs/deploy-vercel.md](docs/deploy-vercel.md)** — the deployment runbook and what a
   redeploy costs you
 
 Start with [ADR-0001](docs/adr/0001-gateway-between-agent-and-erp.md) if you read only one.

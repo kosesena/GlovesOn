@@ -92,7 +92,7 @@ Bizim tool'lar buna uyuyor: okuma uçları GET (query), mal girişi POST (gövde
 | Hata | 2xx olmayan cevaplar ve zaman aşımları modele kısa bir metin olarak dönüyor, model toparlamayı deniyor |
 
 `localhost` yasağının sebebi bu: AssemblyAI tool'u **kendi sunucusundan** çağırıyor.
-Tünel ya da Replit şart, tercih değil.
+Tünel ya da bir dağıtım şart, tercih değil.
 
 **Header güvenliği:** header değerleri şifreli saklanıyor ve yazma-amaçlı — geri
 okunmuyor, sadece adı ve son yazılma zamanı görünüyor. Yani `TOOL_SHARED_SECRET`

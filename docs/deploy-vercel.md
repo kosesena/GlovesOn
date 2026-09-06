@@ -107,5 +107,6 @@ sounds like a network problem and is not.
 definition. `./publish.sh` is what moves it.
 
 **Going back to a process host is cheap.** The code still runs unchanged on an
-always-on machine — Fly.io, Render, a Replit Reserved VM (`.replit` is still in the
-repository). Set `DATABASE_URL` and it works; that is the whole difference.
+always-on machine — Fly.io, Render, a Replit Reserved VM. Set `DATABASE_URL` and it
+works; that is the whole difference, and ADR-0005 records what such a move would buy
+back.

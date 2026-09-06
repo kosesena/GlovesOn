@@ -55,8 +55,8 @@ ENABLE_RESET = env("GLOVESON_ENABLE_RESET", "1") not in ("0", "false", "no")
 if not TOOL_SHARED_SECRET or TOOL_SHARED_SECRET == "degistir-beni-lutfen":
     raise RuntimeError(
         "TOOL_SHARED_SECRET is unset or still the placeholder from .env.example. "
-        "Set it to a value of your own (locally in .env, on Replit in the Secrets "
-        "pane) and make sure the same value is used when you run ./publish.sh."
+        "Set it to a value of your own (locally in .env, on Vercel in the project's "
+        "environment variables) and make sure ./publish.sh runs with the same value."
     )
 
 app = FastAPI(title="GlovesOn Gateway", version="0.2.0")
