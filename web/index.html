@@ -1233,10 +1233,17 @@ function loadAvatar() {
 // bakiyordu. Simdi acilis sayfasi cizildikten SONRA, tarayici bostayken
 // onbellege aliniyor - ilk ekran hala 68 KB odüyor, lobi ise hazir aciliyor.
 function warmAvatar() {
+  // Modul grafiginin TAMAMI sayilmali: character.js'e modulepreload vermek
+  // bagimliliklarini getirmiyor, ve asil agirlik onlarda - three.core.js tek
+  // basina tiklamadan sonra 3.3 saniye indiriyordu.
   const assets = [
     ['prefetch', '/assets/avatar/worker.glb?v=2'],
     ['prefetch', '/assets/avatar/motions.json?v=4'],
     ['modulepreload', '/assets/avatar/character.js?v=26'],
+    ['modulepreload', '/assets/avatar/vendor/three.module.js'],
+    ['modulepreload', '/assets/avatar/vendor/three.core.js'],
+    ['modulepreload', '/assets/avatar/vendor/GLTFLoader.js'],
+    ['modulepreload', '/assets/avatar/vendor/BufferGeometryUtils.js'],
   ];
   for (const [rel, href] of assets) {
     const link = document.createElement('link');
