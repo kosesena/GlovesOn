@@ -451,6 +451,9 @@
   .scenario { background:#e1e4d8; }
   .scenario .warehouse-art { mix-blend-mode:multiply; }
   @media(max-width:600px) { .hero { height:auto; min-height:0; } .hero-copy { width:100%; padding:24px; } .hero h1 { font-size:44px; } .hero-image { position:relative; width:100%; height:320px; } }
+
+.avatar-motion { position:absolute; right:0; top:0; width:54%; height:100%; object-fit:contain; opacity:0; cursor:pointer; }
+@media(max-width:600px){.avatar-motion{top:auto;bottom:0;width:100%;height:320px;}}
 </style>
 </head>
 <body>
@@ -1196,6 +1199,47 @@ const scenarios = {
   reverse: ['Show me the most recent material documents.', 'Choose a receipt, then ask to reverse that document number. Listen to the details and confirm.', 'First post a receipt if the list is empty. A reversal creates a second document and adjusts the stock; the original stays visible.']
 };
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+// Render the greeting against the page, retaining the static avatar on media errors.
+const avatarPhoto = document.querySelector('.hero-image');
+const avatarCanvas = document.createElement('canvas');
+avatarCanvas.width = 512; avatarCanvas.height = 512;
+avatarCanvas.className = 'avatar-motion';
+avatarCanvas.setAttribute('aria-label','Warehouse worker. Tap to wave.');
+avatarCanvas.setAttribute('role','button'); avatarCanvas.tabIndex = 0;
+avatarPhoto.after(avatarCanvas);
+const avatarCtx = avatarCanvas.getContext('2d',{willReadFrequently:true});
+const clips = {};
+for (const [name,url] of Object.entries({idle:'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260906_193128_dd187b93-20ab-44bc-961a-67c2aacf49f9.mp4',wave:'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260907_031327_9503fa1d-8d7f-453e-9ed6-d3ee29c511ba.mp4'})) {
+ const v=document.createElement('video'); v.crossOrigin='anonymous'; v.muted=true; v.playsInline=true; v.preload='none'; v.src=url; v.loop=name==='idle'; clips[name]=v;
+}
+let avatarClip=clips.idle, avatarVisible=false, avatarFrame=0;
+function stopAvatar() { Object.values(clips).forEach(v=>v.pause()); cancelAnimationFrame(avatarFrame); }
+function drawAvatar() {
+ if (avatarClip.paused || document.hidden || !avatarVisible) return;
+ try {
+  avatarCtx.drawImage(avatarClip,0,0,512,512);
+  const frame=avatarCtx.getImageData(0,0,512,512), d=frame.data;
+  const seen=new Uint8Array(512*512), queue=new Int32Array(512*512); let head=0,tail=0;
+  function add(i) { if(i<0||i>=seen.length||seen[i])return; seen[i]=1; const k=i*4; if(d[k]>155&&d[k+1]>130&&d[k+2]>95&&d[k]>=d[k+1]&&d[k+1]>=d[k+2]&&d[k]-d[k+2]<100)queue[tail++]=i; }
+  for(let i=0;i<512;i++){add(i);add(511*512+i);add(i*512);add(i*512+511);}
+  while(head<tail){const i=queue[head++];d[i*4+3]=0;if(i%512)add(i-1);if(i%512<511)add(i+1);add(i-512);add(i+512);}
+  avatarCtx.putImageData(frame,0,0);avatarCanvas.style.opacity='1';avatarPhoto.style.visibility='hidden';
+ } catch { stopAvatar(); avatarCanvas.style.opacity='0'; avatarPhoto.style.visibility='visible'; return; }
+ avatarFrame=requestAnimationFrame(drawAvatar);
+}
+function playAvatar(name) {
+ if(reducedMotion.matches||!avatarVisible||document.hidden)return;
+ stopAvatar();avatarClip=clips[name];if(name==='wave')avatarClip.currentTime=0;
+ avatarClip.play().then(drawAvatar).catch(()=>{avatarPhoto.style.visibility='visible';avatarCanvas.style.opacity='0';});
+}
+function waveAvatar(){if(avatarClip!==clips.wave||avatarClip.ended||avatarClip.paused)playAvatar('wave');}
+avatarCanvas.addEventListener('pointerenter',waveAvatar);avatarCanvas.addEventListener('click',waveAvatar);
+avatarCanvas.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();waveAvatar();}});
+clips.wave.addEventListener('ended',()=>playAvatar('idle'));
+new IntersectionObserver(entries=>{avatarVisible=entries[0].isIntersecting;if(avatarVisible)playAvatar('idle');else stopAvatar();},{threshold:.2}).observe(avatarPhoto);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopAvatar();else if(avatarVisible)playAvatar('idle');});
+reducedMotion.addEventListener('change',()=>{if(reducedMotion.matches){stopAvatar();avatarCanvas.style.opacity='0';avatarPhoto.style.visibility='visible';}else playAvatar('idle');});
+
 document.querySelectorAll('[data-scenario]').forEach(button => {
   button.onclick = () => {
     document.querySelectorAll('[data-scenario]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
