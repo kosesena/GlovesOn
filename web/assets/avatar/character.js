@@ -83,7 +83,10 @@ async function start() {
         if (Math.abs(travelFrom - travelTo) < .05) { resolve(); return; }
         phase = 'walk'; phaseStart = elapsed; play('walk');
         arrival = resolve;
-        setTimeout(() => { if (arrival === resolve) { arrival = null; resolve(); } }, 2600);
+        // Sigorta yuruyus suresinden turuyor: sabit 2600 ms, uzun bir yuruyuste
+        // ekrani karakterden once degistiriyordu.
+        const expect = Math.max(.9, Math.abs(travelTo - travelFrom) / 1.5) * 1000 + 600;
+        setTimeout(() => { if (arrival === resolve) { arrival = null; resolve(); } }, expect);
       });
     };
     hero.append(renderer.domElement, greet);
@@ -123,7 +126,7 @@ async function start() {
         actor.position.y = 0; actor.rotation.z = 0;
       }
       if (phase === 'walk') {
-        const duration = Math.max(1.6, Math.abs(travelTo - travelFrom) / .48);
+        const duration = Math.max(.9, Math.abs(travelTo - travelFrom) / 1.5);
         const t = Math.min(1, (elapsed - phaseStart) / duration);
         actor.position.x = THREE.MathUtils.lerp(travelFrom, travelTo, t);
         const facing = travelTo < travelFrom ? -Math.PI / 2 : Math.PI / 2;
