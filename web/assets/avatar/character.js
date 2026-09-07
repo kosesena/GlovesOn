@@ -21,11 +21,15 @@ async function start() {
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.domElement.className = 'avatar-motion';
+    // Ilk kare hazir olana kadar seffaf: model gec de gelse patlayarak
+    // degil, belirerek giriyor.
+    renderer.domElement.style.opacity = '0';
+    renderer.domElement.style.transition = 'opacity .45s ease';
     renderer.domElement.setAttribute('aria-hidden', 'true');
     renderer.domElement.addEventListener('webglcontextlost', fallback);
     const [gltf, data] = await Promise.all([
-      new GLTFLoader().loadAsync('/assets/avatar/worker.glb'),
-      fetch('/assets/avatar/motions.json?v=3').then(r => { if (!r.ok) throw Error('Motion unavailable'); return r.json(); })
+      new GLTFLoader().loadAsync('/assets/avatar/worker.glb?v=2'),
+      fetch('/assets/avatar/motions.json?v=4').then(r => { if (!r.ok) throw Error('Motion unavailable'); return r.json(); })
     ]);
     if (reduced.matches) { renderer.dispose(); loaded = false; return; }
     const scene = new THREE.Scene();
@@ -134,7 +138,6 @@ async function start() {
       if (touchNow > 0) return;
       phase = 'wave'; phaseStart = elapsed; play('wave');
     }
-    play('idle');
     bubble = document.createElement('p');
     bubble.className = 'avatar-line';
     bubble.textContent = 'Pick an area — I’ll meet you there.';
@@ -216,6 +219,7 @@ async function start() {
         if (phase === 'wave' && elapsed - phaseStart > data.wave.duration) { phase = 'idle'; phaseStart = elapsed; touchClock = TOUCH.period - touchSpan - 2; if (current) { current.stop(); current = null; } }
       }
       renderer.render(scene, camera);
+      if (renderer.domElement.style.opacity === '0') renderer.domElement.style.opacity = '1';
     });
     observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }, { threshold: .1 });
     observer.observe(hero);

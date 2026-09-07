@@ -1225,8 +1225,28 @@ let avatarLoaded = false;
 function loadAvatar() {
   if (avatarLoaded) return;
   avatarLoaded = true;
-  import('/assets/avatar/character.js?v=25').catch(() => {});
+  import('/assets/avatar/character.js?v=26').catch(() => {});
 }
+
+// Indirmeyi tiklamaya baglamak karakteri lobiye gec getiriyordu: 4 MB'lik
+// indirme ancak "vardiyaya basla" dendiginde basliyor, kisi de bos bir odaya
+// bakiyordu. Simdi acilis sayfasi cizildikten SONRA, tarayici bostayken
+// onbellege aliniyor - ilk ekran hala 68 KB odüyor, lobi ise hazir aciliyor.
+function warmAvatar() {
+  const assets = [
+    ['prefetch', '/assets/avatar/worker.glb?v=2'],
+    ['prefetch', '/assets/avatar/motions.json?v=4'],
+    ['modulepreload', '/assets/avatar/character.js?v=26'],
+  ];
+  for (const [rel, href] of assets) {
+    const link = document.createElement('link');
+    link.rel = rel; link.href = href;
+    if (rel === 'prefetch') link.as = 'fetch';
+    document.head.append(link);
+  }
+}
+if ('requestIdleCallback' in window) requestIdleCallback(warmAvatar, { timeout: 4000 });
+else addEventListener('load', () => setTimeout(warmAvatar, 1200));
 
 document.querySelectorAll('[data-scenario]').forEach(button => {
   button.onclick = () => {
