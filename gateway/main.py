@@ -631,3 +631,14 @@ def scenario_image(scene: str) -> FileResponse:
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(WEB_DIR / "assets" / f"{scene}.png",
                         headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/assets/avatar/{filename:path}", include_in_schema=False)
+def avatar_asset(filename: str) -> FileResponse:
+    allowed = {"worker.glb", "motions.json", "character.js",
+               "vendor/three.module.js", "vendor/three.core.js", "vendor/GLTFLoader.js",
+               "vendor/BufferGeometryUtils.js", "vendor/LICENSE"}
+    if filename not in allowed:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    return FileResponse(WEB_DIR / "assets" / "avatar" / filename,
+                        headers={"Cache-Control": "public, max-age=3600"})

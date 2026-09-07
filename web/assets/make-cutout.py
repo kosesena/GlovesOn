@@ -4,10 +4,12 @@ uydurup her pikselde beklenen zemin rengini kestiriyoruz; figur o yuzeyden
 uzaklastigi icin ayrisiyor. Sonra kenarlardan bagli bilesen aliniyor ki
 figurun uzerindeki bej tonlar (karton kutu) silinmesin.
 """
-import os, sys
+import os
+import sys
 from collections import deque
-from PIL import Image, ImageFilter
+
 import numpy as np
+from PIL import Image, ImageFilter
 
 src_path, out_path, tol = sys.argv[1], sys.argv[2], float(sys.argv[3])
 src = Image.open(src_path).convert("RGBA")
@@ -37,22 +39,25 @@ dq = deque()
 for x in range(w):
     for y in (0, h - 1):
         if mask[y, x] and not visited[y, x]:
-            visited[y, x] = True; dq.append((y, x))
+            visited[y, x] = True
+            dq.append((y, x))
 for y in range(h):
     for x in (0, w - 1):
         if mask[y, x] and not visited[y, x]:
-            visited[y, x] = True; dq.append((y, x))
+            visited[y, x] = True
+            dq.append((y, x))
 while dq:
     y, x = dq.popleft()
     for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
         ny, nx = y + dy, x + dx
         if 0 <= ny < h and 0 <= nx < w and mask[ny, nx] and not visited[ny, nx]:
-            visited[ny, nx] = True; dq.append((ny, nx))
+            visited[ny, nx] = True
+            dq.append((ny, nx))
 
 alpha = np.where(visited, 0, 255).astype(np.uint8)
 out = Image.fromarray(np.dstack([a[:, :, :3], alpha]))
 out.putalpha(out.split()[3].filter(ImageFilter.GaussianBlur(1.0)))
 out.save(out_path, optimize=True)
 ys, xs = np.where(alpha > 12)
-print("seffaf %.1f%% · figur %dx%d · %d KB"
-      % (100 * visited.mean(), xs.max()-xs.min(), ys.max()-ys.min(), os.path.getsize(out_path)//1024))
+print(f"seffaf {100 * visited.mean():.1f}% · figur {xs.max()-xs.min()}x{ys.max()-ys.min()}"
+      f" · {os.path.getsize(out_path) // 1024} KB")
