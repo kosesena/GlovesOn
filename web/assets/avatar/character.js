@@ -43,7 +43,7 @@ async function start() {
     const bones = {}; gltf.scene.traverse(o => { if (o.isBone) bones[o.name] = o; });
     const bind = {}; for (const [n, b] of Object.entries(bones)) bind[n] = b.rotation.clone();
     // key: [dx, dy, dz] bind pozuna eklenir. Deneyerek ayarlandi.
-    const restPose = window.__POSE || {
+    const restPose = {
       RightArm:     [ .18,  0,   -.30],
       LeftArm:      [ .18,  0,    .30],
       RightForeArm: [1.28,  .15, -.10],
@@ -52,33 +52,21 @@ async function start() {
       LeftHand:     [ .10,  0,    0  ],
       Spine02:      [ .04,  0,    0  ],
     };
-    // Kulaklik dokunma: her ~10 sn bir sag el kulaga gidip iniyor - depo/cagri
-    // merkezi calisaninin refleksi, karakteri canli tutan kucuk jest.
-    const TOUCH_CYCLE = 10, TOUCH_DUR = 1.7;
-    // Kulaklik dokunma tepe pozu (interaktif bulundu): el yuze/kulaga gelir.
-    const TOUCH_ARM = [-.30, 0, -2.35, 1.15, 0, .35, -.13];
+    // Bekleme pozu: idle klibi ayaklari da hareket ettiriyordu (yerinde
+    // yuruyus). Onun yerine kollar govde onunde kenetli sabit poz + nefes.
+    // (Kulaklik-dokunma jesti denendi ama bu rig'in eklem eksenleri buna
+    //  elverisli degil; el kulaga temiz ulasmadigi icin cikarildi.)
     function applyRest(t) {
       for (const [n, b] of Object.entries(bones)) if (bind[n]) b.rotation.copy(bind[n]);
       for (const [n, d] of Object.entries(restPose)) {
         const b = bones[n]; if (!b) continue;
         b.rotation.x += d[0]; b.rotation.y += d[1]; b.rotation.z += d[2];
       }
-      // Kulaklik dokunma jesti, restPose'un ustune sag kolu override eder.
-      const c = t % TOUCH_CYCLE;
-      if (c < TOUCH_DUR) {
-        const k = Math.sin((c / TOUCH_DUR) * Math.PI);   // 0 -> 1 -> 0
-        const A = TOUCH_ARM;
-        if (bones.RightArm)     { bones.RightArm.rotation.x += A[0]*k; bones.RightArm.rotation.y += A[1]*k; bones.RightArm.rotation.z += A[2]*k; }
-        if (bones.RightForeArm) { bones.RightForeArm.rotation.x += A[3]*k; bones.RightForeArm.rotation.y += A[4]*k; bones.RightForeArm.rotation.z += A[5]*k; }
-        if (bones.Head)         bones.Head.rotation.z += (A[6]||0)*k;
-      }
       // Nefes: gogus ve basta cok hafif salinim.
       if (bones.Spine01) bones.Spine01.rotation.x += Math.sin(t) * .022;
       if (bones.Head)    bones.Head.rotation.x    += Math.sin(t * .9 + 1) * .015;
     }
-    window.__bones = bones;
-    window.__previewPose = (pose) => { window.__POSE = pose; };
-    const actions = Object.fromEntries(Object.entries(data).map(([name, clip]) => [name, mixer.clipAction(THREE.AnimationClip.parse(clip))]));
+        const actions = Object.fromEntries(Object.entries(data).map(([name, clip]) => [name, mixer.clipAction(THREE.AnimationClip.parse(clip))]));
     actions.wave.setLoop(THREE.LoopOnce, 1); actions.wave.clampWhenFinished = true;
     let current, elapsed = 0, phase = 'idle', phaseStart = 0, home = .8, near = .2, travelFrom = .8, travelTo = .2;
     let autoIntro = true, returning = false, arrival = null;
@@ -174,8 +162,6 @@ async function start() {
       renderer.render(scene, camera);
     });
     observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }, { threshold: .1 });
-    window.__avatarDebug = () => ({ visible, phase, elapsed: +elapsed.toFixed(2), x: +actor.position.x.toFixed(3),
-      idleRunning: actions.idle.isRunning(), idleTime: +actions.idle.time.toFixed(2), mixerTime: +mixer.time.toFixed(2) });
     observer.observe(hero);
   } catch (error) { fallback(); console.warn('Avatar fallback:', error.message); }
 }
