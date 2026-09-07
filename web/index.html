@@ -449,7 +449,9 @@
      ayaklarin altindaki golge korundu. Onceden karakter sayfaya konmus bir
      dikdortgenin icinde duruyordu; multiply o beji koyulastirmaktan baska bir
      sey yapmiyordu. Yan fayda: 1.6 MB PNG -> 68 KB WebP. */
-  .hero-image { position:static; inset:auto; flex:0 0 auto; order:2; width:min(38%, 520px); height:auto; align-self:flex-end; object-fit:contain; }
+  /* Yukseklik panele bagli, genislik ondan turuyor: aksi halde genis
+   ekranda figur panelden uzun geliyor ve kafasi kesiliyordu. */
+.hero-image { position:static; inset:auto; flex:0 0 auto; order:2; height:min(92%, 560px); max-width:38%; width:auto; align-self:flex-end; object-fit:contain; object-position:bottom; }
   .hero:after { display:none; }
   .hero-copy { width:52%; padding:36px 5%; }
   .hero-caption,.hero-note { display:none; }
