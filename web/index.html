@@ -1202,14 +1202,27 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 // Render the greeting against the page, retaining the static avatar on media errors.
 const avatarPhoto = document.querySelector('.hero-image');
 const avatarCanvas = document.createElement('canvas');
-avatarCanvas.width = 512; avatarCanvas.height = 512;
+avatarCanvas.width = 1080; avatarCanvas.height = 1080;
 avatarCanvas.className = 'avatar-motion';
 avatarCanvas.setAttribute('aria-label','Warehouse worker. Tap to wave.');
 avatarCanvas.setAttribute('role','button'); avatarCanvas.tabIndex = 0;
 avatarPhoto.after(avatarCanvas);
-const avatarCtx = avatarCanvas.getContext('2d',{willReadFrequently:true});
+const avatarGL = avatarCanvas.getContext('webgl',{alpha:true,premultipliedAlpha:false});
+let avatarProgram, avatarTexture;
+if (avatarGL) {
+ const shader=(type,source)=>{const sh=avatarGL.createShader(type);avatarGL.shaderSource(sh,source);avatarGL.compileShader(sh);if(!avatarGL.getShaderParameter(sh,avatarGL.COMPILE_STATUS))throw new Error('Avatar shader unavailable');return sh;};
+ avatarProgram=avatarGL.createProgram();
+ avatarGL.attachShader(avatarProgram,shader(avatarGL.VERTEX_SHADER,'attribute vec2 p; varying vec2 uv; void main(){uv=vec2((p.x+1.0)*0.5,(1.0-p.y)*0.5);gl_Position=vec4(p,0.0,1.0);}'));
+ avatarGL.attachShader(avatarProgram,shader(avatarGL.FRAGMENT_SHADER,'precision mediump float; varying vec2 uv; uniform sampler2D frame; void main(){vec4 c=texture2D(frame,uv);float blue=c.b-max(c.r,c.g);float a=1.0-smoothstep(0.08,0.38,blue);c.b=min(c.b,max(c.r,c.g)+0.03);gl_FragColor=vec4(c.rgb,a);}'));
+ avatarGL.linkProgram(avatarProgram); avatarGL.useProgram(avatarProgram);
+ const buffer=avatarGL.createBuffer();avatarGL.bindBuffer(avatarGL.ARRAY_BUFFER,buffer);avatarGL.bufferData(avatarGL.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),avatarGL.STATIC_DRAW);
+ const pos=avatarGL.getAttribLocation(avatarProgram,'p');avatarGL.enableVertexAttribArray(pos);avatarGL.vertexAttribPointer(pos,2,avatarGL.FLOAT,false,0,0);
+ avatarTexture=avatarGL.createTexture();avatarGL.bindTexture(avatarGL.TEXTURE_2D,avatarTexture);
+ avatarGL.texParameteri(avatarGL.TEXTURE_2D,avatarGL.TEXTURE_MIN_FILTER,avatarGL.LINEAR);avatarGL.texParameteri(avatarGL.TEXTURE_2D,avatarGL.TEXTURE_MAG_FILTER,avatarGL.LINEAR);
+ avatarGL.texParameteri(avatarGL.TEXTURE_2D,avatarGL.TEXTURE_WRAP_S,avatarGL.CLAMP_TO_EDGE);avatarGL.texParameteri(avatarGL.TEXTURE_2D,avatarGL.TEXTURE_WRAP_T,avatarGL.CLAMP_TO_EDGE);
+}
 const clips = {};
-for (const [name,url] of Object.entries({idle:'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260906_193128_dd187b93-20ab-44bc-961a-67c2aacf49f9.mp4',wave:'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260907_031327_9503fa1d-8d7f-453e-9ed6-d3ee29c511ba.mp4'})) {
+for (const [name,url] of Object.entries({idle:'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260907_032748_337ace76-80f4-4fab-b185-a4824245f7c4.mp4',wave:'https://d8j0ntlcm91z4.cloudfront.net/user_3B5jqzTlShFaOAfvYZsj15OcRk1/hf_20260907_032800_aa210c4a-2911-41fe-867d-e84f89ce7ab6.mp4'})) {
  const v=document.createElement('video'); v.crossOrigin='anonymous'; v.muted=true; v.playsInline=true; v.preload='none'; v.src=url; v.loop=name==='idle'; clips[name]=v;
 }
 let avatarClip=clips.idle, avatarVisible=false, avatarFrame=0;
@@ -1217,13 +1230,13 @@ function stopAvatar() { Object.values(clips).forEach(v=>v.pause()); cancelAnimat
 function drawAvatar() {
  if (avatarClip.paused || document.hidden || !avatarVisible) return;
  try {
-  avatarCtx.drawImage(avatarClip,0,0,512,512);
-  const frame=avatarCtx.getImageData(0,0,512,512), d=frame.data;
-  const seen=new Uint8Array(512*512), queue=new Int32Array(512*512); let head=0,tail=0;
-  function add(i) { if(i<0||i>=seen.length||seen[i])return; seen[i]=1; const k=i*4; if(d[k]>155&&d[k+1]>130&&d[k+2]>95&&d[k]>=d[k+1]&&d[k+1]>=d[k+2]&&d[k]-d[k+2]<100)queue[tail++]=i; }
-  for(let i=0;i<512;i++){add(i);add(511*512+i);add(i*512);add(i*512+511);}
-  while(head<tail){const i=queue[head++];d[i*4+3]=0;if(i%512)add(i-1);if(i%512<511)add(i+1);add(i-512);add(i+512);}
-  avatarCtx.putImageData(frame,0,0);avatarCanvas.style.opacity='1';avatarPhoto.style.visibility='hidden';
+  if(!avatarGL) throw new Error('Avatar rendering unavailable');
+  if(avatarClip.readyState<2){avatarFrame=requestAnimationFrame(drawAvatar);return;}
+  avatarGL.viewport(0,0,1080,1080);
+  avatarGL.bindTexture(avatarGL.TEXTURE_2D,avatarTexture);
+  avatarGL.texImage2D(avatarGL.TEXTURE_2D,0,avatarGL.RGBA,avatarGL.RGBA,avatarGL.UNSIGNED_BYTE,avatarClip);
+  avatarGL.drawArrays(avatarGL.TRIANGLE_STRIP,0,4);
+  avatarCanvas.style.opacity='1';avatarPhoto.style.visibility='hidden';
  } catch { stopAvatar(); avatarCanvas.style.opacity='0'; avatarPhoto.style.visibility='visible'; return; }
  avatarFrame=requestAnimationFrame(drawAvatar);
 }
