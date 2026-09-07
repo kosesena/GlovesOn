@@ -37,6 +37,47 @@ async function start() {
     light.position.set(3, 5, 4); scene.add(light);
     const actor = new THREE.Group(); actor.add(gltf.scene); scene.add(actor);
     const mixer = new THREE.AnimationMixer(gltf.scene);
+    // Bekleme pozu: idle klibi ayaklari da hareket ettiriyordu (yerinde
+    // yuruyus). Onun yerine kollari govde onunde kenetli sabit bir poz tutuyor,
+    // ustune sadece nefes biniyor. Bind rotasyonlarini saklayip ustune delta.
+    const bones = {}; gltf.scene.traverse(o => { if (o.isBone) bones[o.name] = o; });
+    const bind = {}; for (const [n, b] of Object.entries(bones)) bind[n] = b.rotation.clone();
+    // key: [dx, dy, dz] bind pozuna eklenir. Deneyerek ayarlandi.
+    const restPose = window.__POSE || {
+      RightArm:     [ .18,  0,   -.30],
+      LeftArm:      [ .18,  0,    .30],
+      RightForeArm: [1.28,  .15, -.10],
+      LeftForeArm:  [1.28, -.15,  .10],
+      RightHand:    [ .10,  0,    0  ],
+      LeftHand:     [ .10,  0,    0  ],
+      Spine02:      [ .04,  0,    0  ],
+    };
+    // Kulaklik dokunma: her ~10 sn bir sag el kulaga gidip iniyor - depo/cagri
+    // merkezi calisaninin refleksi, karakteri canli tutan kucuk jest.
+    const TOUCH_CYCLE = 10, TOUCH_DUR = 1.7;
+    // Kulaklik dokunma tepe pozu (interaktif bulundu): el yuze/kulaga gelir.
+    const TOUCH_ARM = [-.30, 0, -2.35, 1.15, 0, .35, -.13];
+    function applyRest(t) {
+      for (const [n, b] of Object.entries(bones)) if (bind[n]) b.rotation.copy(bind[n]);
+      for (const [n, d] of Object.entries(restPose)) {
+        const b = bones[n]; if (!b) continue;
+        b.rotation.x += d[0]; b.rotation.y += d[1]; b.rotation.z += d[2];
+      }
+      // Kulaklik dokunma jesti, restPose'un ustune sag kolu override eder.
+      const c = t % TOUCH_CYCLE;
+      if (c < TOUCH_DUR) {
+        const k = Math.sin((c / TOUCH_DUR) * Math.PI);   // 0 -> 1 -> 0
+        const A = TOUCH_ARM;
+        if (bones.RightArm)     { bones.RightArm.rotation.x += A[0]*k; bones.RightArm.rotation.y += A[1]*k; bones.RightArm.rotation.z += A[2]*k; }
+        if (bones.RightForeArm) { bones.RightForeArm.rotation.x += A[3]*k; bones.RightForeArm.rotation.y += A[4]*k; bones.RightForeArm.rotation.z += A[5]*k; }
+        if (bones.Head)         bones.Head.rotation.z += (A[6]||0)*k;
+      }
+      // Nefes: gogus ve basta cok hafif salinim.
+      if (bones.Spine01) bones.Spine01.rotation.x += Math.sin(t) * .022;
+      if (bones.Head)    bones.Head.rotation.x    += Math.sin(t * .9 + 1) * .015;
+    }
+    window.__bones = bones;
+    window.__previewPose = (pose) => { window.__POSE = pose; };
     const actions = Object.fromEntries(Object.entries(data).map(([name, clip]) => [name, mixer.clipAction(THREE.AnimationClip.parse(clip))]));
     actions.wave.setLoop(THREE.LoopOnce, 1); actions.wave.clampWhenFinished = true;
     let current, elapsed = 0, phase = 'idle', phaseStart = 0, home = .8, near = .2, travelFrom = .8, travelTo = .2;
@@ -107,22 +148,15 @@ async function start() {
     renderer.setAnimationLoop(now => {
       const dt = Math.min((now - previous) / 1000, .05); previous = now;
       if (!visible || document.hidden || reduced.matches) return;
-      elapsed += dt; mixer.update(dt);
-      // Nefes sigortasi: idle klibi bir kez durursa karakter sonsuza kadar
-      // cansiz kalir ve bunu fark eden tek sey izleyen insan olur. Dongu
-      // durmus bir idle gorurse yeniden baslatir - tesihs yerine dayaniklilik.
-      if (phase === 'idle' && current === actions.idle && !actions.idle.isRunning()) {
-        actions.idle.reset().setEffectiveWeight(1).play();
-      }
-      // Nefes, klibe emanet degil: idle klibi mixer icinde arada bir oluyor ve
-      // sebebi kutunun derinlerinde. Bu iki satir ise donguden geliyor - dongu
-      // calistigi surece karakter nefes alir. Genlik bilerek kucuk: 2 birim
-      // boyda 8 binde birlik salinim, ekranda ~2 piksel - nefes gibi okunur,
-      // yaylanma gibi degil.
-      if (phase !== 'walk') {
-        actor.position.y = Math.sin(elapsed * 1.6) * .008;
-        actor.rotation.z = Math.sin(elapsed * .8) * .005;
+      elapsed += dt;
+      if (phase === 'idle') {
+        // Klip yok: sabit bekleme pozu + nefes, her karede. Ayaklar bind
+        // pozunda sabit kaldigi icin "yerinde yurume" bitiyor.
+        applyRest(elapsed * 1.6);
+        actor.position.y = Math.sin(elapsed * 1.6) * .006;
+        actor.rotation.z = Math.sin(elapsed * .8) * .004;
       } else {
+        mixer.update(dt);
         actor.position.y = 0; actor.rotation.z = 0;
       }
       if (phase === 'walk') {
@@ -131,11 +165,11 @@ async function start() {
         actor.position.x = THREE.MathUtils.lerp(travelFrom, travelTo, t);
         const facing = travelTo < travelFrom ? -Math.PI / 2 : Math.PI / 2;
         actor.rotation.y = THREE.MathUtils.lerp(actor.rotation.y, facing, Math.min(1, dt * 8));
-        if (t === 1) { phase = 'idle'; phaseStart = elapsed; play('idle');
+        if (t === 1) { phase = 'idle'; phaseStart = elapsed; if (current) { current.stop(); current = null; }
           if (arrival) { const done = arrival; arrival = null; done(); } else if (!returning) wave(); }
       } else {
         actor.rotation.y = THREE.MathUtils.lerp(actor.rotation.y, 0, Math.min(1, dt * 7));
-        if (phase === 'wave' && elapsed - phaseStart > data.wave.duration) { phase = 'idle'; phaseStart = elapsed; play('idle'); }
+        if (phase === 'wave' && elapsed - phaseStart > data.wave.duration) { phase = 'idle'; phaseStart = elapsed; if (current) { current.stop(); current = null; } }
       }
       renderer.render(scene, camera);
     });
