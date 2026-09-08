@@ -630,6 +630,15 @@ def warehouse_composite() -> FileResponse:
     return FileResponse(WEB_DIR / "assets" / "warehouse-composite.svg", media_type="image/svg+xml")
 
 
+# The social card the og:image tag points at. Assets are served by allowlist
+# rather than a static mount, so a file nobody routes is a file nobody sees --
+# and a share card that 404s fails silently in the one place it matters.
+@app.get("/assets/og-card.jpg", include_in_schema=False)
+def og_card() -> FileResponse:
+    return FileResponse(WEB_DIR / "assets" / "og-card.jpg", media_type="image/jpeg",
+                        headers={"Cache-Control": "public, max-age=86400"})
+
+
 @app.get("/assets/{scene}.png", include_in_schema=False)
 def scenario_image(scene: str) -> FileResponse:
     if scene not in {"warehouse-3d", "warehouse-interior", "hero-scene"}:
