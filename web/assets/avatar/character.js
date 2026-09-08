@@ -221,7 +221,7 @@ async function start() {
       // .88'de ise sol kenara sadece 0.36 m kaliyordu ve kol panel sinirinda
       // kesiliyordu. Bedeli figurun ~50 piksel saga kaymasi; sol bosluk 278
       // piksel oldugu icin hala kendi seridinde ve ilk kartin uzaginda.
-      home = -camera.right * .78; near = home;
+      home = Math.max(-camera.right * .78, camera.left + .62); near = home;
       if (phase === 'idle' && !arrival) actor.position.x = home;
     }
     resizeObserver = new ResizeObserver(resize); resizeObserver.observe(hero); resize();
