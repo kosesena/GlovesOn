@@ -711,7 +711,8 @@ body:not(.in-warehouse) > .hero { background:transparent; border-radius:0; margi
 
 body.in-warehouse { background:#ede7da; }
 #warehouseTasks { padding:28px; border-radius:24px; background:#f7f3eaf2; margin-top:24px; }
-.warehouse-shell:has(#warehouseTasks:not([hidden])) { min-height:100svh; background:linear-gradient(#eee6d9b3,#eee6d9b3),url('/assets/warehouse-composite.svg') center/cover; }
+.warehouse-shell:has(#warehouseTasks:not([hidden])),
+.warehouse-shell:has(#warehouseWork:not([hidden])) { min-height:100svh; background:linear-gradient(#eee6d9b3,#eee6d9b3),url('/assets/warehouse-composite.svg') center/cover; }
 #warehouseTasks .shift-heading h3 { font-size:28px; }
 #warehouseTasks .floor,#warehouseTasks #floorHint { display:none; }
 .custom-task-row { display:flex; gap:12px; align-items:center; }
@@ -2005,6 +2006,10 @@ const areaTitles = {receiving:'Receiving bay',storage:'Storage aisles',review:'R
 let warehouseStage = 'lobby';
 let areaTransition = 0;
 let warehouseAreaKey = 'receiving';
+function warehouseTaskCount(key) {
+  return [...document.querySelectorAll('[data-scenario]')].filter(b => areaFor[b.dataset.scenario] === key).length
+    + savedTasks.filter(t => areaFor[t.action] === key).length;
+}
 function showWarehouseStage(stage) {
   if (stage === 'area') stage = 'tasks';
   const lookup = stage === 'work' && warehouseAreaKey === 'storage';
@@ -2024,7 +2029,7 @@ function showWarehouseStage(stage) {
     document.querySelector('.shift-heading p').textContent = 'Choose a task to start your voice session.';
   }
   for (const [id,key] of [['warehouseLobby','lobby'],['warehouseArea','area'],['warehouseTasks','tasks'],['warehouseWork','work']]) document.getElementById(id).hidden = stage !== key;
-  document.getElementById('warehouseBack').textContent = stage === 'lobby' ? '← Back to site' : stage === 'tasks' ? '← Warehouse' : '← '+areaTitles[warehouseAreaKey];
+  document.getElementById('warehouseBack').textContent = stage === 'lobby' ? '← Back to site' : stage === 'tasks' || warehouseTaskCount(warehouseAreaKey) === 1 ? '← Warehouse' : '← '+areaTitles[warehouseAreaKey];
   document.getElementById('warehouseCrumb').textContent = 'PLANT 1000 / '+(stage === 'lobby' ? 'WAREHOUSE' : areaTitles[warehouseAreaKey].toUpperCase());
   window.scrollTo({top:0,behavior:'instant'});
 }
@@ -2185,7 +2190,7 @@ document.getElementById('customTasks').addEventListener('click',event => {
 });
 document.getElementById('warehouseBack').onclick = () => {
   if (warehouseStage === 'lobby') location.hash = 'top';
-  else showWarehouseStage(warehouseStage === 'tasks' ? 'lobby' : 'tasks');
+  else showWarehouseStage(warehouseStage === 'tasks' || warehouseTaskCount(warehouseAreaKey) === 1 ? 'lobby' : 'tasks');
 };
 document.getElementById('warehouseCreate').onclick = () => scenarioDialog.showModal();
 scenarioForm.addEventListener('submit',() => {
