@@ -3,13 +3,16 @@ import asyncio
 import json
 import os
 import sys
-from pathlib import Path
 import unittest
+from pathlib import Path
 from unittest.mock import patch
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault('TOOL_SHARED_SECRET', 'scope-test-secret')
-from gateway import main, session_scope
 import httpx
+
+from gateway import main, session_scope
+
 
 class ScopeRouteTests(unittest.IsolatedAsyncioTestCase):
     async def test_concurrent_requests_and_streams_are_isolated(self):
@@ -39,4 +42,5 @@ class ScopeRouteTests(unittest.IsolatedAsyncioTestCase):
                 # No event already delivered at id 1 can be replayed.
                 self.assertNotIn('id: 1\n',resumed.text)
 
-if __name__ == '__main__': unittest.main()
+if __name__ == '__main__':
+    unittest.main()

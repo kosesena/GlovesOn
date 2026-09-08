@@ -1,7 +1,8 @@
 import importlib.util
 import json
-from pathlib import Path
 import unittest
+from pathlib import Path
+
 root = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('scoped', root / 'gateway/scoped_agent.py')
 scoped = importlib.util.module_from_spec(spec)
@@ -15,13 +16,16 @@ class ScopedAgentTests(unittest.TestCase):
         b = scoped.build(template, 'https://example.com', 'test-only', 'scope-b')
         self.assertEqual(json.dumps(template), original)
         self.assertEqual(a['system_prompt'], template['system_prompt'])
-        for ta, tb in zip(a['tools'], b['tools']):
+        for ta, tb in zip(a['tools'], b['tools'], strict=True):
             self.assertEqual(ta['parameters'], tb['parameters'])
             self.assertNotEqual(ta['http']['headers'][-1], tb['http']['headers'][-1])
             self.assertEqual(ta['http']['headers'][0]['value'], 'test-only')
     def test_refuses_missing_credentials(self):
-        with self.assertRaises(ValueError): scoped.build({}, 'https://example.com', '', 'scope')
+        with self.assertRaises(ValueError):
+            scoped.build({}, 'https://example.com', '', 'scope')
     def test_refuses_insecure_destination(self):
-        with self.assertRaises(ValueError): scoped.build({}, 'http://example.com', 'test-only', 'scope')
+        with self.assertRaises(ValueError):
+            scoped.build({}, 'http://example.com', 'test-only', 'scope')
 
-if __name__ == '__main__': unittest.main()
+if __name__ == '__main__':
+    unittest.main()

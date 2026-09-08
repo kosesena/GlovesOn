@@ -18,18 +18,18 @@ from __future__ import annotations
 import asyncio
 import hmac
 import json
-from contextvars import ContextVar
 import secrets
 import time
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
 
 import httpx
-from fastapi import Request, Body, FastAPI, Header, HTTPException, Query
+from fastapi import Body, FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import FileResponse, StreamingResponse
 
-from . import confirmation, session_scope, scoped_agent, audit, live, sap_client, sap_mock, store
+from . import audit, confirmation, live, sap_client, sap_mock, scoped_agent, session_scope, store
 from .sap_client import SapClient, SapError, env
 from .store import norm_matnr, pretty_matnr
 

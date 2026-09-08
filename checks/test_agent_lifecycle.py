@@ -1,7 +1,9 @@
 """Provider failures simulated over HTTP; no network, database or ERP writes."""
 import unittest
 from unittest.mock import patch
+
 import httpx
+
 from gateway import main, session_scope
 
 
@@ -49,10 +51,17 @@ class AgentLifecycleTests(unittest.IsolatedAsyncioTestCase):
                 return httpx.Response(201, json={'id': 'new-temp'})
             return httpx.Response(204)
         original_client = httpx.AsyncClient
-        factory = lambda **kw: original_client(transport=httpx.MockTransport(respond), **kw)
-        with patch.object(main.httpx, 'AsyncClient', factory), patch.object(main, 'ASSEMBLYAI_API_KEY', 'test'), patch.object(main.live, 'voice_budget_left', return_value=1), patch.object(main.live, 'mint_session'), patch.object(main.live, 'agents_to_clean', return_value=[]), patch.object(main.live, 'save_agent', side_effect=RuntimeError('DB unavailable')), patch.object(main.scoped_agent, 'build', return_value={}):
-            with self.assertRaisesRegex(RuntimeError, 'DB unavailable'):
-                await main.voice_token()
+        def factory(**kw):
+            return original_client(transport=httpx.MockTransport(respond), **kw)
+        with (patch.object(main.httpx, 'AsyncClient', factory),
+              patch.object(main, 'ASSEMBLYAI_API_KEY', 'test'),
+              patch.object(main.live, 'voice_budget_left', return_value=1),
+              patch.object(main.live, 'mint_session'),
+              patch.object(main.live, 'agents_to_clean', return_value=[]),
+              patch.object(main.live, 'save_agent', side_effect=RuntimeError('DB unavailable')),
+              patch.object(main.scoped_agent, 'build', return_value={}),
+              self.assertRaisesRegex(RuntimeError, 'DB unavailable')):
+            await main.voice_token()
         self.assertIn(('DELETE', '/v1/agents/new-temp'), requests)
 
     async def test_empty_cleanup_is_idempotent(self):

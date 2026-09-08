@@ -1,7 +1,7 @@
 """Pure routing tests; intentionally independent of database-reset fixtures."""
 import importlib.util
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 spec = importlib.util.spec_from_file_location('scope', Path(__file__).resolve().parents[1] / 'gateway/session_scope.py')
 scope = importlib.util.module_from_spec(spec)
