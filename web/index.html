@@ -659,6 +659,8 @@ body:not(.in-warehouse) > .hero { height:calc(100svh - 84px); min-height:480px; 
 .hero-hackathon { display:block; margin-top:8px; font-size:11px; line-height:1.5; color:#49553e; }
 
 .landing-hackathon { position:fixed; bottom:14px; left:0; width:100%; text-align:center; font-size:11px; line-height:1.5; color:#394631; pointer-events:none; z-index:2; }
+.landing-hackathon .proof { color:#2f3a29; }
+.landing-hackathon .proof strong { font-weight:650; }
 body.in-warehouse .landing-hackathon { display:none; }
 /* Below the poster breakpoint the figure runs to the bottom of the hero, so a
    viewport-pinned credit line printed across her legs. In the flow it sits
@@ -761,7 +763,11 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 }
 .eyebrow-credit { display:none; }
 .hero-chip { display:none; }
-@media(min-width:1100px) {
+/* The chips are the poster's substitute for the value-proposition sentence,
+   which is hidden from 901px up. At 1100 they arrived 200px too late: between
+   901 and 1099 the hero showed neither, and nothing on the screen said what
+   the product does. */
+@media(min-width:901px) {
  body:not(.in-warehouse) .hero-chip { display:block; position:absolute; top:auto; bottom:90px; z-index:4;
    font:13px var(--mono); letter-spacing:.04em; color:#20241f;
    background:#fffdf7; border:1px solid #ded5c2; padding:12px 18px;
@@ -805,13 +811,14 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
     <div class="hero-attribution">Powered by <strong>AssemblyAI</strong></div>
   </div>
   <div class="hero-chip hero-chip-talk" aria-hidden="true">“Received forty M8 bolts.”</div>
-  <div class="hero-chip hero-chip-doc" aria-hidden="true">DOC 4923041877 · POSTED ✓</div>
+  <div class="hero-chip hero-chip-doc" aria-hidden="true">SAP DOC 4923041877 · POSTED ✓</div>
   <div class="hero-caption">01 / THE RECEIVING FLOOR</div>
 </div>
 <!-- Declared after the hero, not before the nav: below 901px this line leaves
      fixed positioning and falls back into the flow, and from up there it would
-     have landed above the logo. -->
-<div class="landing-hackathon">AssemblyAI Voice Agent Hackathon · 2026</div>
+     have landed above the logo. Wording is .trust-line's, verbatim — that
+     block is hidden in every state, so the claim had nowhere else to live. -->
+<div class="landing-hackathon"><span class="proof">Goods receipt · Stock · Reversal — <strong>SAP OData</strong> · Demo environment</span> · AssemblyAI Voice Agent Hackathon · 2026</div>
 <div class="trust-line"><span>VOICE POWERED BY <strong>AssemblyAI</strong></span><span>GOODS RECEIPT · STOCK · REVERSAL</span><span><strong>SAP OData</strong> · Demo environment</span></div>
 <div class="demo-intro" id="demo"><div><div class="eyebrow">Step onto the receiving floor</div><h2>Your voice. A recorded result.</h2></div><p>Choose a scenario, then start talking. Follow your conversation through to the material document.</p></div>
 <section class="warehouse-shell" id="warehouseShell" hidden aria-label="Interactive warehouse">
