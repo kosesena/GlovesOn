@@ -736,8 +736,11 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
    z-order alone — the copy must NOT form a stacking context (no position,
    no transform), so the static h1 text paints under the z:2 figure while
    the em, positioned at z:3, paints over her. The one-line value prop is
-   the poster's price: it shows only below 901px, where the layout stacks;
-   on the wide poster the two proof chips carry the concrete story. */
+   the poster's price: it shows only below 901px, where the layout stacks.
+   The wide poster carries no side copy at all — corner chips were tried
+   (sample utterance, doc number, read-back promise) and every version read
+   as clutter against the single figure; the concrete story lives in the
+   credit line under the poster and on the how-it-works page. */
 @media(min-width:901px) {
  /* Shorter than the generic landing hero: the absolute CTA at bottom:40 was
     landing on the fixed hackathon credit line on 800px-tall screens. */
@@ -762,19 +765,6 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
  body:not(.in-warehouse) .hero-actions button { box-shadow:0 10px 26px rgba(36,75,53,.25); }
 }
 .eyebrow-credit { display:none; }
-.hero-chip { display:none; }
-/* The chips are the poster's substitute for the value-proposition sentence,
-   which is hidden from 901px up. At 1100 they arrived 200px too late: between
-   901 and 1099 the hero showed neither, and nothing on the screen said what
-   the product does. */
-@media(min-width:901px) {
- body:not(.in-warehouse) .hero-chip { display:block; position:absolute; top:auto; bottom:90px; z-index:4;
-   font:13px var(--mono); letter-spacing:.04em; color:#20241f;
-   background:#fffdf7; border:1px solid #ded5c2; padding:12px 18px;
-   box-shadow:0 8px 22px rgba(138,113,83,.19); }
- body:not(.in-warehouse) .hero-chip-talk { left:9vw; transform:rotate(-3deg); border-radius:16px 16px 16px 4px; }
- body:not(.in-warehouse) .hero-chip-doc { right:8.5vw; transform:rotate(2.5deg); color:#244b35; font-weight:700; border-radius:16px 16px 4px 16px; }
-}
 
  .hero-depth-outline { display:none; }
 @media(min-width:901px) { body:not(.in-warehouse) > .hero { overflow:visible; } }
@@ -815,8 +805,6 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
     <div class="hero-actions"><button class="hero-start" id="heroStart">Start your shift ↗</button></div>
     <div class="hero-attribution">Powered by <strong>AssemblyAI</strong></div>
   </div>
-  <div class="hero-chip hero-chip-talk" aria-hidden="true">“Received forty M8 bolts.”</div>
-  <div class="hero-chip hero-chip-doc" aria-hidden="true">SAP DOC 4923041877 · POSTED ✓</div>
   <div class="hero-caption">01 / THE RECEIVING FLOOR</div>
 </div>
 <!-- Declared after the hero, not before the nav: below 901px this line leaves
