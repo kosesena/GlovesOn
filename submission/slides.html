@@ -1,0 +1,257 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>GlovesOn — deck</title>
+<style>
+ @page { size: 13.333in 7.5in; margin: 0; }
+ *{ margin:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+ :root{
+   --cream:#f6e5ce; --ground:#f4ead6; --ink:#20241f; --green:#244b35; --orange:#ce5428;
+   --muted:#5c6552; --line:#d8cdb6; --paper:#fffdf7;
+   --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+   --sans:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
+   /* dark console tokens, from the app's warehouse mode */
+   --dbg:#151b18; --dpanel:#19201c; --dpanel2:#222c25; --dline:#344039;
+   --dtext:#edf1e8; --dmuted:#a1ada3; --daccent:#b9edc9;
+ }
+ html,body{ font-family:var(--sans); color:var(--ink); }
+ .slide{
+   position:relative; width:13.333in; height:7.5in; overflow:hidden;
+   padding:0.72in 0.86in; page-break-after:always; break-after:page;
+   background:radial-gradient(1200px 760px at 40% 32%,#faf0dd,#f6e5ce 66%,#efd9b9);
+   display:flex; flex-direction:column;
+ }
+ .slide:last-child{ page-break-after:auto; }
+ .tag{ position:absolute; top:0.5in; right:0.6in; font:9px var(--mono); letter-spacing:.14em; color:#9a8f78; }
+ .kicker{ font:12px var(--mono); letter-spacing:.16em; color:#7a6a4a; text-transform:uppercase;
+   display:flex; align-items:center; gap:11px; }
+ .kicker:before{ content:''; width:8px; height:8px; border-radius:50%; background:var(--orange); flex:none; }
+ h1{ font-weight:650; letter-spacing:-.045em; line-height:.98; }
+ h2{ font-weight:650; letter-spacing:-.03em; line-height:1.02; font-size:50px; }
+ .lede{ color:var(--muted); font-size:22px; line-height:1.5; }
+ b.g{ color:var(--green); } b.o{ color:var(--orange); }
+ .foot{ position:absolute; left:0.86in; bottom:0.5in; font:10px var(--mono); letter-spacing:.06em; color:#9a8f78; }
+ .src{ font:9px var(--mono); color:#a99e86; letter-spacing:.04em; }
+
+ /* cover */
+ .cover{ padding:0; }
+ .cover img{ width:100%; height:100%; object-fit:cover; }
+
+ /* the read-back exchange, reused on 3 */
+ .xchg{ background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:26px 30px;
+   font:19px/1.75 var(--mono); color:var(--ink); box-shadow:0 10px 30px rgba(138,113,83,.14); }
+ .xchg .r{ color:var(--muted); }
+ .xchg .r b{ display:inline-block; width:58px; color:#98a08a; font:600 11px var(--mono); letter-spacing:.14em; vertical-align:1px; }
+ .xchg .out{ margin-top:14px; padding-top:14px; border-top:1px solid var(--line); color:var(--green); font-weight:600; }
+
+ /* dark console card, slides 4 + 5 */
+ .console{ background:var(--dbg); border-radius:14px; color:var(--dtext); overflow:hidden;
+   box-shadow:0 20px 50px rgba(20,27,24,.28); border:1px solid var(--dline); }
+ .console .top{ display:flex; align-items:center; gap:12px; padding:14px 20px; border-bottom:1px solid var(--dline);
+   font:11px var(--mono); letter-spacing:.1em; color:var(--dmuted); }
+ .console .top .dot{ width:8px; height:8px; border-radius:50%; background:var(--daccent); box-shadow:0 0 10px var(--daccent); }
+ .console .body{ display:grid; grid-template-columns:1fr 1fr; }
+ .console .col{ padding:20px 22px; }
+ .console .col+.col{ border-left:1px solid var(--dline); }
+ .console .lbl{ font:10px var(--mono); letter-spacing:.14em; color:var(--dmuted); margin-bottom:12px; }
+ .say{ font:16px/1.5 var(--mono); color:var(--dtext); }
+ .say .q{ color:#fff; } .say .g{ color:var(--daccent); }
+ .doc{ background:var(--paper); color:var(--ink); border-radius:10px; padding:16px 18px; font:13px/1.7 var(--mono); }
+ .doc .stamp{ display:inline-block; margin-top:8px; padding:3px 10px; border:1.5px solid var(--green); color:var(--green);
+   border-radius:5px; font-weight:700; letter-spacing:.08em; transform:rotate(-3deg); }
+ .doc .row{ display:flex; justify-content:space-between; gap:16px; }
+ .doc .row span:first-child{ color:#7d857a; }
+
+ /* four-point discipline list */
+ .pts{ display:grid; gap:26px; margin:auto 0; }
+ .pt{ display:flex; gap:16px; align-items:flex-start; }
+ .pt .n{ flex:none; width:30px; height:30px; border-radius:8px; background:var(--green); color:#fffaf0;
+   display:grid; place-items:center; font:600 14px var(--mono); }
+ .pt b{ font-size:20px; } .pt p{ color:var(--muted); font-size:15px; line-height:1.45; margin-top:2px; }
+
+ /* chips, slide 7 */
+ .chips{ display:flex; flex-wrap:wrap; gap:12px; }
+ .chip{ background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:12px 16px;
+   font:14px var(--mono); color:var(--ink); }
+ .chip b{ color:var(--green); }
+
+ /* two columns, slide 8 */
+ .cols{ display:grid; grid-template-columns:1fr 1fr; gap:26px; }
+ .card{ background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:26px 28px; }
+ .card h3{ font-size:22px; letter-spacing:-.02em; margin-bottom:10px; }
+ .card p{ color:var(--muted); font-size:16px; line-height:1.5; }
+ .card .who{ font:10px var(--mono); letter-spacing:.12em; color:var(--orange); text-transform:uppercase; margin-bottom:14px; }
+
+ /* metric row, slide 9 */
+ .mrow{ display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+ .metric{ background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:26px; }
+ .metric .big{ font-size:40px; font-weight:650; letter-spacing:-.03em; color:var(--green); }
+ .metric .big.o{ color:var(--orange); }
+ .metric .cap{ color:var(--muted); font-size:14px; line-height:1.4; margin-top:8px; }
+
+ /* limits, slide 10 */
+ .lim{ display:grid; gap:22px; margin:auto 0; }
+ .lim .row{ display:flex; gap:14px; align-items:flex-start; font-size:17px; line-height:1.4; }
+ .lim .row:before{ content:'—'; color:var(--orange); font-weight:700; }
+ .lim .row b{ color:var(--ink); } .lim .row span{ color:var(--muted); }
+
+ /* close links */
+ .links{ display:flex; gap:14px; flex-wrap:wrap; }
+ .link{ background:var(--green); color:#fffaf0; border-radius:12px; padding:14px 22px; font:15px var(--sans); font-weight:600; }
+ .link.ghost{ background:transparent; color:var(--green); border:1.5px solid #b9c3b0; }
+</style></head><body>
+
+<!-- 1 · COVER -->
+<section class="slide cover"><img src="cover-16x9.jpg" alt="GlovesOn"></section>
+
+<!-- 2 · PROBLEM -->
+<section class="slide"><span class="tag">02 · THE PROBLEM</span>
+ <div class="kicker">The receiving floor</div>
+ <h1 style="font-size:74px;margin:26px 0 34px">Every delivery has to<br>end up in SAP.</h1>
+ <div class="lede" style="max-width:19ch">A pallet lands. Both hands are on the box, gloves on. Until that delivery is a
+   document, the company does not know it owns the goods —<br><b class="g">purchasing chases it, production plans without it.</b></div>
+ <div style="margin-top:auto"><div class="lede" style="color:var(--ink);font-weight:600;font-size:24px">Today that costs a walk: gloves off, to a shared terminal. <b class="o">Every delivery.</b></div></div>
+ <div class="foot">GlovesOn · AssemblyAI Voice Agent Hackathon · 2026</div>
+</section>
+
+<!-- 3 · SOLUTION -->
+<section class="slide"><span class="tag">03 · THE SOLUTION</span>
+ <div class="kicker">Say it. It posts.</div>
+ <h1 style="font-size:60px;margin:24px 0 30px">One spoken sentence<br>becomes a real document.</h1>
+ <div class="xchg" style="max-width:9.6in">
+   <div class="r"><b>YOU</b>“Forty M8 bolts arrived.”</div>
+   <div class="r" style="color:var(--green)"><b style="color:#8aa891">GUIDE</b>“Forty pieces of hex bolt M8x40 into bin A-03-02 — confirm?”</div>
+   <div class="r"><b>YOU</b>“Yes.”</div>
+   <div class="out">→ Goods receipt posted · through SAP’s released OData API · stock moves on screen</div>
+ </div>
+ <div class="lede" style="margin-top:26px;font-size:20px">Hands never leave the box. The screen is gone from the loop.</div>
+ <div class="foot">GlovesOn · AssemblyAI Voice Agent Hackathon · 2026</div>
+</section>
+
+<!-- 4 · SEE IT WORK -->
+<section class="slide"><span class="tag">04 · SEE IT WORK</span>
+ <div class="kicker">A confirmed write, live</div>
+ <h2 style="margin:22px 0 26px;font-size:40px">Every number on screen is real.</h2>
+ <div class="console">
+   <div class="top"><span class="dot"></span>GLOVESON · PLANT 1000 / RECEIVING · DEMO</div>
+   <div class="body">
+     <div class="col">
+       <div class="lbl">CONVERSATION</div>
+       <div class="say"><span class="q">“Post a goods receipt, forty pieces of forty-seven eleven.”</span><br><br>
+         <span class="g">“Forty pieces of hex bolt M8x40 into bin A-03-02 — confirm?”</span><br><br>
+         <span class="q">“Confirm.”</span></div>
+     </div>
+     <div class="col">
+       <div class="lbl">YOUR RESULT</div>
+       <div class="doc">
+         <div class="row"><span>Document</span><b>4900000123</b></div>
+         <div class="row"><span>Material</span><b>4711 · Hex Bolt M8x40</b></div>
+         <div class="row"><span>Movement</span><b>501</b></div>
+         <div class="row"><span>Quantity</span><b>40 EA → bin A-03-02</b></div>
+         <div class="row"><span>Stock</span><b>240 → 280</b></div>
+         <span class="stamp">POSTED ✓</span>
+       </div>
+     </div>
+   </div>
+ </div>
+ <div class="lede" style="margin-top:22px;font-size:18px">The read-back names the <b class="g">description</b>, not just the number — which is what lets a worker catch they are holding nuts, not bolts.</div>
+ <div class="foot">Replace with a GIF of the live demo before submitting.</div>
+</section>
+
+<!-- 5 · DISCIPLINE -->
+<section class="slide"><span class="tag">05 · THE DISCIPLINE</span>
+ <div class="kicker">A write you can trust</div>
+ <h2 style="margin:22px 0 30px">Four guardrails, each one deliberate.</h2>
+ <div class="pts">
+   <div class="pt"><span class="n">1</span><div><b>The read-back names four things.</b><p>Quantity, unit, material description, bin. The description is load-bearing.</p></div></div>
+   <div class="pt"><span class="n">2</span><div><b>Nothing posts without a spoken yes.</b><p><code style="font-family:var(--mono);color:var(--green)">execution_mode: hold</code> — the agent waits for the ERP instead of narrating success.</p></div></div>
+   <div class="pt"><span class="n">3</span><div><b>A duplicate is refused.</b><p>The same receipt within two minutes is caught — by a guard in the gateway, because real S/4HANA would accept it twice.</p></div></div>
+   <div class="pt"><span class="n">4</span><div><b>Nothing is deleted — it is reversed.</b><p>A wrong receipt gets a reversal document (102 against a 101). Both stay; the audit trail ties each to its spoken confirmation.</p></div></div>
+ </div>
+ <div class="foot">Reasoning in full: docs/adr/0002-confirm-before-write.md</div>
+</section>
+
+<!-- 6 · ARCHITECTURE -->
+<section class="slide"><span class="tag">06 · ARCHITECTURE</span>
+ <div class="kicker">The agent never sees SAP</div>
+ <h2 style="margin:20px 0 22px;font-size:40px">One boundary carries every guardrail.</h2>
+ <div style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:26px 30px;text-align:center">
+   <img src="architecture.svg" style="width:100%;max-height:3.1in;object-fit:contain" alt="architecture">
+ </div>
+ <div class="lede" style="margin-top:auto;font-size:19px">It speaks in warehouse terms; the gateway owns auth, SAP field translation and every write guardrail. Swapping the mock for a real tenant is <b class="g">one environment variable</b> — there is no second code path.</div>
+ <div class="foot">docs/adr/0001 · docs/adr/0003</div>
+</section>
+
+<!-- 7 · ASSEMBLYAI -->
+<section class="slide"><span class="tag">07 · BUILT ON ASSEMBLYAI</span>
+ <div class="kicker">The whole voice loop is the Voice Agent API</div>
+ <h2 style="margin:22px 0 30px">One connection: speech, reasoning, voice, tools.</h2>
+ <div class="chips">
+   <div class="chip">Streaming <b>speech-to-text</b></div>
+   <div class="chip">LLM routing</div>
+   <div class="chip">Voice output</div>
+   <div class="chip">Turn-taking &amp; VAD</div>
+   <div class="chip"><b>JSON-Schema</b> HTTP tools</div>
+   <div class="chip"><b>execution_mode: hold</b> on both writes</div>
+   <div class="chip">transcription_prompt</div>
+   <div class="chip">56 keyterms → SAP material numbers</div>
+   <div class="chip">Barge-in</div>
+   <div class="chip">Session token minted server-side</div>
+ </div>
+ <div class="lede" style="margin-top:34px;font-size:17px">Turn detection is pinned (<b class="g">800 / 2000&nbsp;ms</b>) for non-native speakers — adaptive pacing is deliberately off, so we do not claim per-speaker adaptation.</div>
+ <div class="foot">agent/agent.json · docs/assemblyai-notlari.md</div>
+</section>
+
+<!-- 8 · WHY IT DOESN'T EXIST -->
+<section class="slide"><span class="tag">08 · WHY THIS IS NEW</span>
+ <div class="kicker">Everyone else voice-guides planned work</div>
+ <h2 style="margin:20px 0 26px;font-size:40px">The unplanned pallet has no voice path.</h2>
+ <div class="cols">
+   <div class="card"><div class="who">The incumbents</div><h3>Honeywell · Lydia · Ivanti</h3><p>The WMS issues the task; the worker answers fixed prompts. Decades of it. But a worker cannot <i>initiate</i> a document by describing it.</p></div>
+   <div class="card"><div class="who">SAP itself</div><h3>Joule</h3><p>Posts and reverses goods movements — by <b>chat</b>, today. Real-time voice announced for its top cloud tiers, GA planned H2 2026.</p></div>
+ </div>
+ <div class="lede" style="margin-top:26px;color:var(--ink);font-weight:600;font-size:23px">GlovesOn is the unplanned moment — by voice, today.</div>
+ <div class="foot"><span class="src">sources with bias tags: docs/market.md §1–2</span></div>
+</section>
+
+<!-- 9 · MARKET + COST -->
+<section class="slide"><span class="tag">09 · MARKET &amp; COST</span>
+ <div class="kicker">An established budget line</div>
+ <h2 style="margin:20px 0 30px">Zero per-seat hardware against a $5,000 norm.</h2>
+ <div class="mrow">
+   <div class="metric"><div class="big">$4.8–6.5B</div><div class="cap">voice-directed warehousing today · ~14–17%/yr (analyst estimates, cited as a range)</div></div>
+   <div class="metric"><div class="big">~$5,000</div><div class="cap">incumbent cost per user, hardware + software</div></div>
+   <div class="metric"><div class="big o">$0.00</div><div class="cap">GlovesOn per-seat hardware — a browser and a headset. Voice: $0.075/connected min.</div></div>
+ </div>
+ <div class="lede" style="margin-top:auto;font-size:16px">No ROI figure is quoted — session length per receipt is unmeasured (docs/nfr.md §5). <span class="src">market numbers: docs/market.md §4</span></div>
+ <div class="foot">GlovesOn · AssemblyAI Voice Agent Hackathon · 2026</div>
+</section>
+
+<!-- 10 · LIMITS -->
+<section class="slide"><span class="tag">10 · HONEST LIMITS</span>
+ <div class="kicker">Named, not hidden</div>
+ <h2 style="margin:22px 0 30px">What this does not do yet.</h2>
+ <div class="lim">
+   <div class="row"><span><b>The posting is made by a service user, not the worker</b> — SAP cannot yet say who did it. The missing Clean Core piece: principal propagation.</span></div>
+   <div class="row"><span><b>Noise robustness is untested</b> — voice_focus is not yet enabled, on a floor that is loud by definition.</span></div>
+   <div class="row"><span><b>The demo serves one session at a time</b>, by design.</span></div>
+   <div class="row"><span><b>Turkish is understood on input</b>, but the agent cannot answer in Turkish yet (TTS support pending).</span></div>
+ </div>
+ <div class="lede" style="margin-top:30px;font-size:17px">Naming the gap is the credibility. All four are written up in the repo.</div>
+ <div class="foot">docs/clean-core.md · docs/nfr.md</div>
+</section>
+
+<!-- 11 · CLOSE -->
+<section class="slide"><span class="tag">11</span>
+ <div class="kicker">GlovesOn</div>
+ <h1 style="font-size:52px;margin:26px 0 24px;max-width:16ch">A voice agent that writes to a system of record — and treats the write with the care that deserves.</h1>
+ <div class="links" style="margin-top:14px">
+   <span class="link">Live demo · gloveson.vercel.app</span>
+   <span class="link ghost">GitHub repository</span>
+   <span class="link ghost">Judge guide — every claim → a file &amp; a command</span>
+ </div>
+ <div style="margin-top:auto;display:flex;align-items:center;gap:14px">
+   <span style="width:44px;height:44px;border-radius:11px;background:linear-gradient(150deg,#f0803e,#d8542a);display:grid;place-items:center;color:#fff;font-size:22px">↗</span>
+   <span style="font-weight:700;font-size:22px;letter-spacing:-.02em">GlovesOn</span>
+   <span class="src" style="margin-left:auto;font-size:11px">AssemblyAI Voice Agent Hackathon · 2026</span>
+ </div>
+</section>
+
+</body></html>

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 34 1120 388" width="1120" height="388" role="img" aria-label="GlovesOn architecture: browser microphone to the AssemblyAI Voice Agent API, which calls the GlovesOn gateway over HTTPS; the gateway speaks OData to S/4HANA and streams the live warehouse screen over SSE.">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+  <path d="M 194,222 L 262,222" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <path d="M 194,222 L 262,222" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="12 48" opacity="0.45"><animate attributeName="stroke-dashoffset" from="60" to="0" dur="1.6s" begin="0s" repeatCount="indefinite"/></path>
+  <circle cx="194" cy="222" r="5" fill="#2563eb"><animateMotion dur="1.6s" begin="0s" repeatCount="indefinite" path="M 194,222 L 262,222"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.88;1" dur="1.6s" begin="0s" repeatCount="indefinite"/></circle>
+  <text x="228" y="210" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="13" font-weight="500" fill="#475569" text-anchor="middle">audio</text>
+  <path d="M 490,222 L 606,222" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <path d="M 490,222 L 606,222" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="12 48" opacity="0.45"><animate attributeName="stroke-dashoffset" from="60" to="0" dur="1.9s" begin="0.2s" repeatCount="indefinite"/></path>
+  <circle cx="490" cy="222" r="5" fill="#2563eb"><animateMotion dur="1.9s" begin="0.2s" repeatCount="indefinite" path="M 490,222 L 606,222"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.88;1" dur="1.9s" begin="0.2s" repeatCount="indefinite"/></circle>
+  <text x="552" y="210" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="13" font-weight="500" fill="#475569" text-anchor="middle">HTTPS tool calls</text>
+  <path d="M 872,190 L 916,140" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <path d="M 872,190 L 916,140" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="12 48" opacity="0.45"><animate attributeName="stroke-dashoffset" from="60" to="0" dur="2.1s" begin="0.5s" repeatCount="indefinite"/></path>
+  <circle cx="872" cy="190" r="5" fill="#2563eb"><animateMotion dur="2.1s" begin="0.5s" repeatCount="indefinite" path="M 872,190 L 916,140"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.88;1" dur="2.1s" begin="0.5s" repeatCount="indefinite"/></circle>
+  <text x="905" y="178" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="13" font-weight="500" fill="#475569" text-anchor="middle">OData</text>
+  <path d="M 872,256 L 916,308" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <path d="M 872,256 L 916,308" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="12 48" opacity="0.45"><animate attributeName="stroke-dashoffset" from="60" to="0" dur="2.1s" begin="0.7s" repeatCount="indefinite"/></path>
+  <circle cx="872" cy="256" r="5" fill="#2563eb"><animateMotion dur="2.1s" begin="0.7s" repeatCount="indefinite" path="M 872,256 L 916,308"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.88;1" dur="2.1s" begin="0.7s" repeatCount="indefinite"/></circle>
+  <text x="903" y="300" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="13" font-weight="500" fill="#475569" text-anchor="middle">SSE</text>
+  <path d="M 194,222 L 270,222" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M 490,222 L 614,222" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M 872,190 L 922,133" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M 872,256 L 922,315" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="24" y="182" width="170" height="80" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="109" y="214" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="16" font-weight="600" fill="#2e1065" text-anchor="middle">Browser mic</text>
+  <text x="109" y="238" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="13" font-weight="500" fill="#475569" text-anchor="middle">PCM16 · 24 kHz</text>
+  <rect x="270" y="158" width="220" height="128" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="380" y="192" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="17" font-weight="600" fill="#2e1065" text-anchor="middle">AssemblyAI</text>
+  <text x="380" y="214" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="17" font-weight="600" fill="#2e1065" text-anchor="middle">Voice Agent API</text>
+  <text x="380" y="242" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="13" font-weight="500" fill="#475569" text-anchor="middle">STT · turn detection · LLM</text>
+  <text x="380" y="262" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="13" font-weight="500" fill="#475569" text-anchor="middle">TTS · barge-in</text>
+  <rect x="614" y="140" width="258" height="164" rx="16" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/>
+  <rect x="614" y="140" width="258" height="164" rx="16" fill="none" stroke="#2563eb" stroke-width="3" opacity="0.0"><animate attributeName="opacity" values="0;0.55;0" dur="3.4s" repeatCount="indefinite"/><animate attributeName="stroke-width" values="3;9;3" dur="3.4s" repeatCount="indefinite"/></rect>
+  <text x="743" y="176" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="17" font-weight="600" fill="#0b1b33" text-anchor="middle">GlovesOn Gateway</text>
+  <text x="743" y="197" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="13" font-weight="500" fill="#475569" text-anchor="middle">FastAPI</text>
+  <text x="743" y="228" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="13" font-weight="500" fill="#0b1b33" text-anchor="middle">/erp/* tools · shared secret</text>
+  <text x="743" y="250" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="13" font-weight="500" fill="#0b1b33" text-anchor="middle">spoken read-back</text>
+  <text x="743" y="272" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="13" font-weight="500" fill="#0b1b33" text-anchor="middle">duplicate guard · validation</text>
+  <path d="M922,76 a77.0,16 0 0,1 154,0 v84 a77.0,16 0 0,1 -154,0 z" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+  <path d="M922,76 a77.0,16 0 0,0 154,0" fill="none" stroke="#16a34a" stroke-width="2"/>
+  <text x="999.0" y="122" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="17" font-weight="600" fill="#052e16" text-anchor="middle">S/4HANA</text>
+  <text x="999.0" y="144" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="13" font-weight="500" fill="#475569" text-anchor="middle">OData + CSRF</text>
+  <text x="999.0" y="162" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="12" font-weight="500" fill="#475569" text-anchor="middle">mock today</text>
+  <rect x="922" y="268" width="154" height="96" rx="14" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <text x="999" y="300" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="16" font-weight="600" fill="#0f172a" text-anchor="middle">Live screen</text>
+  <text x="999" y="322" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="12" font-weight="500" fill="#475569" text-anchor="middle">the material</text>
+  <text x="999" y="338" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="12" font-weight="500" fill="#475569" text-anchor="middle">document, as it posts</text>
+  <text x="560.0" y="404" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif" font-size="14" font-weight="500" fill="#475569" text-anchor="middle">the agent never sees SAP — the gateway owns the write</text>
+  </svg>
