@@ -1012,6 +1012,12 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
  body:not(.in-warehouse) .hero-image {grid-column:2;grid-row:4/6;position:static;transform:none;width:100%;max-width:240px;height:clamp(210px,32svh,310px);margin:0;justify-self:start;object-fit:contain;}
  body:not(.in-warehouse) .hero-actions button {white-space:nowrap;}
 }
+@media(min-width:600px) and (max-width:900px) {
+ body:not(.in-warehouse) .hero-copy>p {max-width:none;width:100%;white-space:nowrap;font-size:clamp(14px,2.15vw,19px);}
+ body:not(.in-warehouse) .hero-actions {grid-column:1/-1;justify-self:center;justify-content:center;}
+ body:not(.in-warehouse) .hero-attribution {grid-column:1/-1;justify-self:center;text-align:center;}
+ body:not(.in-warehouse) .hero-image {grid-column:1/-1;width:170px;height:260px;max-width:none;justify-self:start;margin-left:calc(50% + 30px);}
+}
 </style>
 </head>
 <body>
