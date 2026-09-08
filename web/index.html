@@ -736,14 +736,18 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
  body:not(.in-warehouse) .hero .eyebrow { font-size:11px; justify-content:center; }
  body:not(.in-warehouse) .hero .eyebrow-credit { display:inline; }
  body:not(.in-warehouse) .hero h1 { margin:20px 0 0; font-size:clamp(44px,min(10vw,17.5svh),170px); }
+ body:not(.in-warehouse) .hero h1 .l1 { position:relative; left:-.72em; }
+ body:not(.in-warehouse) .hero h1 .l2 { position:relative; left:.55em; }
+ body:not(.in-warehouse) .hero h1 .l2:after { content:attr(data-text); position:absolute; left:0; top:0;
+   white-space:nowrap; color:rgba(38,43,37,.15); z-index:3; pointer-events:none; }
  body:not(.in-warehouse) .hero h1 em { white-space:nowrap; position:relative; z-index:3;
    text-shadow:0 0 22px #f6e5ce, 0 0 60px rgba(246,229,206,.85); }
  body:not(.in-warehouse) .hero-copy>p,body:not(.in-warehouse) .hero-attribution { display:none; }
  body:not(.in-warehouse) .hero-image { display:block; position:absolute; left:50%; transform:translateX(-50%);
-   bottom:20px; width:auto; height:min(82svh,740px); z-index:2;
+   bottom:20px; width:auto; height:min(47vw,82svh,740px); z-index:2;
    filter:drop-shadow(0 24px 34px rgba(138,101,60,.33)); }
  body:not(.in-warehouse) > .hero:after { content:''; display:block; position:absolute; left:50%; transform:translateX(-50%);
-   bottom:14px; width:min(60svh,560px); height:56px; z-index:-1;
+   bottom:14px; width:min(34vw,60svh,560px); height:56px; z-index:-1;
    background:radial-gradient(closest-side,#d9bf9d,transparent); }
  body:not(.in-warehouse) .hero-actions { position:absolute; left:50%; transform:translateX(-50%);
    bottom:40px; margin:0; z-index:5; }
@@ -773,7 +777,7 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
   <img class="hero-image" src="/assets/worker-3d.webp" alt="A warehouse worker wearing gloves and a headset carries a box with both hands." width="742" height="1165" fetchpriority="high" />
   <div class="hero-copy">
     <div class="eyebrow">Built for hands that are busy<span class="eyebrow-credit">· Powered by AssemblyAI</span></div>
-    <h1>Gloves on.<br>Hands full.<br><em>Just speak.<span class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></em></h1>
+    <h1><span class="l1">Gloves on.</span><br><span class="l2" data-text="Hands full.">Hands full.</span><br><em>Just speak.<span class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></em></h1>
     <p>Receive goods, check stock and review receipts — by voice.</p>
     <div class="hero-actions"><button class="hero-start" id="heroStart">Start your shift ↗</button></div>
     <div class="hero-attribution">Powered by <strong>AssemblyAI</strong></div>
