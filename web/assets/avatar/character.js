@@ -7,6 +7,7 @@ import { GLTFLoader } from './vendor/GLTFLoader.js';
 const hero = document.querySelector('#avatarStage');
 const photo = null;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+let resetStage;
 let renderer, observer, resizeObserver, greet, bubble, visible = false, loaded = false;
 const fallback = () => {
   renderer?.setAnimationLoop(null);
@@ -83,7 +84,20 @@ async function start() {
     const TOUCH = { period: 10, rise: .62, hold: .30, fall: .68 };
     const touchSpan = TOUCH.rise + TOUCH.hold + TOUCH.fall;
     const touchScratch = new THREE.Quaternion();
-    let touchClock = 0, touchNow = 0;
+    let touchClock = 0, touchNow = 0, idleVariant = 0;
+    let lookAt = 0, lookFrom = 0, lookStarted = 0, nextLook = 3.5;
+    let lookYaw = 0;
+    function updateLook(t) {
+      if (t >= nextLook) {
+        lookFrom = lookYaw;
+        lookAt = Math.random() < .45 ? 0 : (Math.random() - .5) * .24;
+        lookStarted = t;
+        nextLook = t + 3 + Math.random() * 4;
+      }
+      const blend = smoothstep(Math.min(1, (t - lookStarted) / .9));
+      lookYaw = THREE.MathUtils.lerp(lookFrom, lookAt, blend);
+      if (bones.Head) bones.Head.rotation.y += lookYaw;
+    }
 
     const smoothstep = (x) => x * x * (3 - 2 * x);
 
@@ -115,8 +129,10 @@ async function start() {
       if (bones.Spine01) bones.Spine01.rotation.x += Math.sin(t) * .022;
       if (bones.Head)    bones.Head.rotation.x    += Math.sin(t * .9 + 1) * .015;
     }
-    const actions = Object.fromEntries(Object.entries(data).map(([name, clip]) => [name, mixer.clipAction(THREE.AnimationClip.parse(clip))]));
-    actions.wave.setLoop(THREE.LoopOnce, 1); actions.wave.clampWhenFinished = true;
+    // Only travel uses an imported clip. Hover never advances the mixer.
+    const actions = { walk: mixer.clipAction(THREE.AnimationClip.parse(data.walk)) };
+    const greetingDuration = 2.8;
+    let greetingCount = 0, greetingIsWave = true;
     let current, elapsed = 0, phase = 'idle', phaseStart = 0, home = .8, near = .2, travelFrom = .8, travelTo = .2;
     let autoIntro = true, returning = false, arrival = null;
     function play(name) {
@@ -136,7 +152,9 @@ async function start() {
       // Kol kulakliga uzanmisken selam klibine gecmek bilegi tek karede yarim
       // metre isinliyordu. Selam kozmetik: jest bitene kadar yok sayiyoruz.
       if (touchNow > 0) return;
-      phase = 'wave'; phaseStart = elapsed; play('wave');
+      mixer.stopAllAction(); current = null;
+      greetingIsWave = greetingCount++ % 2 === 0;
+      phase = 'wave'; phaseStart = elapsed;
     }
     bubble = document.createElement('p');
     bubble.className = 'avatar-line';
@@ -144,19 +162,30 @@ async function start() {
     hero.append(bubble);
     greet = document.createElement('button'); greet.className = 'avatar-greet';
     greet.setAttribute('aria-label', 'Say hello to your warehouse guide');
-    greet.addEventListener('pointerenter', wave); greet.addEventListener('click', wave);
+    greet.addEventListener('pointerenter', wave);
+    greet.addEventListener('click', () => {
+      wave();
+      // Speech requires an intentional click, never an automatic idle gesture.
+      if (phase === 'wave' && 'speechSynthesis' in window && !speechSynthesis.speaking) {
+        const utterance = new SpeechSynthesisUtterance(greetingIsWave ? 'Hi there!' : 'Okay!');
+        utterance.lang = 'en-US'; utterance.rate = 1; utterance.pitch = 1.1;
+        speechSynthesis.speak(utterance);
+      }
+    });
     autoIntro = false;
     // Disariya acilan tek kanca: bir alan secildiginde karakter o kartin onune
     // yuruyor ve soz veriyor. Ekran, soz cozulunce degisiyor.
     window.gloveson = window.gloveson || {};
     window.gloveson.avatarWalkTo = (key) => {
-      bubble?.classList.add('is-away');
       const card = document.querySelector(`[data-enter="${key}"]`);
       if (!card || reduced.matches || !visible) return null;
+      if (arrival) { const cancel = arrival; arrival = null; cancel(); }
+      bubble?.classList.add('is-away');
       const stage = hero.getBoundingClientRect(), target = card.getBoundingClientRect();
       // Kartin merkezini sahne koordinatina cevir: -half .. +half
       const ratio = ((target.left + target.width / 2) - stage.left) / stage.width;
       const half = camera.right;
+      document.getElementById('warehouseRoom')?.classList.add('avatar-travelling');
       return new Promise(resolve => {
         travelFrom = actor.position.x;
         travelTo = (ratio - .5) * 2 * half * .82;
@@ -167,8 +196,17 @@ async function start() {
         // ekrani karakterden once degistiriyordu.
         const expect = Math.max(.9, Math.abs(travelTo - travelFrom) / 1.5) * 1000 + 600;
         setTimeout(() => { if (arrival === resolve) { arrival = null; resolve(); } }, expect);
-      });
+      }).finally(() => document.getElementById('warehouseRoom')?.classList.remove('avatar-travelling'));
     };
+    resetStage = (event) => {
+      document.getElementById('warehouseRoom')?.classList.remove('avatar-travelling');
+      if (arrival) { const cancel = arrival; arrival = null; cancel(); }
+      phase = 'idle'; touchNow = 0; touchClock = 0;
+      mixer.stopAllAction(); current = null;
+      actor.position.set(home, 0, 0); actor.rotation.set(0, 0, 0);
+      if (event.detail === 'lobby') bubble?.classList.remove('is-away');
+    };
+    window.addEventListener('gloveson:warehouse-stage', resetStage);
     hero.append(renderer.domElement, greet);
     function resize() {
       const height = hero.clientHeight, width = hero.clientWidth;
@@ -196,12 +234,47 @@ async function start() {
         // Klip yok: sabit bekleme pozu + nefes, her karede. Ayaklar bind
         // pozunda sabit kaldigi icin "yerinde yurume" bitiyor.
         applyRest(elapsed * 1.6);
-        touchClock += dt; if (touchClock >= TOUCH.period) touchClock -= TOUCH.period;
-        touchNow = touchWeight(touchClock);
-        if (touchNow > 0) applyTouch(touchNow);
+        touchClock += dt;
+        if (touchClock >= TOUCH.period) { touchClock -= TOUCH.period; idleVariant = (idleVariant + 1) % 3; }
+        updateLook(elapsed);
+        const gesture = touchWeight(touchClock);
+        touchNow = gesture;
+        if (idleVariant === 0 && gesture > 0) applyTouch(gesture);
+        if (idleVariant === 1 && bones.Head) bones.Head.rotation.y += gesture * .18;
+        if (idleVariant === 2 && bones.Head) bones.Head.rotation.x += gesture * .08;
+        const answering = idleVariant === 0 && gesture > .8;
+        bubble.textContent = answering ? (greetingIsWave ? 'Hi there!' : 'Okay!') : 'Pick an area — I’ll meet you there.';
+        bubble.classList.toggle('is-speaking', answering);
+        if (answering && !greetingIsWave && bones.Head) bones.Head.rotation.x += Math.sin(elapsed * 10) * .018;
         actor.position.y = Math.sin(elapsed * 1.6) * .006;
         actor.rotation.z = Math.sin(elapsed * .8) * .004;
+      } else if (phase === 'wave') {
+        // A planted, procedural greeting using the already fitted headset pose.
+        // Restore every bone first so no travel pose can remain on the legs.
+        applyRest(elapsed * 1.6);
+        const t = elapsed - phaseStart;
+        const envelope = smoothstep(Math.max(0, Math.min(1, t / .85, (greetingDuration - t) / .9)));
+        if (greetingIsWave) {
+          // A separate greeting pose: hold the upper arm still, wave gently
+          // from the forearm only after the arm has finished rising.
+          applyTouch(envelope);
+          if (bones.RightArm) bones.RightArm.rotation.z -= .42 * envelope;
+          const waveTime = Math.max(0, t - .85);
+          const waveWeight = smoothstep(Math.min(1, waveTime / .25)) * envelope;
+          if (bones.RightForeArm) bones.RightForeArm.rotation.z += Math.sin(waveTime * 6.2) * .16 * waveWeight;
+          if (bones.RightHand) bones.RightHand.rotation.z += Math.sin(waveTime * 6.2 + .2) * .045 * waveWeight;
+        } else {
+          applyTouch(envelope);
+        }
+        const answering = t > .75 && t < 2;
+        bubble.textContent = answering ? (greetingIsWave ? 'Hi there!' : 'Okay!') : 'Pick an area — I’ll meet you there.';
+        bubble.classList.toggle('is-speaking', answering);
+        if (answering && !greetingIsWave && bones.Head) bones.Head.rotation.x += Math.sin(t * 10) * .018;
+        if (bones.Head) bones.Head.rotation.x += Math.sin(Math.min(1, t / greetingDuration) * Math.PI) * .06;
+        touchNow = 0;
+        actor.position.y = 0; actor.rotation.z = 0;
       } else {
+        bubble.classList.remove('is-speaking');
         mixer.update(dt);
         touchNow = 0;
         actor.position.y = 0; actor.rotation.z = 0;
@@ -216,8 +289,14 @@ async function start() {
           if (arrival) { const done = arrival; arrival = null; done(); } else if (!returning) wave(); }
       } else {
         actor.rotation.y = THREE.MathUtils.lerp(actor.rotation.y, 0, Math.min(1, dt * 7));
-        if (phase === 'wave' && elapsed - phaseStart > data.wave.duration) { phase = 'idle'; phaseStart = elapsed; touchClock = TOUCH.period - touchSpan - 2; if (current) { current.stop(); current = null; } }
+        if (phase === 'wave' && elapsed - phaseStart > greetingDuration) { phase = 'idle'; phaseStart = elapsed; touchClock = TOUCH.period - touchSpan - 2; if (current) { current.stop(); current = null; } }
       }
+      // Keep the greeting target on the guide, clear of the task cards.
+      const span = camera.right - camera.left;
+      greet.style.left = ((actor.position.x - .34 - camera.left) / span * 100) + '%';
+      greet.style.width = (.68 / span * 100) + '%';
+      greet.style.top = '0'; greet.style.bottom = 'auto'; greet.style.height = '100%';
+      greet.style.pointerEvents = phase === 'walk' ? 'none' : 'auto';
       renderer.render(scene, camera);
       if (renderer.domElement.style.opacity === '0') renderer.domElement.style.opacity = '1';
     });
@@ -226,7 +305,10 @@ async function start() {
   } catch (error) { fallback(); console.warn('Avatar fallback:', error.message); }
 }
 reduced.addEventListener('change', () => {
-  if (reduced.matches) { fallback(); observer?.disconnect(); resizeObserver?.disconnect(); renderer?.dispose(); renderer?.domElement.remove(); greet?.remove(); loaded = false; }
+  if (reduced.matches) { fallback(); observer?.disconnect(); resizeObserver?.disconnect(); renderer?.dispose(); renderer?.domElement.remove(); greet?.remove(); bubble?.remove();
+    window.removeEventListener('gloveson:warehouse-stage', resetStage);
+    if (window.gloveson) delete window.gloveson.avatarWalkTo;
+    loaded = false; }
   else start();
 });
 start();

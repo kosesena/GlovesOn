@@ -625,9 +625,14 @@ def scene_webp(scene: str) -> FileResponse:
                         headers={"Cache-Control": "public, max-age=86400"})
 
 
+@app.get("/assets/warehouse-composite.svg", include_in_schema=False)
+def warehouse_composite() -> FileResponse:
+    return FileResponse(WEB_DIR / "assets" / "warehouse-composite.svg", media_type="image/svg+xml")
+
+
 @app.get("/assets/{scene}.png", include_in_schema=False)
 def scenario_image(scene: str) -> FileResponse:
-    if scene not in {"warehouse-3d"}:
+    if scene not in {"warehouse-3d", "warehouse-interior", "hero-scene"}:
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(WEB_DIR / "assets" / f"{scene}.png",
                         headers={"Cache-Control": "public, max-age=86400"})
@@ -635,7 +640,7 @@ def scenario_image(scene: str) -> FileResponse:
 
 @app.get("/assets/avatar/{filename:path}", include_in_schema=False)
 def avatar_asset(filename: str) -> FileResponse:
-    allowed = {"worker.glb", "motions.json", "character.js",
+    allowed = {"worker.glb", "motions.json", "character.js", "receiving-intro.mp4", "review-intro.mp4", "storage-intro.mp4",
                "vendor/three.module.js", "vendor/three.core.js", "vendor/GLTFLoader.js",
                "vendor/BufferGeometryUtils.js", "vendor/LICENSE"}
     if filename not in allowed:
