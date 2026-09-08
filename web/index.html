@@ -910,7 +910,7 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
    Their positioned parents have no z-index so the filled text stays behind. */
 @media(min-width:901px) {
  .hero-depth-line { position:relative; display:inline-block; }
- .hero-depth-outline .outline-clear {-webkit-text-stroke:0; }
+ .hero-depth-outline .outline-fine { -webkit-text-stroke:.8px #fff3dc; }
  .hero-depth-outline {
    display:block; position:absolute; inset:0; z-index:3;
    color:transparent; -webkit-text-fill-color:transparent;
@@ -1075,7 +1075,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
   <img class="hero-image" src="/assets/worker-3d.webp" alt="A warehouse worker wearing gloves and a headset carries a box with both hands." width="742" height="1165" fetchpriority="high" />
   <div class="hero-copy">
     <div class="eyebrow">Built for hands that are busy<span class="eyebrow-credit">· Powered by <svg class="aai-mark" role="img" aria-label="AssemblyAI"><use href="#aai-dark"/></svg></span></div>
-    <h1><span class="hero-depth-line" >Gloves on.<span class="hero-depth-outline" aria-hidden="true">Glov<span class="outline-clear">e</span>s on.</span></span><br><span class="hero-depth-line" >Hands full.<span class="hero-depth-outline" aria-hidden="true">Hands full.</span></span><br><em>Just speak<span class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></em></h1>
+    <h1><span class="hero-depth-line" >Gloves on.<span class="hero-depth-outline" aria-hidden="true">Glov<span class="outline-fine">e</span>s on.</span></span><br><span class="hero-depth-line" >Hands full.<span class="hero-depth-outline" aria-hidden="true">Hands full.</span></span><br><em>Just speak<span class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></em></h1>
     <p>Receive goods, check stock and review receipts — by voice.</p>
     <div class="hero-actions"><button class="hero-start" id="heroStart">Start your shift ↗</button></div>
     <div class="hero-attribution">Powered by <svg class="aai-mark" role="img" aria-label="AssemblyAI"><use href="#aai-dark"/></svg></div>
