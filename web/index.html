@@ -947,6 +947,36 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
   .console-wrap.has-result main .right {order:-1;}
   .console-wrap.has-result main {display:flex;flex-direction:column;}
 }
+
+#warehouseWork .record-details summary {color:#244b35;}
+#warehouseWork .voice-credit svg {filter:brightness(0) saturate(100%);opacity:.75;}
+/* Shared warehouse work palette and outcome hierarchy. */
+#warehouseWork .console-wrap {--text:#253b2c;--muted:#52634e;--accent:#244b35;--line:#c8cebf;--panel:#e2e7d8;--panel-2:#eef0e5;background:#f7f3ea;color:var(--text);border:1px solid var(--line);}
+#warehouseWork .console-wrap header {background:#e2e7d8;flex-wrap:wrap;gap:14px;}
+#warehouseWork .right {background:#e9ecdf;}
+#warehouseWork .console-wrap main {min-height:0;}
+#warehouseWork .console-wrap main>section {min-height:0;}
+#warehouseWork .primer {gap:16px;padding:24px;}
+#warehouseWork .pr-list q {color:#253b2c;font-family:system-ui,sans-serif;font-size:22px;}
+#warehouseWork .pr-list span,#warehouseWork .pr-lead,#warehouseWork .status,#warehouseWork .hint {color:#52634e;}
+#warehouseWork #scenarioNote {display:none;}
+#warehouseWork #talkBtn {background:#244b35;color:white;padding:16px 28px;font-size:18px;border-radius:32px;}
+#warehouseWork .msg.user {background:#e2e7d8;border-color:#c8cebf;}
+#warehouseWork .msg.tool {background:#fff0d4;color:#664b13;border-color:#d8bf82;}
+#warehouseWork .pending {background:#fff0d4;color:#664b13;}
+#warehouseWork .controls {margin-top:20px;padding:14px 24px;border-color:#c8cebf;}
+#warehouseWork .doc {box-shadow:0 8px 24px #243b2c12;}
+#warehouseWork .doc h3,#warehouseWork .doc .srv,#warehouseWork .doc .dfoot {font-family:system-ui,sans-serif;}
+#warehouseWork .doc .frow:has(#f-menge) b {font-size:24px;color:#244b35;}
+#warehouseWork .stockstrip {background:#e2e7d8;color:#253b2c;border-color:#c8cebf;}
+#warehouseWork .lookup-result.is-found #lookupLocation,#warehouseWork .lookup-result.is-found #lookupQuantity {font-size:clamp(22px,3vw,30px);color:#244b35;}
+.reversal-link {margin:18px 0;padding:18px;border:1px solid #c8cebf;border-radius:14px;background:#fffaf1;font-family:system-ui,sans-serif;}
+.reversal-link p {margin:0 0 12px;font-weight:650;}
+.reversal-link div {display:flex;justify-content:space-between;gap:12px;padding:8px 0;flex-wrap:wrap;}
+.reversal-link b {font-family:var(--mono);overflow-wrap:anywhere;}
+.reversal-link small {display:block;margin-top:10px;color:#52634e;}
+@media(max-width:760px) {#warehouseWork .console-wrap header .spacer {display:none;} #warehouseWork .console-wrap .plant {white-space:normal;}}
+
 </style>
 </head>
 <body>
@@ -1083,6 +1113,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
         <div class="dfoot" id="dfoot">Nothing has been requested yet.</div>
       </article>
 
+      <aside id="reversalLink" class="reversal-link" hidden aria-live="polite"><p>Both records are preserved</p><div><span>Original receipt</span><b id="originalReceipt">—</b></div><div><span>Reversal document</span><b id="reversalReceipt">—</b></div><small>The reversal adjusts stock; the original receipt stays in the history.</small></aside>
       <!-- Stok, belgenin yanindan kaybolmasin -->
       <div class="stockstrip" id="stockStrip" hidden>
         <div class="ss-mat"><b id="ss-matnr">—</b><span id="ss-maktx"></span></div>
@@ -1177,6 +1208,7 @@ function setStamp(text, kind) {
 }
 
 function clearDoc() {
+  F('reversalLink').hidden = true;
   for (const id of ['f-mblnr','f-gmc','f-bwart','f-matnr','f-maktx','f-menge','f-werks','f-bin','f-ref'])
     setField(id, EMPTY, false);
   F('row-ref').hidden = true;
@@ -1333,6 +1365,7 @@ function receiveScopedEvent(e) {
     for (const [id, value] of Object.entries({'f-matnr':d.MATNR, 'f-maktx':d.MAKTX,
       'f-menge':`${d.MENGE} ${d.MEINS}`, 'f-werks':`${d.WERKS} / ${d.LGORT}`, 'f-bin':d.LGPLA})) setField(id,value);
     if (d.document) { F('row-ref').hidden=false; setField('f-ref',d.document); }
+    document.querySelector('#doc .srv').textContent = `${d.operation === 'reversal' ? 'Reversal draft' : 'Receipt draft'} / Warehouse ${d.WERKS || '1000'}`;
     awaitingConfirmation();
     const draftGeneration = postReveal;
     setTimeout(() => {
@@ -1352,6 +1385,12 @@ function receiveScopedEvent(e) {
     dfootEl.textContent = 'Recording your confirmed draft. Waiting for the system result.';
   } else if (evt.type === 'goods_receipt') {
     const reversal = !!d.reversal;
+    document.querySelector('#doc .srv').textContent = `${reversal ? 'Receipt reversal' : 'Goods receipt'} / Warehouse ${d.WERKS || '1000'}`;
+    F('reversalLink').hidden = !reversal;
+    if (reversal) {
+      F('originalReceipt').textContent = d.reverses || 'Unavailable';
+      F('reversalReceipt').textContent = d.MBLNR || 'Unavailable';
+    }
     // Staged reveal: the stamp thuds first, the document number appears a
     // beat later, then the stock counts. Everything at once reads as a screen
     // refresh; in sequence it reads as a posting actually completing. The
@@ -1448,7 +1487,7 @@ let partialEl = null, live = false;
 const meterEl = document.getElementById('meter');
 const mctx = meterEl.getContext('2d');
 
-let statusLabel = 'idle', statusOn = false, statusSince = 0, statusTimed = false;
+let statusLabel = 'Ready to listen', statusOn = false, statusSince = 0, statusTimed = false;
 let micLevel = 0, agentLevel = 0;
 let pendingTool = null;
 
@@ -1461,7 +1500,7 @@ const TOOL_LABEL = {
 };
 
 function setStatus(text, on = false, timed = false) {
-  statusLabel = text;
+  statusLabel = text === 'idle' ? 'Ready to listen' : text;
   statusOn = on;
   statusTimed = timed;
   statusSince = performance.now();
@@ -1835,7 +1874,7 @@ function cleanup() {
 }
 
 const scenarios = {
-  stock: ['Where are the ball bearings stored?', 'Listen for the material description, storage location and available stock. You can ask a follow-up question about the quantity.', 'Find a material by description. This is a stock lookup; it does not create a receipt or change inventory.'],
+  stock: ['Where are the ball bearings stored?', 'Ask by material name or number. Your guide returns its location and available stock.', 'Find a material by description. This is a stock lookup; it does not create a receipt or change inventory.'],
   receive: ['Post a goods receipt, twenty pieces of four seven one one.', 'Listen to the material, quantity and destination. Say confirm when the details are right.', 'A new delivery of hex bolts. Follow the receipt from your spoken request to a document and an updated stock level.'],
   correct: ['Post a goods receipt, twenty pieces of four seven one one.', 'During the read-back, say: “Actually, twelve pieces.” Wait for the corrected details, then confirm.', 'Try correcting a quantity before posting. The final document should contain twelve pieces.'],
   reverse: ['Show me the most recent material documents.', 'Choose a receipt, then ask to reverse that document number. Listen to the details and confirm.', 'First post a receipt if the list is empty. A reversal creates a second document and adjusts the stock; the original stays visible.']
