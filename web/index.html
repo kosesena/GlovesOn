@@ -721,6 +721,18 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 #how article { border:1px solid #ced5c4; background:#edf0e5; border-radius:18px; padding:24px; }
 #how article p { color:#46563f; }
 @media(max-width:700px) { body > #how:target { grid-template-columns:1fr; padding:18px 22px 40px; } }
+
+/* Fit the complete hero artwork to viewport height, including wide Safari windows. */
+body:not(.in-warehouse):not(:has(#how:target)) { background-size:auto 100svh; background-position:right top; }
+@media(min-width:651px) {
+ body:not(.in-warehouse) > .hero { justify-content:flex-start; padding:0 7%; min-height:0; }
+ body:not(.in-warehouse) .hero-image { display:none; }
+ body:not(.in-warehouse) .hero-copy { flex:0 1 48%; width:48%; max-width:650px; padding:24px 0 48px; }
+ body:not(.in-warehouse) .hero h1 { font-size:clamp(38px,min(5vw,8svh),78px); }
+ body:not(.in-warehouse) .hero h1 em { white-space:nowrap; }
+ body:not(.in-warehouse) .hero-copy>p { font-size:clamp(16px,2.3svh,20px); }
+ body:not(.in-warehouse) .hero-actions { margin-top:24px; }
+}
 </style>
 </head>
 <body>
