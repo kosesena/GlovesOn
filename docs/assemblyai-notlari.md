@@ -152,8 +152,8 @@ SKU'lar, referans numaraları, kısaltmalar, özel isimler. Yani MATNR ve raf ko
 tam hedef kitlesi.
 
 **Yapıldı:** `agent.json` içine 851 karakterlik bir `transcription_prompt` (depo
-sahnesi, numaraların nasıl söylendiği, malzeme isimleri) ve 27 terimlik `keyterms`
-listesi eklendi.
+sahnesi, numaraların nasıl söylendiği, malzeme isimleri) ve 56 terimlik `keyterms`
+listesi eklendi (100 limitinin altında; sayı listeye terim eklendikçe büyüdü).
 
 ---
 
