@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS events (
     payload    TEXT NOT NULL,
     created_at DOUBLE PRECISION NOT NULL
 );
+CREATE TABLE IF NOT EXISTS scoped_agents (
+    scope TEXT PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    expires_at DOUBLE PRECISION NOT NULL
+);
 CREATE TABLE IF NOT EXISTS voice_sessions (
     ref        TEXT NOT NULL,
     created_at DOUBLE PRECISION NOT NULL
@@ -104,3 +109,24 @@ def current_session() -> str:
         row = conn.execute(
             "SELECT ref FROM voice_sessions ORDER BY created_at DESC LIMIT 1").fetchone()
     return str(row["ref"]) if row else ""
+
+
+def save_agent(scope: str, agent_id: str, expires_at: float) -> None:
+    with store.db() as conn:
+        conn.execute("INSERT INTO scoped_agents(scope, agent_id, expires_at) VALUES (%s,%s,%s)",
+                     (scope, agent_id, expires_at))
+
+
+def agents_to_clean(scope: str | None = None) -> list[dict]:
+    with store.db() as conn:
+        if scope is not None:
+            return conn.execute(
+                "SELECT scope, agent_id FROM scoped_agents WHERE scope = %s", (scope,)).fetchall()
+        return conn.execute(
+            "SELECT scope, agent_id FROM scoped_agents WHERE expires_at <= %s ORDER BY expires_at LIMIT 5",
+            (time.time(),)).fetchall()
+
+
+def forget_agent(scope: str) -> None:
+    with store.db() as conn:
+        conn.execute("DELETE FROM scoped_agents WHERE scope = %s", (scope,))

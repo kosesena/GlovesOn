@@ -36,7 +36,8 @@ Project*. This sets `DATABASE_URL` in the project's environment; the code reads 
 |---|---|
 | `ASSEMBLYAI_API_KEY` | your key |
 | `TOOL_SHARED_SECRET` | a value of your own — **the gateway refuses to start without one** |
-| `AGENT_ID` | the id `./publish.sh` printed |
+| `AGENT_ID` | legacy published agent id (browser sessions create their own agent) |
+| `GATEWAY_PUBLIC_URL` | HTTPS URL of this gateway, required for session tool callbacks |
 | `GLOVESON_ENABLE_RESET` | `0` on any day strangers have the address |
 
 Optional: `SAP_BASE_URL` to point at a real S/4HANA, `MOCK_SAP_BASE_URL` to reach the
@@ -121,3 +122,18 @@ definition. `./publish.sh` is what moves it.
 always-on machine — Fly.io, Render, a Replit Reserved VM. Set `DATABASE_URL` and it
 works; that is the whole difference, and ADR-0005 records what such a move would buy
 back.
+
+## Private browser sessions
+
+The gateway now creates a stored AssemblyAI agent for each browser session from
+`agent/agent.json`. Include that file in the deployment bundle. Tool authentication
+and signed event-routing headers are configured server-side; the browser receives
+an agent id and expiring scope token, never the shared tool secret.
+
+`live.init()` adds `scoped_agents` without resetting warehouse data. Normal browser
+teardown deletes the temporary agent; failed deletions are retried after expiry on
+later token requests. There is no scheduled sweep when the app is idle. The scope
+expires after ten minutes; provider voice sessions are limited to five minutes.
+
+Preview deployments must point GATEWAY_PUBLIC_URL to their own reachable gateway
+when testing scoped results; a production callback URL routes events to production.

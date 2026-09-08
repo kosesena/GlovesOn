@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import asyncio
 import hmac
+import json
+from contextvars import ContextVar
 import secrets
 import time
 from contextlib import asynccontextmanager
@@ -24,10 +26,10 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from fastapi import Body, FastAPI, Header, HTTPException, Query
+from fastapi import Request, Body, FastAPI, Header, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 
-from . import audit, live, sap_client, sap_mock, store
+from . import session_scope, scoped_agent, audit, live, sap_client, sap_mock, store
 from .sap_client import SapClient, SapError, env
 from .store import norm_matnr, pretty_matnr
 
@@ -141,15 +143,38 @@ SSE_MAX_LIFETIME_SECONDS = 50
 EVENT_POLL_SECONDS = 0.4
 
 
+event_scope: ContextVar[str | None] = ContextVar("event_scope", default=None)
+
+
+@app.middleware("http")
+async def bind_event_scope(request: Request, call_next):
+    token = request.headers.get("X-Event-Scope", "")
+    scope = session_scope.verify(token, TOOL_SHARED_SECRET) if token else None
+    if token and scope is None:
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"detail": "Event scope expired or invalid"}, status_code=401)
+    reset = event_scope.set(scope)
+    try:
+        return await call_next(request)
+    finally:
+        event_scope.reset(reset)
+
+
 def publish(event_type: str, payload: dict[str, Any]) -> None:
-    live.publish(event_type, payload)
+    live.publish(event_type, {**payload, "event_scope": event_scope.get()})
 
 
 @app.get("/events")
-async def events() -> StreamingResponse:
+async def events(request: Request, scope_token: str = Query(...)) -> StreamingResponse:
+    scope = session_scope.verify(scope_token, TOOL_SHARED_SECRET)
+    if scope is None:
+        raise HTTPException(status_code=401, detail="Event scope expired or invalid")
     # Akis, olaylari veritabanindan okuyor: ekrani tutan ornek ile yazmayi
     # yapan ornek ayni olmayabilir. Bkz. live.py.
     last_id = await asyncio.to_thread(live.latest_id)
+    cursor = request.headers.get("last-event-id", "")
+    if cursor.isdigit():
+        last_id = min(last_id, int(cursor))
 
     async def stream():
         nonlocal last_id
@@ -157,12 +182,15 @@ async def events() -> StreamingResponse:
         idle = 0.0
         yield "retry: 2000\n\n"
         while not _shutting_down.is_set() and time.monotonic() < deadline:
+            if session_scope.verify(scope_token, TOOL_SHARED_SECRET) is None:
+                break
             rows = await asyncio.to_thread(live.since, last_id)
             if rows:
                 idle = 0.0
                 for event_id, payload in rows:
                     last_id = event_id
-                    yield f"data: {payload}\n\n"
+                    if session_scope.owns_event(scope, json.loads(payload)):
+                        yield f"id: {event_id}\ndata: {payload}\n\n"
             else:
                 idle += EVENT_POLL_SECONDS
                 if idle >= 5:
@@ -291,7 +319,7 @@ async def post_goods_receipt(
     # Yoklugu yazmayi DURDURMAZ - izi zenginlestirir, sart kosmaz. Bir yazma
     # kimlik dogrulamaya degil onaya dayanir; bkz. docs/adr/0002.
     utterance = str(body.get("confirmed_utterance") or "")
-    session_id = str(body.get("session_id") or "") or live.current_session()
+    session_id = event_scope.get() or str(body.get("session_id") or "")
 
     try:
         rows = await sap().get_stock(matnr, plant)
@@ -431,7 +459,7 @@ async def reverse_goods_receipt(
     if not document:
         raise HTTPException(status_code=400, detail="document is required")
     utterance = str(body.get("confirmed_utterance") or "")
-    session_id = str(body.get("session_id") or "")
+    session_id = event_scope.get() or str(body.get("session_id") or "")
 
     try:
         docs = await sap().list_documents(10)
@@ -533,6 +561,33 @@ async def purchase_order(
 VOICE_TOKEN_MAX = int(env("VOICE_TOKEN_MAX_PER_HOUR", "40"))
 
 
+async def clean_scoped_agents(client: httpx.AsyncClient, scope: str | None = None) -> bool:
+    """Bound provider cleanup; retain failed rows for a later expiry sweep."""
+    async def remove(row):
+        try:
+            response = await client.delete(
+                f"https://agents.assemblyai.com/v1/agents/{row['agent_id']}",
+                headers={"Authorization": ASSEMBLYAI_API_KEY}, timeout=5)
+        except httpx.RequestError:
+            return False
+        if not (response.is_success or response.status_code == 404):
+            return False
+        await asyncio.to_thread(live.forget_agent, row['scope'])
+        return True
+    rows = await asyncio.to_thread(live.agents_to_clean, scope)
+    return all(await asyncio.gather(*(remove(row) for row in rows)))
+
+
+@app.post("/api/voice-session/end")
+async def close_voice_session(body: dict = Body(...)) -> dict:
+    scope = session_scope.verify(body.get("scope_token", ""), TOOL_SHARED_SECRET)
+    if scope is None:
+        raise HTTPException(status_code=401, detail="Invalid session scope")
+    async with httpx.AsyncClient(timeout=15) as client:
+        deleted = await clean_scoped_agents(client, scope)
+    return {"closed": deleted, "cleanup_pending": not deleted}
+
+
 @app.get("/api/voice-token")
 async def voice_token() -> dict[str, Any]:
     if not ASSEMBLYAI_API_KEY:
@@ -553,7 +608,27 @@ async def voice_token() -> dict[str, Any]:
                              headers={"Authorization": f"Bearer {ASSEMBLYAI_API_KEY}"})
     if r.status_code != 200:
         raise HTTPException(status_code=502, detail=f"Token error: {r.text}")
-    return {"token": r.json()["token"], "agent_id": AGENT_ID}
+    scope_token = session_scope.issue(TOOL_SHARED_SECRET, ttl=600)
+    scope = session_scope.verify(scope_token, TOOL_SHARED_SECRET)
+    gateway_url = env("GATEWAY_PUBLIC_URL").rstrip("/")
+    payload = scoped_agent.build(json.loads((ROOT / "agent/agent.json").read_text()),
+                                 gateway_url, TOOL_SHARED_SECRET, scope_token)
+    async with httpx.AsyncClient(timeout=30) as client:
+        await clean_scoped_agents(client)
+        created = await client.post("https://agents.assemblyai.com/v1/agents",
+                                    headers={"Authorization": ASSEMBLYAI_API_KEY}, json=payload)
+        if not created.is_success:
+            raise HTTPException(status_code=502, detail="Private voice session could not be configured")
+        agent_id = created.json().get("id") or created.json().get("agent_id")
+        if not agent_id:
+            raise HTTPException(status_code=502, detail="Private agent identifier missing")
+        try:
+            await asyncio.to_thread(live.save_agent, scope, agent_id, time.time() + 600)
+        except Exception:
+            await client.delete(f"https://agents.assemblyai.com/v1/agents/{agent_id}",
+                                headers={"Authorization": ASSEMBLYAI_API_KEY})
+            raise
+    return {"token": r.json()["token"], "agent_id": agent_id, "scope_token": scope_token}
 
 
 @app.get("/api/inventory")
