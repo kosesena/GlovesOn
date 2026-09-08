@@ -45,6 +45,12 @@ and 56 keyterms tune recognition to SAP material numbers and warehouse
 vocabulary; both write tools run in `execution_mode: hold` so the agent waits
 for the ERP instead of narrating an optimistic success.
 
+**Staged on purpose.** The demo wraps the console in a small warehouse — a
+lobby, a guide, guided tasks — because you cannot ship a receiving floor to a
+judge. The scenery is the only fiction: underneath sit SAP's released OData
+contract, numbered documents, reversals and one-use write drafts, and pointing
+one environment variable at a real tenant takes the costume off.
+
 **Honest about limits.** The posting is made by a service user, not the worker
 (SAP cannot yet say who did it); noise robustness is untested; the demo serves
 one session at a time. These are written up in the repo, not hidden.
