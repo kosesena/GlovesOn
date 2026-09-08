@@ -556,6 +556,17 @@
     #warehouseLobby .warehouse-entry b { font-size:12px; }
     #warehouseLobby .warehouse-entry em { font-size:9px; }
     #warehouseLobby .warehouse-art { width:100%; }
+    /* Portrait crops the scene's sides, so the review-desk target clamps to
+       the left edge — exactly where the avatar idles — and the label printed
+       across her. The entry targets are inline styles computed from source-
+       image coordinates, hence the !important. The avatar drops to a half-
+       height greeter in the corner instead of a full-height figure. */
+    #warehouseLobby .warehouse-entry[data-enter=review] { left:34% !important; top:60% !important; }
+    /* The target clamp keeps centres 75px off each edge, but a 190px-wide
+       entry overhangs a clamped centre by 20px — Storage aisles was bleeding
+       off the right edge. 150px puts the half-width at exactly the clamp. */
+    #warehouseLobby .warehouse-entry[data-enter] { width:150px !important; }
+    #warehouseLobby .avatar-stage { top:auto; bottom:0; height:52%; }
   }
 
 
