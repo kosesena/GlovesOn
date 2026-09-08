@@ -743,6 +743,10 @@ body.in-warehouse .landing-hackathon { display:none; }
 #warehouseTasks .scenario b { font-size:24px; }
 #warehouseTasks .scenario-desc { font-size:16px; }
 #warehouseTasks .scenario-copy:after { content:'Start this task →'; display:block; margin-top:18px; color:#244b35; font-size:15px; font-weight:650; }
+/* The title's ↗ is the affordance in the compact scenario bar, where nothing
+   else says the card is clickable. Here the ::after above already says it in
+   words, and two arrows on one button read as two destinations. */
+#warehouseTasks .scenario b span[aria-hidden] { display:none; }
 @media(max-width:600px) { #warehouseTasks { padding:20px; } #warehouseTasks .scenario .warehouse-art { width:95px; height:120px; flex-basis:95px; } #warehouseTasks .scenario b { font-size:20px; } }
 
 /* Lookup uses a light palette throughout, including inherited console tokens. */
@@ -943,7 +947,13 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 </form></dialog>
 <div class="scenario-bar" role="group" aria-label="Choose a guided voice scenario">
 <button class="scenario" data-scenario="receive" aria-pressed="true"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><span class="scenario-copy"><small>01 / RECEIVE</small><b>Receive a delivery<span aria-hidden="true">↗</span></b><span class="scenario-desc">From arrival to recorded stock.</span></span></button>
-<button class="scenario" data-scenario="correct" aria-pressed="false"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><span class="scenario-copy"><small>02 / CORRECT</small><b>Get the quantity right<span aria-hidden="true">↗</span></b><span class="scenario-desc">Correct the count before confirming.</span></span></button>
+<!-- The review-desk sprite, not the receiving one: correct and receive share
+     an area, so identical art put two visually indistinguishable cards on the
+     same screen. The sheet has three frames and no fourth to draw on, and a
+     desk with a clipboard fits "check the count before confirming" better than
+     a roller door does. reverse keeps this sprite but sits alone on its own
+     screen, so no screen repeats an illustration now. -->
+<button class="scenario" data-scenario="correct" aria-pressed="false"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><span class="scenario-copy"><small>02 / CORRECT</small><b>Get the quantity right<span aria-hidden="true">↗</span></b><span class="scenario-desc">Correct the count before confirming.</span></span></button>
 <button class="scenario" data-scenario="stock" aria-pressed="false"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><span class="scenario-copy"><small>03 / FIND</small><b>Find it on the shelf<span aria-hidden="true">↗</span></b><span class="scenario-desc">Ask where your material belongs.</span></span></button>
 <button class="scenario" data-scenario="reverse" aria-pressed="false"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><span class="scenario-copy"><small>04 / REVERSE</small><b>Reverse a receipt<span aria-hidden="true">↗</span></b><span class="scenario-desc">Reverse the entry. Keep the record.</span></span></button>
 </div>
