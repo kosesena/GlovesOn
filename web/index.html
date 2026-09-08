@@ -91,12 +91,15 @@
      bunu ogrenecegi yer, elleri doluyken okuyacagi bir README degil. Ilk
      mesaj gelir gelmez kayboluyor: yonerge, konusmanin ustune yigilmamali. */
   .primer { padding: 18px 18px 6px; display: flex; flex-direction: column; gap: 14px; }
-  .pr-lead { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  /* Mono is for ERP data — numbers, bins, documents. Instructional prose in
+     mono read as console output; these two lines are guidance, so they take
+     the system face and a size meant for reading. */
+  .pr-lead { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; font-size: 13px; line-height: 1.5; color: var(--muted); }
   .pr-lead b { color: var(--accent); font-weight: 600; }
   .pr-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
   .pr-list li { border-left: 2px solid var(--accent-dim); padding: 1px 0 1px 12px; }
   .pr-list q { font-size: 14px; color: var(--text); quotes: '\201C' '\201D'; }
-  .pr-list span { display: block; margin-top: 4px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .pr-list span { display: block; margin-top: 4px; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; font-size: 13px; line-height: 1.5; color: var(--muted); }
   .pr-list span b { color: var(--warn); font-weight: 600; }
   .pr-foot {
     font-family: var(--mono); font-size: 11px; line-height: 1.55; color: var(--muted);
@@ -1157,6 +1160,7 @@ function countStock(to, unit) {
 // ---------------------------------------------------------------------------
 // Bekleyen yazma seridi
 // ---------------------------------------------------------------------------
+let postReveal = 0;   // generation guard for the staged POSTED reveal
 function showPending(text) { pendingTxt.textContent = text; pendingEl.hidden = false; }
 function clearPending() { pendingEl.hidden = true; }
 
@@ -1255,7 +1259,12 @@ function receiveScopedEvent(e) {
 
   } else if (evt.type === 'goods_receipt') {
     const reversal = !!d.reversal;
-    setField('f-mblnr', d.MBLNR);
+    // Staged reveal: the stamp thuds first, the document number appears a
+    // beat later, then the stock counts. Everything at once reads as a screen
+    // refresh; in sequence it reads as a posting actually completing. The
+    // generation counter voids the pending timeouts if a reset lands mid-beat.
+    const rv = ++postReveal;
+    setField('f-mblnr', EMPTY);
     setField('f-bwart', d.BWART);
     setField('f-gmc', ['102','502'].includes(String(d.BWART)) ? '01' : '05');
     setField('f-menge', `${d.MENGE} ${d.MEINS}`);
@@ -1276,7 +1285,8 @@ function receiveScopedEvent(e) {
       setStamp('POSTED', 'posted');
       dfootEl.textContent = `Posted to SAP at ${when}${sess}, after spoken confirmation.`;
     }
-    countStock(d.new_stock_level, d.MEINS);
+    setTimeout(() => { if (rv === postReveal) setField('f-mblnr', d.MBLNR); }, 280);
+    setTimeout(() => { if (rv === postReveal) countStock(d.new_stock_level, d.MEINS); }, 520);
     clearPending();
     refreshInventory();
 
@@ -1287,6 +1297,7 @@ function receiveScopedEvent(e) {
     setTimeout(clearPending, 6000);
 
   } else if (evt.type === 'reset') {
+    postReveal++;              // void any in-flight reveal beats
     lastStock = null;
     stripEl.hidden = true;
     clearDoc();
