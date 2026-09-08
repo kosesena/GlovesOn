@@ -222,6 +222,10 @@
 
   table.mini { font-size: 11px; }
   table.mini td { padding: 6px 10px; }
+  table.mini th { padding: 2px 10px 6px; font-size: 9px; font-weight: 500;
+    letter-spacing: .08em; text-transform: uppercase; text-align: left;
+    color: var(--muted); }
+  table.mini th.num { text-align: right; }
   table.mini tr.clickable { cursor: pointer; }
   table.mini tr.clickable:hover td { background: var(--panel-2); }
   table.mini tr.open td { background: var(--panel-2); }
@@ -641,7 +645,7 @@ body.in-warehouse { background:#ede7da; }
 .right:has(#doc:not([hidden])) .result-hint { display:none; }
 .record-details summary { cursor:pointer; padding:18px 0; color:#dce5d8; }
 #warehouseBriefImage { display:none; }
-#warehouseBrief { padding:24px 30px; }
+#warehouseBrief { padding:18px 26px; }
 
 /* Keep the first screen focused. .trust-line and footer are hidden here and
    hidden again under body.in-warehouse, so they never paint in any state; the
@@ -897,7 +901,7 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 <button class="scenario" data-scenario="receive" aria-pressed="true"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><span class="scenario-copy"><small>01 / RECEIVE</small><b>Receive a delivery<span aria-hidden="true">↗</span></b><span class="scenario-desc">From arrival to recorded stock.</span></span></button>
 <button class="scenario" data-scenario="correct" aria-pressed="false"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><span class="scenario-copy"><small>02 / CORRECT</small><b>Get the quantity right<span aria-hidden="true">↗</span></b><span class="scenario-desc">Correct the count before confirming.</span></span></button>
 <button class="scenario" data-scenario="stock" aria-pressed="false"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><span class="scenario-copy"><small>03 / FIND</small><b>Find it on the shelf<span aria-hidden="true">↗</span></b><span class="scenario-desc">Ask where your material belongs.</span></span></button>
-<button class="scenario" data-scenario="reverse" aria-pressed="false"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><span class="scenario-copy"><small>04 / REVERSE</small><b>Undo a receipt<span aria-hidden="true">↗</span></b><span class="scenario-desc">Reverse the entry. Keep the record.</span></span></button>
+<button class="scenario" data-scenario="reverse" aria-pressed="false"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><span class="scenario-copy"><small>04 / REVERSE</small><b>Reverse a receipt<span aria-hidden="true">↗</span></b><span class="scenario-desc">Reverse the entry. Keep the record.</span></span></button>
 </div>
 <div class="console-wrap">
 
@@ -966,7 +970,8 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 
       <details class="record-details"><summary>View recent receipts and stock</summary><div class="sub">Recent documents</div>
       <table class="mini">
-        <tbody id="docBody"><tr><td colspan="4" class="empty">No documents yet.</td></tr></tbody>
+        <thead><tr><th>Document</th><th>Mvt</th><th>Material</th><th class="num">Qty</th><th class="num">Time</th></tr></thead>
+        <tbody id="docBody"><tr><td colspan="5" class="empty">No documents yet.</td></tr></tbody>
       </table>
 
       <!-- Depoda ne var. Bos ekrani doldurmaktan cok, konusana soyleyecek
@@ -974,6 +979,7 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
            yani ayni tablo hem davet hem de kanit. -->
       <div class="sub">Stock in this plant</div>
       <table class="mini">
+        <thead><tr><th>Material</th><th>Description</th><th>Bin</th><th class="num">On hand</th></tr></thead>
         <tbody id="stockBody"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
       </table></details>
     </div>
