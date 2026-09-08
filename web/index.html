@@ -752,18 +752,28 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
    block collapses to one line of flexed spans. Below 901px the
    stacked, scrolling layout stays — a phone page is meant to scroll. */
 @media(min-width:901px) {
- body > #how:target { margin:0 auto; padding:6px 32px 10px; gap:10px; align-content:start; }
+ /* Taller viewports: the card centres in the leftover height instead of
+    top-piling with a dead cream band under it. Shorter-than-fit viewports are
+    unaffected — with no free space align-content does nothing. */
+ body > #how:target { margin:0 auto; padding:6px 32px 8px; gap:10px; min-height:calc(100svh - 94px); align-content:center; }
  #how .how-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 18px; }
  #how .how-heading a { flex-basis:100%; padding:2px 0; font-size:13px; }
  .how-heading h1 { margin:0; font-size:clamp(26px,2.6vw,38px); }
  .how-heading p { margin:0; flex-basis:100%; font-size:14px; }
- #how article { padding:16px 18px; }
+ /* article is a flex column so the outcome can pin to the bottom; floats are
+    ignored on flex items, so the head content lives in .card-head, a flow-root
+    block where the sprite still floats beside the title and cannot spill into
+    the dialog below. */
+ #how article { display:flex; flex-direction:column; padding:15px 18px; }
+ #how .card-head { display:flow-root; }
  #how article .warehouse-art { float:right; width:clamp(54px,9svh,86px); margin:-2px -4px 2px 10px; }
  .how h3 { font-size:18px; }
  .how p { font-size:12.5px; line-height:1.55; }
- #how .how-dialog { margin-top:10px; padding:10px 12px; gap:7px; }
+ #how .how-dialog { margin-top:10px; padding:10px 12px; gap:6px; }
  #how .how-dialog p { font-size:11.5px; }
- #how .how-outcome { margin-top:10px; }
+ /* margin-top:auto pins all three outcome lines to one shared baseline at
+    the card bottoms; the leftover space sits between dialog and outcome. */
+ #how .how-outcome { margin-top:auto; padding-top:8px; }
  #how .how-rules { grid-column:1/3; padding:9px 18px; gap:6px 22px; align-self:center; }
  #how .how-rules span { font-size:12.5px; }
  #how .how-cta { grid-column:3; justify-self:end; align-self:center; margin:0; }
@@ -974,13 +984,13 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 <!-- The dialogs quote the demo's real seed data — material 4711, hex bolt
      M8x40, bin A-03-02, 240 on hand — and the guide's line is the read-back
      format agent.json itself prescribes. If the seed changes, change these. -->
-<article><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><small>01 / RECEIVE</small><h3>Check in a delivery.</h3><p>Say what arrived and how many. The bin, the unit and the description are looked up for you.</p>
+<article><div class="card-head"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><small>01 / RECEIVE</small><h3>Check in a delivery.</h3><p>Say what arrived and how many. The bin, the unit and the description are looked up for you.</p></div>
 <div class="how-dialog"><p><b>YOU</b>“Forty M8 bolts arrived.”</p><p class="g"><b>YOUR GUIDE</b>“Forty pieces of hex bolt M8x40 into bin A-03-02 — confirm?”</p><p><b>YOU</b>“Yes.”</p></div>
 <p class="how-outcome">Receipt posted · stock 240 → 280</p></article>
-<article><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><small>02 / FIND</small><h3>Find material and stock.</h3><p>Ask where a material lives and how much is on hand. A lookup — nothing changes.</p>
+<article><div class="card-head"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><small>02 / FIND</small><h3>Find material and stock.</h3><p>Ask where a material lives and how much is on hand. A lookup — nothing changes.</p></div>
 <div class="how-dialog"><p><b>YOU</b>“Where are the M8 bolts?”</p><p class="g"><b>YOUR GUIDE</b>“Bin A-03-02 — 240 on hand.”</p></div>
-<p class="how-outcome">No confirmation asked · inventory untouched</p></article>
-<article><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><small>03 / REVIEW</small><h3>Reverse the right receipt.</h3><p>A wrong receipt is corrected with a reversal document. Nothing is ever deleted.</p>
+<p class="how-outcome">No confirmation needed · stock untouched</p></article>
+<article><div class="card-head"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><small>03 / REVIEW</small><h3>Reverse the right receipt.</h3><p>A wrong receipt is corrected with a reversal document. Nothing is ever deleted.</p></div>
 <div class="how-dialog"><p><b>YOU</b>“That last receipt was wrong.”</p><p class="g"><b>YOUR GUIDE</b>“Reversing it — forty hex bolts back out of A-03-02. Confirm?”</p><p><b>YOU</b>“Yes.”</p></div>
 <p class="how-outcome">Reversal posted · both documents stay</p></article>
 <div class="how-rules"><small>THE RULES OF THE FLOOR</small><span>Every write is read back before it happens.</span><span>Nothing posts without your spoken yes.</span><span>Nothing is deleted — a reversal keeps both records.</span></div>
