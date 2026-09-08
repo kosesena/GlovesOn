@@ -600,8 +600,7 @@ body > .console-wrap, body > .demo-intro { display:none; }
 #top { scroll-margin-top:100px; }
 body:not(.in-warehouse) { background:radial-gradient(1000px 620px at 50% 30%,#faf0dd,#f6e5ce 70%,#f0dbbc) fixed; }
 body:not(.in-warehouse) > .site-nav { position:relative; z-index:2; max-width:none; background:transparent; }
-body:not(.in-warehouse) > .hero { background:transparent; border-radius:0; margin:0; max-width:none; width:100%; height:calc(100svh - 180px); min-height:480px; max-height:none; }
-body:not(.in-warehouse) > .trust-line,body:not(.in-warehouse) > footer { position:relative; max-width:none; margin:0; padding-left:4%; padding-right:4%; background:transparent; color:#465340; border-color:#43513b25; }
+body:not(.in-warehouse) > .hero { background:transparent; border-radius:0; margin:0; max-width:none; width:100%; max-height:none; }
 @media(max-width:900px) {
  body:not(.in-warehouse) > .hero { padding:0 20px 8px; min-height:calc(100svh - 200px); height:auto; flex-direction:column; justify-content:flex-start; align-items:center; }
  body:not(.in-warehouse) .hero-copy { order:0; width:100%; padding:24px 0 0; text-align:center; background:none; }
@@ -631,23 +630,11 @@ body.in-warehouse { background:#ede7da; }
 #warehouseBriefImage { display:none; }
 #warehouseBrief { padding:24px 30px; }
 
-/* Keep landing credits within the text column, away from the character. */
-body:not(.in-warehouse) > .trust-line,
-body:not(.in-warehouse) > footer {
- width:48%; margin:0; padding:12px 0 12px 8%;
- display:flex; flex-wrap:wrap; justify-content:flex-start; gap:8px 18px;
- border:0; font-size:10px; line-height:1.6; color:#43503d;
-}
-body:not(.in-warehouse) > .hero { height:calc(100svh - 235px); min-height:440px; }
-body:not(.in-warehouse) > footer { padding-top:0; padding-bottom:20px; }
-@media(max-width:650px) {
- body:not(.in-warehouse) > .trust-line,body:not(.in-warehouse) > footer {
- width:55%; padding-left:20px; font-size:9px;
- }
- body:not(.in-warehouse) > .hero { min-height:430px; }
-}
-
-/* Keep the first screen focused; provenance lives next to the main action. */
+/* Keep the first screen focused. .trust-line and footer are hidden here and
+   hidden again under body.in-warehouse, so they never paint in any state; the
+   provenance they carried now lives in .landing-hackathon. The styling they
+   had before was deleted rather than left dormant — three .hero height rules
+   had already stacked up behind it, each silently overriding the last. */
 body:not(.in-warehouse) > .trust-line,
 body:not(.in-warehouse) > footer { display:none; }
 body:not(.in-warehouse) > .hero { height:calc(100svh - 84px); min-height:480px; }
@@ -656,7 +643,6 @@ body:not(.in-warehouse) > .hero { height:calc(100svh - 84px); min-height:480px; 
 .project-context { grid-column:1/-1; color:#49553e; font-size:13px; }
 @media(max-width:900px) { body:not(.in-warehouse) > .hero { height:auto; min-height:calc(100svh - 84px); } }
 
-.hero-hackathon { display:block; margin-top:8px; font-size:11px; line-height:1.5; color:#49553e; }
 
 .landing-hackathon { position:fixed; bottom:14px; left:0; width:100%; text-align:center; font-size:11px; line-height:1.5; color:#394631; pointer-events:none; z-index:2; }
 .landing-hackathon .proof { color:#2f3a29; }
