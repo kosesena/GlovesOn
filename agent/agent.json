@@ -270,6 +270,7 @@
       "min_silence": 800,
       "max_silence": 2000,
       "interrupt_response": true
-    }
+    },
+    "voice_focus": "far-field"
   }
 }

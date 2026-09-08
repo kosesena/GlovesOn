@@ -162,8 +162,15 @@ listesi eklendi (100 limitinin altında; sayı listeye terim eklendikçe büyüd
 - **`input.transcription_mode`** — `balanced` (varsayılan), `min_latency`,
   `max_accuracy`. Malzeme numaraları yanlış okunmaya devam ederse `max_accuracy`
   denenecek ilk şey; bedeli gecikme
-- **`input.voice_focus` / `voice_focus_threshold`** — gürültü bastırma. Depo sesi
-  testinde (15 Eylül) devreye alınacak
+- **`input.voice_focus`** — bir aç/kapa değil, bir MOD. Değerleri `near-field`
+  (varsayılan) ve `far-field`; yani hiç yazmasan bile gürültü bastırma zaten
+  çalışıyor. "Devreye alınacak" demek yanlıştı — açıktı, sadece mod seçilmemişti.
+  Depo işçisi mikrofonun ağzında değil (eldivenli, kutu taşıyor), o yüzden
+  `agent.json`'a **`far-field`** yazıldı. Senaryodan türetildi, ölçülerek değil.
+  `input.voice_focus_threshold` (0.0–1.0, varsayılan **0.85**, `voice_focus`
+  set edilmişse geçerli) default'ta bırakıldı — turn_detection'daki dersle aynı:
+  gerçek kayıt olmadan sayı uydurma. Construction-time: STT bağlantısı açılırken
+  uygulanıyor, oturum ortasında değişmez. Ölçüm protokolü: `docs/noise-test.md`.
 - **`input.language_codes`** — beklenen dilleri bildirmek
 - **`output.volume`** — 0-100, oturum ortasında değiştirilebiliyor
 

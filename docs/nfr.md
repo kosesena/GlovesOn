@@ -126,7 +126,7 @@ until they are.
 
 | | Position |
 |---|---|
-| Noise | **Untested, and nothing is enabled.** `agent/agent.json` carries no `voice_focus` block, and `web/index.html` sets the browser's own `noiseSuppression: false`. The transcription prompt names forklift noise; nothing has been measured. Incumbent voice systems are better at this — `docs/market.md` §5 |
+| Noise | **Enabled, still unmeasured.** Earlier drafts said "nothing is enabled" — that was wrong: `voice_focus` is on by default (`near-field`), so noise suppression was already running. `agent/agent.json` now sets `input.voice_focus: far-field`, the mode for a speaker who is not on the mic — the warehouse case — chosen from the scenario, not from measurement; `voice_focus_threshold` is left at its 0.85 default until a real recording sets it. The browser's own `noiseSuppression` stays `false` on purpose, so suppression happens once, on AssemblyAI's side, closest to the STT model. What is untested is the *result* under real forklift noise — the harness for that is `docs/noise-test.md`. Incumbent voice systems are still better at this — `docs/market.md` §5 |
 | Interruption | Barge-in on; the client flushes queued agent audio on `input.speech.started` |
 | Hands-free | Session start still needs a button press — the one non-hands-free moment |
 | Accents and non-native speakers | Untested. A real warehouse floor is multilingual; this is a significant gap for the stated user |
