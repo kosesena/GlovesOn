@@ -9,7 +9,7 @@ is the point of testing these and not, say, the JSON shape of a stock reply.
 from __future__ import annotations
 
 import pytest
-from conftest import AUTH, post_receipt, stock_level
+from conftest import AUTH, post_receipt, reverse_receipt, scope_of, scoped_headers, stock_level
 from fastapi import HTTPException
 
 from gateway import audit, sap_client, store
@@ -84,11 +84,8 @@ def test_a_reversal_posts_a_second_document_and_returns_the_stock(client):
     before = stock_level(client)
     receipt = post_receipt(client, quantity=20).json()
 
-    reversal = client.post("/erp/reverse-goods-receipt",
-                           json={"document": receipt["MBLNR"],
-                                 "confirmed_utterance": "Reverse it",
-                                 "session_id": "test-session"},
-                           headers=AUTH).json()
+    reversal = reverse_receipt(client, receipt["MBLNR"],
+                               confirmed_utterance="Reverse it").json()
 
     assert reversal["reversed"] is True
     assert reversal["BWART"] == "502"                    # the reverse of a 501
@@ -105,28 +102,24 @@ def test_a_reversal_posts_a_second_document_and_returns_the_stock(client):
 
 def test_a_reversal_cannot_itself_be_reversed(client):
     receipt = post_receipt(client).json()
-    reversal = client.post("/erp/reverse-goods-receipt", json={"document": receipt["MBLNR"]},
-                           headers=AUTH).json()
+    reversal = reverse_receipt(client, receipt["MBLNR"]).json()
 
-    again = client.post("/erp/reverse-goods-receipt", json={"document": reversal["MBLNR"]},
-                        headers=AUTH).json()
+    again = reverse_receipt(client, reversal["MBLNR"]).json()
     assert again["reversed"] is False
     assert "reversal" in again["message"].lower()
 
 
 def test_a_document_is_not_reversed_twice(client):
     receipt = post_receipt(client).json()
-    client.post("/erp/reverse-goods-receipt", json={"document": receipt["MBLNR"]}, headers=AUTH)
+    reverse_receipt(client, receipt["MBLNR"])
 
-    second = client.post("/erp/reverse-goods-receipt", json={"document": receipt["MBLNR"]},
-                         headers=AUTH).json()
+    second = reverse_receipt(client, receipt["MBLNR"]).json()
     assert second["reversed"] is False
     assert "already reversed" in second["message"].lower()
 
 
 def test_an_unknown_document_is_refused_in_words_a_worker_can_act_on(client):
-    r = client.post("/erp/reverse-goods-receipt", json={"document": "4900000000"},
-                    headers=AUTH).json()
+    r = reverse_receipt(client, "4900000000").json()
     assert r["reversed"] is False
     assert "read the number again" in r["message"].lower()
 
@@ -157,35 +150,41 @@ def test_an_unstocked_material_is_refused_with_the_plant_named(client):
 # --- the trail from document back to the spoken sentence ---------------------
 
 def test_the_audit_trail_records_the_confirmed_utterance(client):
-    receipt = post_receipt(client, confirmed_utterance="Twenty pieces of hex bolt M8x40",
-                           session_id="session-abc").json()
+    # The session reference is no longer a string the caller invents: it is
+    # the scope the gateway verified on the request, the same identity that
+    # signed the draft. The trail therefore links the document to a session
+    # that provably existed, not to a claim.
+    headers = scoped_headers()
+    receipt = post_receipt(client, headers=headers,
+                           confirmed_utterance="Twenty pieces of hex bolt M8x40").json()
 
     row = audit.lookup(receipt["MBLNR"])
     assert row is not None
     assert row["utterance"] == "Twenty pieces of hex bolt M8x40"
-    assert row["session_id"] == "session-abc"
+    assert row["session_id"] == scope_of(headers)
     assert row["action"] == "goods_receipt"
 
 
 def test_a_reversal_is_recorded_too(client):
     receipt = post_receipt(client).json()
-    reversal = client.post("/erp/reverse-goods-receipt",
-                           json={"document": receipt["MBLNR"],
-                                 "confirmed_utterance": "Reverse that one",
-                                 "session_id": "session-abc"},
-                           headers=AUTH).json()
+    reversal = reverse_receipt(client, receipt["MBLNR"],
+                               confirmed_utterance="Reverse that one").json()
 
     row = audit.lookup(reversal["MBLNR"])
     assert row["action"] == "reversal"
     assert row["utterance"] == "Reverse that one"
 
 
-def test_a_missing_utterance_does_not_block_the_write(client):
-    # The trail enriches a posting; the read-back-and-yes protocol is what
-    # authorises it (ADR-0002). A tool call without the sentence still posts.
-    body = client.post("/erp/goods-receipt",
-                       json={"material": "4711", "quantity": 20}, headers=AUTH).json()
-    assert body["posted"] is True
+def test_a_missing_utterance_now_blocks_the_write(client):
+    # This guarantee flipped with the draft protocol, deliberately. The trail
+    # used to merely enrich a posting; now the confirmed sentence is part of
+    # what the gateway demands before consuming a draft, so a call without it
+    # is refused and nothing reaches SAP (ADR-0002, revised).
+    before = stock_level(client)
+    body = post_receipt(client, confirmed_utterance=None).json()
+    assert body["posted"] is False
+    assert "confirmation" in body["message"].lower()
+    assert stock_level(client) == before
 
 
 def test_the_document_carries_its_voice_origin_into_sap(client):
@@ -193,13 +192,15 @@ def test_the_document_carries_its_voice_origin_into_sap(client):
     # speaker claimed to be. BKTXT marks the origin, XBLNR carries the session
     # reference that leads back to the audit trail. Read from the mock's own
     # tables, because these are fields SAP stores, not fields our tools return.
-    receipt = post_receipt(client, session_id="abc123").json()
+    headers = scoped_headers()
+    receipt = post_receipt(client, headers=headers).json()
 
     with store.db() as conn:
         row = conn.execute("SELECT bktxt, xblnr FROM mkpf WHERE mblnr=%s",
                            (receipt["MBLNR"],)).fetchone()
     assert row["bktxt"] == "GLOVESON VOICE"
-    assert row["xblnr"] == "VOICE:abc123"
+    # XBLNR is 16 chars in SAP; "VOICE:" leaves ten for the scope id.
+    assert row["xblnr"] == "VOICE:" + scope_of(headers)[:10]
 
 
 # --- the trail is readable, not only writable --------------------------------
@@ -208,36 +209,38 @@ def test_a_document_can_be_traced_back_to_the_sentence_that_caused_it(client):
     # A trail nothing reads is not a trail. This is the endpoint the screen
     # calls when a judge clicks a document, so the evidence is visible rather
     # than merely stored.
-    # A real session reference is secrets.token_hex(4) — eight characters.
-    receipt = post_receipt(client, confirmed_utterance="Twenty pieces of hex bolt M8x40",
-                           session_id="a1b2c3d4").json()
+    headers = scoped_headers()
+    sid = scope_of(headers)
+    receipt = post_receipt(client, headers=headers,
+                           confirmed_utterance="Twenty pieces of hex bolt M8x40").json()
 
     p = client.get(f"/api/provenance/{receipt['MBLNR']}").json()
 
     assert p["MBLNR"] == receipt["MBLNR"]
     assert p["MENGE"] == 20
     assert p["BKTXT"] == "GLOVESON VOICE"
-    assert p["XBLNR"] == "VOICE:a1b2c3d4"
+    assert p["XBLNR"] == "VOICE:" + sid[:10]
     assert p["voice"]["utterance"] == "Twenty pieces of hex bolt M8x40"
-    assert p["voice"]["session_id"] == "a1b2c3d4"
+    assert p["voice"]["session_id"] == sid
     assert p["voice"]["action"] == "goods_receipt"
 
 
-def test_provenance_says_so_when_no_sentence_was_recorded(client):
-    # Silence is information: the document was posted by a direct tool call.
-    # Showing an empty quote would imply someone said nothing out loud.
-    body = client.post("/erp/goods-receipt",
-                       json={"material": "4711", "quantity": 20}, headers=AUTH).json()
-    p = client.get(f"/api/provenance/{body['MBLNR']}").json()
-    assert p["voice"] is None or p["voice"]["utterance"] == ""
+def test_a_bare_call_without_a_draft_writes_nothing(client):
+    # The state this test used to document — a posted document with no spoken
+    # sentence — is no longer reachable through the API: a bare tool call,
+    # valid input and all, dies on the missing draft before SAP is touched.
+    # That unreachability IS the guarantee now.
+    before = stock_level(client)
+    body = post_receipt(client, drafted=False).json()
+    assert body["posted"] is False
+    assert "draft" in body["message"].lower()
+    assert stock_level(client) == before
 
 
 def test_a_reversal_points_at_the_document_it_reverses(client):
     receipt = post_receipt(client).json()
-    reversal = client.post("/erp/reverse-goods-receipt",
-                           json={"document": receipt["MBLNR"],
-                                 "confirmed_utterance": "Reverse it"},
-                           headers=AUTH).json()
+    reversal = reverse_receipt(client, receipt["MBLNR"],
+                               confirmed_utterance="Reverse it").json()
 
     p = client.get(f"/api/provenance/{reversal['MBLNR']}").json()
     assert p["reverses"] == receipt["MBLNR"]

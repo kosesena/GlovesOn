@@ -16,6 +16,11 @@ from gateway import main, session_scope
 
 class ScopeRouteTests(unittest.IsolatedAsyncioTestCase):
     async def test_concurrent_requests_and_streams_are_isolated(self):
+        # This harness talks to the app over a bare ASGITransport, skipping the
+        # lifespan on purpose — so it must also skip the latch a lifespan-ed
+        # client from another test file may have left behind: TestClient exit
+        # sets _shutting_down, and a set latch ends every SSE stream at birth.
+        main._shutting_down.clear()
         captured = []
         def record(kind, payload):
             captured.append((len(captured)+1, json.dumps({'type':kind,'data':payload})))

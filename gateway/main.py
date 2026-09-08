@@ -71,6 +71,11 @@ async def lifespan(_: FastAPI):
     gorunmedi; testler ilk kosuda ortaya cikardi.
     """
     global _sap
+    # A fresh start clears the shutdown latch. Without this, the first test
+    # client's exit set the event forever and every later SSE stream in the
+    # same process exited on arrival — the whole checks/ suite only passed
+    # when it ran alone.
+    _shutting_down.clear()
     store.init_db()
     audit.init()
     confirmation.init()

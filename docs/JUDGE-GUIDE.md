@@ -26,23 +26,29 @@ curl -s https://gloveson.vercel.app/health
 curl -s -H "X-Tool-Secret: $S" \
   "https://gloveson.vercel.app/erp/stock?material=4711"
 
-# 3. a goods receipt: a real material document, and stock moves
+# 3. try to post a receipt the way a script would — and watch it refused
 curl -s -X POST -H "X-Tool-Secret: $S" -H "Content-Type: application/json" \
   -d '{"material":"4711","quantity":20,
-       "confirmed_utterance":"Twenty pieces of hex bolt M8x40 into bin A-03-02",
-       "session_id":"judge01"}' \
+       "confirmed_utterance":"Twenty pieces of hex bolt M8x40 into bin A-03-02"}' \
   https://gloveson.vercel.app/erp/goods-receipt
 
-# 4. say it again — refused, with the original document named
-#    (repeat step 3 verbatim)
+# 4. so where do documents come from? the ones the voice demo has posted
+curl -s -H "X-Tool-Secret: $S" https://gloveson.vercel.app/erp/recent-documents
 
 # 5. why does that document exist? the sentence that caused it
-curl -s https://gloveson.vercel.app/api/provenance/<MBLNR>
+curl -s https://gloveson.vercel.app/api/provenance/<MBLNR from step 4>
 ```
 
-Step 4 is the one worth watching. A real S/4HANA accepts the same goods receipt
-twice without complaint; the refusal is ours, and it is what makes a worker
-repeating themselves safe.
+Step 3 is the one worth watching, and it worth watching because it **fails**.
+This guide used to post a document here; since the draft protocol it cannot:
+a write is accepted only inside a verified voice session that first *prepared*
+the exact details and then confirmed them, so the strongest thing a curl can
+demonstrate is the refusal itself — valid input, correct secret, and still no
+document. The full prepare→confirm dance, the duplicate refusal and the
+reversal are all exercised end-to-end by the test suite below; the live posting
+you can watch happen is the voice demo. (If step 4 returns an empty list,
+nobody has spoken to the demo since its last reset — run one goods receipt by
+voice and look again.)
 
 ---
 

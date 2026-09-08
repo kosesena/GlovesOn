@@ -51,11 +51,22 @@ os.environ["AGENT_ID"] = "test-agent-id"
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from gateway import audit, live, store  # noqa: E402
+from gateway import audit, live, session_scope, store  # noqa: E402
 from gateway.main import app  # noqa: E402
 
 SECRET = os.environ["TOOL_SHARED_SECRET"]
 AUTH = {"X-Tool-Secret": SECRET}
+
+
+def scoped_headers():
+    """One voice session's identity. The same scope must sign the preparation
+    and the write — the draft is keyed to it — so tests mint one per exchange
+    and pass it to both calls, exactly as the published agent does."""
+    return {**AUTH, "X-Event-Scope": session_scope.issue(SECRET)}
+
+
+def scope_of(headers):
+    return session_scope.verify(headers["X-Event-Scope"], SECRET)
 
 
 @pytest.fixture()
@@ -73,12 +84,45 @@ def client():
         yield c
 
 
-def post_receipt(client, **body):
+def post_receipt(client, headers=None, drafted=True, user_confirmation="confirm", **body):
+    """Prepare-then-confirm, the way the agent is now required to write.
+
+    drafted=False skips the preparation and calls the write bare — the path a
+    misbehaving client would take. Input validation runs before the draft is
+    consumed, so the validation tests use it to reach their messages; the
+    contract tests use it to prove a bare call cannot post. If a preparation
+    itself is refused (unknown material, malformed quantity), the helper falls
+    back to the bare call so the refusal message still comes from validation,
+    which fires first on both paths."""
+    headers = headers or scoped_headers()
     payload = {"material": "4711", "quantity": 20,
-               "confirmed_utterance": "Twenty pieces of hex bolt into bin A-03-02",
-               "session_id": "test-session"}
+               "confirmed_utterance": "Twenty pieces of hex bolt into bin A-03-02"}
     payload.update(body)
-    return client.post("/erp/goods-receipt", json=payload, headers=AUTH)
+    details = {k: v for k, v in payload.items()
+               if k in ("material", "quantity", "plant", "storage_location",
+                        "purchase_order", "allow_duplicate")}
+    if drafted:
+        prep = client.post("/erp/prepare-goods-receipt", json=details, headers=headers).json()
+        if prep.get("prepared"):
+            payload["draft_token"] = prep["draft_token"]
+            payload.setdefault("user_confirmation", user_confirmation)
+    return client.post("/erp/goods-receipt", json=payload, headers=headers)
+
+
+def reverse_receipt(client, document, headers=None, drafted=True,
+                    user_confirmation="confirm", **body):
+    """The reversal twin of post_receipt, through /erp/prepare-reversal."""
+    headers = headers or scoped_headers()
+    payload = {"document": document,
+               "confirmed_utterance": f"Reverse document {document}"}
+    payload.update(body)
+    details = {"document": document}
+    if drafted:
+        prep = client.post("/erp/prepare-reversal", json=details, headers=headers).json()
+        if prep.get("prepared"):
+            payload["draft_token"] = prep["draft_token"]
+            payload.setdefault("user_confirmation", user_confirmation)
+    return client.post("/erp/reverse-goods-receipt", json=payload, headers=headers)
 
 
 def stock_level(client, material="4711", lgort="0001"):

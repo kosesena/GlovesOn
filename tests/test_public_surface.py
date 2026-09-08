@@ -42,6 +42,10 @@ def test_every_erp_route_refuses_an_unauthenticated_caller(client):
         ("GET", "/erp/recent-documents", None),
         ("POST", "/erp/goods-receipt", {"material": "4711", "quantity": 20}),
         ("POST", "/erp/reverse-goods-receipt", {"document": "4900000000"}),
+        # The preparation endpoints mint write drafts; a stranger minting
+        # drafts is a stranger halfway to a posting, so they answer 401 too.
+        ("POST", "/erp/prepare-goods-receipt", {"material": "4711", "quantity": 20}),
+        ("POST", "/erp/prepare-reversal", {"document": "4900000000"}),
     ]
     routed = {r.path for r in client.app.routes if getattr(r, "path", "").startswith("/erp/")}
     assert routed == {p.split("?")[0] for _, p, _ in calls}, (
