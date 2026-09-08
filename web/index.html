@@ -897,9 +897,7 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
     comes from the shadow baked into the cutout plus the puddle below. */
  body:not(.in-warehouse) .hero-image { display:block; position:absolute; left:50%; transform:translateX(-50%);
    top:-36px; bottom:auto; width:auto; height:min(86svh,780px); max-height:calc(100% - 92px); margin-top:0; z-index:2; }
- body:not(.in-warehouse) > .hero:after { content:''; display:block; position:absolute; left:50%; transform:translateX(-50%);
-   bottom:14px; width:min(60svh,560px); height:56px; z-index:-1;
-   background:radial-gradient(closest-side,#d9bf9d,transparent); }
+ body:not(.in-warehouse) > .hero:after { content:none; display:none; }
  body:not(.in-warehouse) .hero-actions { position:absolute; left:50%; transform:translateX(-50%);
    bottom:40px; margin:0; z-index:5; }
  body:not(.in-warehouse) .hero-actions button { box-shadow:0 10px 26px rgba(36,75,53,.25); }
