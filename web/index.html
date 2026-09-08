@@ -734,7 +734,7 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 @media(max-width:700px) { body > #how:target { grid-template-columns:1fr; padding:18px 22px 40px; } }
 
 /* Depth poster: the headline's first two lines pass behind the figure and
-   "Just speak." passes in front, magazine-cover style. It works through
+   "Just speak" passes in front, magazine-cover style. It works through
    z-order alone — the copy must NOT form a stacking context (no position,
    no transform), so the static h1 text paints under the z:2 figure while
    the em, positioned at z:3, paints over her. The one-line value prop is
@@ -786,6 +786,11 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
    display:block; position:absolute; inset:0; z-index:3;
    color:transparent; -webkit-text-fill-color:transparent;
    -webkit-text-stroke:1.25px #fff3dc;
+   /* One light stroke disappeared over the carton she carries. drop-shadow
+      reads the element's alpha, and with the fill transparent that alpha is
+      the stroke alone — so this darkens the outline's edge instead of
+      painting a solid letter behind her. */
+   filter:drop-shadow(0 0 1px rgba(38,32,22,.5)) drop-shadow(0 1px 2px rgba(38,32,22,.3));
    pointer-events:none; user-select:none;
    mask-image:url('/assets/worker-3d.webp');
    mask-repeat:no-repeat;
@@ -805,7 +810,7 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
   <img class="hero-image" src="/assets/worker-3d.webp" alt="A warehouse worker wearing gloves and a headset carries a box with both hands." width="742" height="1165" fetchpriority="high" />
   <div class="hero-copy">
     <div class="eyebrow">Built for hands that are busy<span class="eyebrow-credit">· Powered by AssemblyAI</span></div>
-    <h1><span class="hero-depth-line" >Gloves on.<span class="hero-depth-outline" aria-hidden="true">Gloves on.</span></span><br><span class="hero-depth-line" >Hands full.<span class="hero-depth-outline" aria-hidden="true">Hands full.</span></span><br><em>Just speak.<span class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></em></h1>
+    <h1><span class="hero-depth-line" >Gloves on.<span class="hero-depth-outline" aria-hidden="true">Gloves on.</span></span><br><span class="hero-depth-line" >Hands full.<span class="hero-depth-outline" aria-hidden="true">Hands full.</span></span><br><em>Just speak<span class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></em></h1>
     <p>Receive goods, check stock and review receipts — by voice.</p>
     <div class="hero-actions"><button class="hero-start" id="heroStart">Start your shift ↗</button></div>
     <div class="hero-attribution">Powered by <strong>AssemblyAI</strong></div>
