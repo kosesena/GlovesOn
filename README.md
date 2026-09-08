@@ -183,6 +183,12 @@ options and what the choice costs.
   security posture, cost model, known defects
 - **[docs/clean-core.md](docs/clean-core.md)** — where this complies with SAP Clean Core
   and, at greater length, where it does not
+- **[docs/market.md](docs/market.md)** — the competitive landscape, adversarially
+  fact-checked: who already writes to SAP by voice, what Joule does, and the claims this
+  project may not make
+- **[docs/business-case.md](docs/business-case.md)** — who this is for and what it
+  displaces: the unplanned pallet, the ~$5,000-per-seat incumbent norm, and the ROI
+  figure deliberately not quoted until session length is measured
 - **[docs/deploy-vercel.md](docs/deploy-vercel.md)** — the deployment runbook and what a
   redeploy costs you
 
