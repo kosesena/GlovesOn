@@ -977,6 +977,30 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 .reversal-link small {display:block;margin-top:10px;color:#52634e;}
 @media(max-width:760px) {#warehouseWork .console-wrap header .spacer {display:none;} #warehouseWork .console-wrap .plant {white-space:normal;}}
 
+
+/* Keep supporting actions secondary to speaking and seeing a result. */
+#warehouseCreate {display:none;}
+#warehouseTasks #newScenario {display:inline-block;background:transparent;color:#244b35;border:1px solid #c8cebf;padding:10px 16px;font-size:14px;}
+#warehouseShell #replayAreaIntro {background:transparent;color:#244b35;border:0;padding:8px;font-size:13px;text-decoration:underline;text-underline-offset:4px;}
+#warehouseWork .console-wrap .logo,#warehouseWork .console-wrap .plant,#warehouseWork .console-wrap .spacer,#warehouseWork .console-wrap main>section>h2,#warehouseGuideQuote,#warehouseWork .brief-eyebrow {display:none;}
+#warehouseWork .console-wrap header {justify-content:center;padding:18px 24px;}
+#warehouseWork .voice-credit {flex-basis:100%;justify-content:center;text-align:center;}
+#warehouseWork .write-progress {display:none;}
+#warehouseWork .has-result .write-progress {display:flex;}
+#warehouseWork .task-help {margin:20px 24px 0;}
+#warehouseWork .task-help summary {cursor:pointer;color:#244b35;padding:12px 0;}
+#warehouseWork .task-help .primer {padding:12px 0;}
+#warehouseWork #conversationDetails {margin-top:8px;}
+#warehouseWork #conversationDetails #resetBtn {margin:0 0 16px;padding:10px 16px;color:#244b35;border-color:#c8cebf;}
+#warehouseWork .controls {display:none;}
+#warehouseWork #warehouseBrief {padding:20px 26px;}
+#warehouseWork .result-hint {font-size:15px;line-height:1.6;}
+#warehouseWork .console-wrap main {display:flex;flex-direction:column;}
+#warehouseWork .console-wrap main>.right {order:-1;border-left:0;}
+#warehouseWork .console-wrap main>section:first-child {border-top:1px solid #c8cebf;}
+#warehouseWork .deskspace {width:100%;max-width:850px;box-sizing:border-box;margin:0 auto;}
+#warehouseWork .lookup-result {max-width:850px;width:100%;box-sizing:border-box;margin:0 auto;}
+#warehouseWork .task-help {margin-top:8px;}
 </style>
 </head>
 <body>
@@ -1010,13 +1034,13 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <div class="trust-line"><span>VOICE POWERED BY <strong>AssemblyAI</strong></span><span>GOODS RECEIPT · STOCK · REVERSAL</span><span><strong>SAP OData</strong> · Demo environment</span></div>
 <div class="demo-intro" id="demo"><div><div class="eyebrow">Step onto the receiving floor</div><h2>Your voice. A recorded result.</h2></div><p>Choose a scenario, then start talking. Follow your conversation through to the material document.</p></div>
 <section class="warehouse-shell" id="warehouseShell" hidden aria-label="Interactive warehouse">
-<div class="warehouse-toolbar"><button id="warehouseBack">← Back to site</button><span id="warehouseCrumb">PLANT 1000 / WAREHOUSE</span><button id="replayAreaIntro" hidden>Watch scene ↻</button><button id="warehouseCreate">+ Create your scenario</button></div>
+<div class="warehouse-toolbar"><button id="warehouseBack">← Back to site</button><span id="warehouseCrumb">PLANT 1000 / WAREHOUSE</span><button id="replayAreaIntro" hidden>Watch a walkthrough ↗</button><button id="warehouseCreate">+ Create a task</button></div>
 <div id="warehouseLobby"><div class="warehouse-title"><div class="eyebrow">YOUR SHIFT / PLANT 1000</div><h1>Where are you working today?</h1><p>Step into an area to pick up your next task.</p></div><div class="warehouse-room" id="warehouseRoom"><div id="avatarStage" class="avatar-stage"></div><button class="warehouse-entry" data-enter="receiving"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><b>Receiving bay</b><small>Deliveries & quantity checks</small><em>2 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="storage"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><b>Storage aisles</b><small>Locate materials & stock</small><em>1 guided task ↗</em></button><button class="warehouse-entry" data-enter="review"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><b>Review desk</b><small>Check receipts & reverse entries</small><em>1 guided task ↗</em></button></div></div>
 <div id="warehouseArea" hidden><div class="warehouse-title"><h1 id="warehouseAreaTitle"></h1><p>Take the next guided task, or open the task folder.</p></div><div class="warehouse-choice"><article><small>01 / TAKE A TASK</small><h2>Next on your shift</h2><p id="nextTaskDescription"></p><button id="takeNextTask">Take this task ↗</button></article><article><small>02 / TASK FOLDER</small><h2>Choose your task</h2><p>Browse the guided scenarios and the tasks you have created for this area.</p><button id="browseTasks">Open task folder ↗</button></article></div></div>
 <div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><div id="warehouseBrief"><span id="warehouseBriefImage" class="warehouse-art" aria-hidden="true" ></span><div class="brief-copy"><small class="brief-eyebrow">YOUR NEXT TASK</small><h2 id="warehouseBriefTitle"></h2><p id="warehouseBriefText"></p><blockquote id="warehouseGuideQuote" hidden><small>YOUR WAREHOUSE GUIDE</small><p>“A delivery just arrived. Let’s check it in.”</p></blockquote></div></div></div>
 </section>
 <section class="shift" aria-label="Warehouse shift">
-  <div class="shift-heading"><div><h3>Your shift starts here.</h3><p>Choose an area. Pick a task. Work by voice.</p></div><button id="newScenario">+ Create scenario</button></div>
+  <div class="shift-heading"><div><h3>Your shift starts here.</h3><p>Choose an area. Pick a task. Work by voice.</p></div><button id="newScenario">+ Create a task</button></div>
   <div class="floor" role="group" aria-label="Warehouse areas">
     <button class="zone" data-zone="receiving" aria-pressed="false"><span>01 / LOADING BAY</span><b>Receiving</b><small>Deliveries & quantity checks</small></button>
     <button class="zone" data-zone="storage" aria-pressed="false"><span>02 / STORAGE AISLES</span><b>Shelves</b><small>Materials & stock locations</small></button>
@@ -1064,7 +1088,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
   <canvas id="meter" width="108" height="36" aria-hidden="true"></canvas>
   <div class="dot" id="dot"></div>
   <div class="status" id="status">idle</div>
-  <button id="resetBtn">Reset demo</button>
+
   <button id="talkBtn" class="primary">Start talking</button>
 </header>
 
@@ -1074,13 +1098,14 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
     <h2>Conversation</h2>
     <!-- #log'un DISINDA duruyor: "Reset demo" gunlugun icerigini komple
          degistiriyor, primer orada olsaydi onunla birlikte silinirdi. -->
-    <div id="primer" class="primer">
+    <details id="taskHelp" class="task-help"><summary>What can I say?</summary><div id="primer" class="primer">
       <div class="pr-lead">Press <b>Start talking</b>, then try this request.</div>
       <ul class="pr-list" id="scenarioPrompt"><li><q>Post a goods receipt, twenty pieces of four seven one one.</q><span>Listen to the material, quantity and destination. Say <b>confirm</b> when the details are right.</span></li></ul>
       <div class="pr-foot" id="scenarioNote">A new delivery of hex bolts. Follow the receipt from your spoken request to a document and an updated stock level.</div>
     </div>
 
-    <details id="conversationDetails"><summary>Conversation transcript</summary><div id="log"></div></details>
+    </details>
+    <details id="conversationDetails"><summary>Conversation transcript</summary><div id="log"></div><button id="resetBtn">Reset demo</button></details>
     <div class="controls">
       <span class="hint">Headphones recommended · barge-in enabled — you can interrupt the agent</span>
     </div>
@@ -2215,7 +2240,8 @@ document.getElementById('takeNextTask').onclick = () => {
 scenarioBar.addEventListener('click',event => {
   if (location.hash === '#warehouse' && event.target.closest('[data-scenario]')) {
     const card = event.target.closest('[data-scenario]');
-    document.querySelector('.record-details').open = card.dataset.scenario === 'reverse';
+    document.querySelector('.record-details').open = false;
+    document.getElementById('taskHelp').open = false;
     document.getElementById('warehouseBrief').hidden = false;
     document.getElementById('warehouseBriefImage').className = card.querySelector('.warehouse-art').className;
     document.getElementById('warehouseBriefTitle').textContent = card.querySelector('b').textContent.replace('↗','').trim();
