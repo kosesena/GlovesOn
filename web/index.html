@@ -725,7 +725,7 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 /* Fit the complete hero artwork to viewport height, including wide Safari windows. */
 body:not(.in-warehouse):not(:has(#how:target)) { background-size:auto 100svh; background-position:right top; }
 @media(min-width:651px) {
- body:not(.in-warehouse) > .hero { justify-content:flex-start; padding:0 7%; padding-left:max(7vw,calc(100vw - 58svh - min(440px,42vw) - 8vw)); min-height:0; }
+ body:not(.in-warehouse) > .hero { justify-content:flex-start; padding:0 7%; padding-left:clamp(7vw,calc(50vw - 29svh - min(220px,21vw)),19vw); min-height:0; }
  body:not(.in-warehouse) .hero-image { display:none; }
  body:not(.in-warehouse) .hero-copy { flex:0 0 min(440px,42vw); width:min(440px,42vw); max-width:440px; padding:24px 0 48px; }
  body:not(.in-warehouse) .hero h1 { font-size:clamp(38px,min(5vw,8svh),78px); }
