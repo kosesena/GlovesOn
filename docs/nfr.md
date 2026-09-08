@@ -59,16 +59,21 @@ endpoint is a gap, mitigated only by the shared secret.
 | ERP rejects the write | Agent states the reason | None | Yes |
 | AssemblyAI unavailable | No session at all | None | No fallback exists |
 | Network drops mid-session | Session interrupted | None | `session.resume` exists; not implemented |
-| Model calls the write tool without confirming | Stock changes unasked | **Yes** | Gateway validates inputs but cannot see whether a read-back happened |
+| Model calls the write tool without confirming | Stock changes unasked | Partly | A write now requires a one-use draft token minted by `prepare_*`, bound to the exact payload, consumed with an explicit confirmation string. The gateway still cannot prove the words were *spoken* — a deterministic draft guard, not authenticated consent (ADR-0002) |
 
 **The timed-out write.** A write that times out is ambiguous: the gateway may have
 posted the document and been too slow to say so. The agent reports failure, the worker
 repeats the sentence, and stock is double-counted. This was the most serious defect in
 the design.
 
-It is now handled. The gateway reads recent documents back from SAP — it remembers
-nothing itself — and refuses a second one for the same material, quantity, plant,
-storage location and purchase order inside a 120-second window. Instead of posting, it returns the document
+It is now handled twice over. First, no write executes without a **draft**: the
+agent must call `prepare_*`, the gateway mints a one-use token bound to the exact
+material, quantity, plant, location and (for reversals) document, and the write
+must return that token with an explicit confirmation inside 120 seconds — any
+changed detail, expiry or reuse is refused before SAP is touched. Second, the
+duplicate window: the gateway reads recent documents back from SAP — it remembers
+nothing about *postings* itself — and refuses a second identical receipt inside a
+120-second window. Instead of posting, it returns the document
 that already exists and the agent reads it back: *"this already went through forty
 seconds ago as document 4919786625 — is this a second delivery?"* Only an explicit
 confirmation, carried as `allow_duplicate`, opens a second posting.
@@ -79,10 +84,13 @@ surfaces the question to the person who can know, and does nothing until answere
 
 **What this does not cover**
 
-- Deduplication is by content and time, not by a client-generated idempotency key. A
-  key minted once per confirmed intent would be stricter; the model cannot be relied
-  on to generate and reuse one correctly, so content plus a window is the pragmatic
-  equivalent for this specific failure.
+- An earlier revision of this section argued a per-intent idempotency key was
+  rejected because "the model cannot be relied on to generate and reuse one
+  correctly". The draft token resolves that objection from the other side: the
+  **gateway** mints the key and the model only carries it, so the write is now
+  keyed after all — without trusting the model to invent one. The content-and-time
+  window remains for what the token cannot see: a *new* draft, honestly confirmed
+  twice, for the same physical pallet.
 - A genuine second identical delivery inside 120 seconds costs one extra question. A
   false question is cheaper than a silent double count, so the trade is deliberate.
 - The window is a constant (`DUPLICATE_WINDOW_SECONDS`), not tuned against real

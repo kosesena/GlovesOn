@@ -143,8 +143,9 @@ Field fidelity: `MATNR` (18-char zero-padded), `MAKTX`, `WERKS`, `LGORT`, `LGPLA
 
 ## What the agent is made of
 
-Six tools, two of which write. Both writes are unreachable without a spoken read-back and
-an unmistakable yes.
+Eight tools. Two prepare a write and two perform one — and neither write is reachable
+without the draft its preparation minted: a one-use token bound to the exact details that
+were read back, consumed together with the spoken yes.
 
 | Tool | Mode | What it does |
 |---|---|---|
@@ -152,8 +153,10 @@ an unmistakable yes.
 | `search_material` | interactive | find a material by description |
 | `get_purchase_order` | interactive | PO status and open quantity |
 | `get_recent_documents` | interactive | what was posted just now |
-| **`post_goods_receipt`** | **hold** | posts a material document |
-| **`reverse_goods_receipt`** | **hold** | posts the reversal of one |
+| `prepare_goods_receipt` | interactive | mints the one-use draft a receipt must present |
+| `prepare_reversal` | interactive | the same, for a reversal |
+| **`post_goods_receipt`** | **hold** | posts a material document — draft token required |
+| **`reverse_goods_receipt`** | **hold** | posts the reversal of one — draft token required |
 
 | AssemblyAI feature | Where |
 |---|---|
@@ -268,10 +271,13 @@ docs/                   ADRs, NFRs, Clean Core assessment, deploy runbook
 ## Safety design
 
 Reads are free; a write is not. Neither write is reachable without the spoken read-back
-and an explicit yes. Independently of anything the model does, the gateway rejects unknown
-materials, non-integer and non-positive quantities, a duplicate of a posting made in the
-last two minutes, a reversal of an already-reversed document, and any call that does not
-carry the shared tool secret. A mis-behaving prompt still cannot corrupt stock.
+and an explicit yes — and since the draft protocol, not without a **one-use token** the
+gateway itself minted at preparation, bound to the exact details read back and dead two
+minutes later. Independently of anything the model does, the gateway rejects unknown
+materials, non-integer and non-positive quantities, a write whose draft is missing,
+expired, altered or already spent, a duplicate of a posting made in the last two minutes,
+a reversal of an already-reversed document, and any call that does not carry the shared
+tool secret. A mis-behaving prompt still cannot corrupt stock.
 
 What is *not* solved is named rather than hidden: the posting is made by a service user,
 not by the worker, so SAP cannot say who did it. That gap is written up in
