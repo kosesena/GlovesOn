@@ -1,0 +1,41 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+ *{margin:0;box-sizing:border-box}
+ :root{--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--ink:#20241f;--green:#244b35;--orange:#ce5428}
+ html,body{width:1920px;height:1080px;overflow:hidden}
+ body{background:radial-gradient(1200px 760px at 42% 34%,#faf0dd,#f6e5ce 68%,#efd9b9);
+   font:16px/1.5 ui-sans-serif,system-ui,-apple-system,sans-serif;color:var(--ink);
+   display:grid;grid-template-columns:1fr 46%;align-items:center}
+ .brand{position:absolute;top:60px;left:76px;display:flex;align-items:center;gap:16px;font-size:34px;font-weight:700;letter-spacing:-.02em}
+ .brand .mark{width:58px;height:58px;border-radius:15px;background:linear-gradient(150deg,#f0803e,#d8542a);
+   display:grid;place-items:center;color:#fff;font-size:30px;box-shadow:0 8px 22px rgba(206,84,40,.32)}
+ .badge{position:absolute;top:70px;right:120px;font:13px var(--mono);letter-spacing:.14em;color:#5c6552}
+ .badge b{color:var(--green);font-weight:600}
+ .left{padding:0 40px 40px 90px}
+ .eyebrow{font:14px var(--mono);letter-spacing:.16em;color:#7a6a4a;display:flex;align-items:center;gap:12px;margin-bottom:30px}
+ .eyebrow:before{content:'';width:9px;height:9px;border-radius:50%;background:var(--orange)}
+ h1{font-size:118px;line-height:.9;letter-spacing:-.06em;font-weight:650}
+ h1 .o{color:var(--orange);display:inline-flex;align-items:center;gap:.16em}
+ .wave{display:inline-flex;align-items:flex-end;gap:7px;height:.52em;margin-left:.04em}
+ .wave i{width:9px;background:var(--orange);border-radius:6px}
+ .wave i:nth-child(1){height:34%}.wave i:nth-child(2){height:70%}.wave i:nth-child(3){height:100%}
+ .wave i:nth-child(4){height:56%}.wave i:nth-child(5){height:26%}
+ .lede{margin-top:40px;font-size:32px;line-height:1.4;color:#45513e;max-width:20ch}
+ .lede b{color:var(--green);font-weight:650}
+ .rule{margin-top:48px;font:16px var(--mono);letter-spacing:.03em;color:#5c6552}
+ .rule b{color:var(--ink)}
+ .rule .s{color:var(--orange);padding:0 10px}
+ .right{position:relative;height:100%}
+ .fig{position:absolute;right:4%;bottom:-6px;height:930px;filter:drop-shadow(0 30px 40px rgba(138,101,60,.28))}
+ .puddle{position:absolute;right:10%;bottom:30px;width:460px;height:66px;
+   background:radial-gradient(closest-side,#d9bf9d,transparent);z-index:-1}
+</style></head><body>
+ <div class="brand"><span class="mark">↗</span>GlovesOn</div>
+ <div class="badge">AssemblyAI Voice Agent Hackathon <b>· 2026</b></div>
+ <div class="left">
+   <div class="eyebrow">BUILT FOR HANDS THAT ARE BUSY</div>
+   <h1>Gloves on.<br>Hands full.<br><span class="o">Just speak<span class="wave"><i></i><i></i><i></i><i></i><i></i></span></span></h1>
+   <p class="lede">Speak a goods receipt — and watch it post as a real document to <b>SAP</b>.</p>
+   <div class="rule">Goods receipt<span class="s">·</span>Stock<span class="s">·</span>Reversal<span class="s">—</span><b>SAP OData</b></div>
+ </div>
+ <div class="right"><img class="fig" src="http://localhost:8000/assets/worker-3d.webp" alt=""></div>
+</body></html>

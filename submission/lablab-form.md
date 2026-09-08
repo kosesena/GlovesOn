@@ -1,0 +1,61 @@
+# lablab submission — form fields
+
+Copy-paste into the lablab submission form. Every claim traces to a repo file;
+nothing here says more than docs/market.md and docs/business-case.md support.
+
+---
+
+## Project title
+GlovesOn — a voice agent that writes to SAP
+
+## Short description  (one line)
+A hands-free warehouse voice agent that posts real goods receipts into SAP —
+spoken, read back for confirmation, and reversible, never deleted.
+
+## Long description
+
+**The moment.** A pallet lands on the receiving dock. The worker has both hands
+under a box and gloves on. That delivery has to become a material document in
+SAP — until it does, the company does not know it owns the goods. Today that
+means gloves off and a walk to a shared terminal, for every delivery.
+
+**What GlovesOn does.** The worker says one sentence — *"Forty M8 bolts
+arrived."* The agent looks the material up itself (bin, unit, description),
+reads the whole posting back aloud — *"Forty pieces of hex bolt M8x40 into bin
+A-03-02, confirm?"* — and only on an unmistakable yes posts a **real goods
+receipt** through SAP's released OData API. Stock moves on screen in the moment.
+A wrong receipt is corrected by voice too — with a reversal document, never a
+deletion, so both records stay and the audit trail ties each document back to
+the sentence the worker confirmed.
+
+**Why it is different.** Voice in warehouses is decades old, but every incumbent
+voice-*guides planned work*: the WMS issues a task, the worker answers fixed
+prompts. The unplanned pallet has no voice path. SAP's own assistant (Joule)
+does this by chat and has voice on its roadmap for its top cloud tiers — proof
+the problem is real. GlovesOn demonstrates it working today, on a browser and a
+consumer headset, with a write discipline built in: spoken read-back of the
+material *description* (what catches nuts-for-bolts), an explicit yes, a
+duplicate guard, reversal instead of deletion, and an audit trail from document
+to sentence.
+
+**Built on AssemblyAI.** The Voice Agent API runs the whole loop — streaming
+speech-to-text, LLM routing, voice output, turn-taking — with JSON-Schema HTTP
+tool calling into a gateway that owns every SAP guardrail. A `transcription_prompt`
+and 56 keyterms tune recognition to SAP material numbers and warehouse
+vocabulary; both write tools run in `execution_mode: hold` so the agent waits
+for the ERP instead of narrating an optimistic success.
+
+**Honest about limits.** The posting is made by a service user, not the worker
+(SAP cannot yet say who did it); noise robustness is untested; the demo serves
+one session at a time. These are written up in the repo, not hidden.
+
+Live demo · GitHub repo · every claim mapped to a file and a test in the judge guide.
+
+## Technology & category tags
+AssemblyAI Voice Agent API · Speech-to-Text · Voice Agents · SAP · S/4HANA ·
+OData · ERP · FastAPI · Python · Postgres · Enterprise · Logistics · Warehousing
+
+## Links
+- Application URL: https://gloveson.vercel.app
+- GitHub repository: https://github.com/kosesena/GlovesOn  (make public before submitting)
+- Demo platform: Vercel (serverless) + Neon Postgres
