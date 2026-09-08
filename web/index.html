@@ -725,6 +725,10 @@ body.in-warehouse .landing-hackathon { display:none; }
 
 .site-nav .nav-links a[href="#how"],.site-nav .nav-links a[href="#warehouse"] { display:inline-flex; align-items:center; min-height:44px; padding:12px 22px; border-radius:28px; background:#244b35; color:#fffaf0; font-weight:600; }
 body:not(.in-warehouse):has(#how:target) { background:#f7f3ea; }
+/* On the how page the closing CTA owns "start"; a second copy in the nav made
+   the two corners of a one-screen page say the same thing. The brand mark and
+   "Back to home" still lead out. */
+body:has(#how:target) > .site-nav .nav-links { display:none; }
 body:not(.in-warehouse):has(#how:target) > .hero,
 body:has(#how:target) > .landing-hackathon { display:none; }
 body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:24px 32px 60px; gap:28px; background:#f7f3ea; color:#253b2c; scroll-margin-top:110px; }
