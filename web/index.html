@@ -605,7 +605,7 @@ body:not(.in-warehouse) { background:#f6e5ce url('/assets/hero-scene.png') right
 body:not(.in-warehouse) > .site-nav { position:relative; z-index:2; max-width:none; background:transparent; }
 body:not(.in-warehouse) > .hero { background:transparent; border-radius:0; margin:0; max-width:none; width:100%; height:calc(100svh - 180px); min-height:480px; max-height:none; }
 body:not(.in-warehouse) > .trust-line,body:not(.in-warehouse) > footer { position:relative; max-width:none; margin:0; padding-left:4%; padding-right:4%; background:transparent; color:#465340; border-color:#43513b25; }
-@media(max-width:650px) {
+@media(max-width:900px) {
  body:not(.in-warehouse) { background-position:70% center; }
  body:not(.in-warehouse) > .hero { padding:0 20px; min-height:calc(100svh - 200px); height:auto; justify-content:flex-start; align-items:flex-start; }
  body:not(.in-warehouse) .hero-copy { width:100%; padding:28px 0; background:linear-gradient(90deg,#f6e5cef0,#f6e5ce99,transparent); }
@@ -651,7 +651,7 @@ body:not(.in-warehouse) > .hero { height:calc(100svh - 84px); min-height:480px; 
 .hero-attribution { margin-top:18px; font-size:12px; color:#49553e; letter-spacing:.015em; }
 .hero-attribution strong { font-weight:650; }
 .project-context { grid-column:1/-1; color:#49553e; font-size:13px; }
-@media(max-width:650px) { body:not(.in-warehouse) > .hero { height:auto; min-height:calc(100svh - 84px); } }
+@media(max-width:900px) { body:not(.in-warehouse) > .hero { height:auto; min-height:calc(100svh - 84px); } }
 
 .hero-hackathon { display:block; margin-top:8px; font-size:11px; line-height:1.5; color:#49553e; }
 
@@ -724,14 +724,24 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 
 /* Fit the complete hero artwork to viewport height, including wide Safari windows. */
 body:not(.in-warehouse):not(:has(#how:target)) { background-size:auto 100svh; background-position:right top; }
-@media(min-width:651px) {
- body:not(.in-warehouse) > .hero { justify-content:flex-start; padding:0 7%; padding-left:clamp(7vw,calc(50vw - 29svh - min(220px,21vw)),19vw); min-height:0; }
+/* The copy is a centered column in the cream zone left of the figure. The
+   figure's left edge sits ~54svh from the right of the viewport (the scene
+   is 150svh wide, right-anchored, and she starts 64% into it), so the free
+   zone's centre is 50vw - 27svh; half the 640px column off that centres the
+   block. The headline reaches 96px: at 440px/78px a 1500px screen dwarfed
+   the copy and left an empty plain between text and figure. Below 901px the
+   zone is too thin for side-by-side — the washed full-width treatment that
+   already served phones takes over, which also removes the 651-900px band
+   where the old rules ran the text straight across the figure. */
+@media(min-width:901px) {
+ body:not(.in-warehouse) > .hero { justify-content:flex-start; padding:0 4%; padding-left:clamp(24px,calc(50vw - 27svh - 320px),26vw); min-height:0; }
  body:not(.in-warehouse) .hero-image { display:none; }
- body:not(.in-warehouse) .hero-copy { flex:0 0 min(440px,42vw); width:min(440px,42vw); max-width:440px; padding:24px 0 48px; }
- body:not(.in-warehouse) .hero h1 { font-size:clamp(38px,min(5vw,8svh),78px); }
+ body:not(.in-warehouse) .hero-copy { flex:0 0 auto; width:640px; max-width:clamp(300px,calc(100vw - 54svh - 32px),640px); padding:24px 0 48px; text-align:center; }
+ body:not(.in-warehouse) .hero .eyebrow { font-size:11px; justify-content:center; }
+ body:not(.in-warehouse) .hero h1 { font-size:clamp(38px,min(6.6vw,11svh),96px); }
  body:not(.in-warehouse) .hero h1 em { white-space:nowrap; }
- body:not(.in-warehouse) .hero-copy>p { font-size:clamp(16px,2.3svh,20px); }
- body:not(.in-warehouse) .hero-actions { margin-top:24px; }
+ body:not(.in-warehouse) .hero-copy>p { font-size:clamp(16px,2.5svh,21px); max-width:430px; margin-left:auto; margin-right:auto; }
+ body:not(.in-warehouse) .hero-actions { justify-content:center; margin-top:24px; }
 }
 
 /* Blend the fitted scene into the cream canvas on extra-wide screens. */
