@@ -1022,7 +1022,10 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 #warehouseWork #talkBtn {min-height:44px;padding:10px 20px;font-size:15px;border-radius:24px;}
 #warehouseWork #meter {display:none;}
 #warehouseWork header:has(#talkBtn.live) #meter {display:block;}
-#warehouseWork #dot {width:6px;height:6px;}
+#warehouseWork #dot {width:7px;height:7px;background:#42925b;box-shadow:0 0 0 3px #42925b18,0 0 8px #42925b55;}
+#warehouseWork #dot.on {background:#2d9b50;box-shadow:0 0 0 4px #2d9b5020,0 0 12px #2d9b5070;}
+#warehouseWork #dot[data-state="error"] {background:#b54b35;box-shadow:none;}
+#warehouseWork #dot[data-state="connecting"] {background:#a17627;box-shadow:none;}
 #warehouseWork #status {font-family:system-ui,sans-serif;font-size:13px;}
 #warehouseWork .voice-credit {font-size:10px;}
 </style>
@@ -1553,6 +1556,7 @@ function setStatus(text, on = false, timed = false) {
   statusOn = on;
   statusTimed = timed;
   statusSince = performance.now();
+  dotEl.dataset.state = /error|no agent/i.test(text) ? 'error' : /connecting/i.test(text) ? 'connecting' : 'ready';
   dotEl.classList.toggle('on', on);
 }
 
