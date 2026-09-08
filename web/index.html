@@ -917,6 +917,25 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
    mask-position:var(--figure-x,0px) var(--figure-y,0px);
  }
 }
+
+/* Keep the task and verified result readable while the transcript is optional. */
+.write-progress {display:flex;flex-wrap:wrap;gap:12px 24px;list-style:none;margin:0;padding:18px 24px;background:#f6efdf;color:#57634f;font:600 14px/1.5 system-ui,sans-serif;}
+.write-progress [aria-current="step"] {color:#244b35;text-decoration:underline;text-decoration-color:#e16b32;text-underline-offset:6px;}
+body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72fr) minmax(0,1.28fr);min-height:460px;}
+.console-wrap .primer,.console-wrap .controls,.console-wrap .result-hint {font-family:system-ui,sans-serif;}
+.console-wrap #conversationDetails {margin:16px 24px;}
+.console-wrap #conversationDetails summary {cursor:pointer;padding:12px 0;}
+.console-wrap #talkBtn {min-height:48px;}
+.console-wrap .result-hint {padding:0 24px;}
+.is-lookup .write-progress {display:none;}
+@media(max-width:760px) {body:not(.is-lookup) .console-wrap main {grid-template-columns:1fr;} .write-progress {gap:10px 18px;font-size:12px;}}
+
+.doc.is-draft .frow:has(#f-mblnr),.doc.is-draft .frow:has(#f-gmc),.doc.is-draft .frow:has(#f-bwart) {display:none;}
+.console-wrap.has-result .primer {display:none;}
+@media(max-width:700px) {
+  .console-wrap.has-result main .right {order:-1;}
+  .console-wrap.has-result main {display:flex;flex-direction:column;}
+}
 </style>
 </head>
 <body>
@@ -990,6 +1009,9 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 <button class="scenario" data-scenario="reverse" aria-pressed="false"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><span class="scenario-copy"><small>04 / REVERSE</small><b>Reverse a receipt<span aria-hidden="true">↗</span></b><span class="scenario-desc">Reverse the entry. Keep the record.</span></span></button>
 </div>
 <div class="console-wrap">
+<ol class="write-progress" aria-label="Receipt progress">
+<li data-step="speak" aria-current="step">1 · Speak</li><li data-step="review">2 · Review draft</li><li data-step="posting">3 · Confirm & record</li><li data-step="done">4 · Result</li>
+</ol>
 
 
 <header>
@@ -1017,7 +1039,7 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
       <div class="pr-foot" id="scenarioNote">A new delivery of hex bolts. Follow the receipt from your spoken request to a document and an updated stock level.</div>
     </div>
 
-    <details id="conversationDetails" open><summary>Conversation transcript</summary><div id="log"></div></details>
+    <details id="conversationDetails"><summary>Conversation transcript</summary><div id="log"></div></details>
     <div class="controls">
       <span class="hint">Headphones recommended · barge-in enabled — you can interrupt the agent</span>
     </div>
@@ -1127,8 +1149,18 @@ function setField(id, value, fresh = true) {
   }
 }
 
+function setWriteStep(step) {
+  document.querySelectorAll('.write-progress [data-step]').forEach(el => {
+    if (el.dataset.step === step) el.setAttribute('aria-current','step');
+    else el.removeAttribute('aria-current');
+  });
+}
 function setStamp(text, kind) {
   document.getElementById('doc').hidden = text === 'NO DOCUMENT';
+  document.querySelector('.result-hint').hidden = text !== 'NO DOCUMENT';
+  setWriteStep(kind === 'posted' || kind === 'reversed' ? 'done' : kind === 'posting' ? 'posting' : text === 'NO DOCUMENT' ? 'speak' : 'review');
+  document.querySelector('.console-wrap').classList.toggle('has-result', text !== 'NO DOCUMENT');
+  document.getElementById('doc').classList.toggle('is-draft', !['posted','reversed'].includes(kind));
   stampEl.textContent = text;
   stampEl.className = 'stamp' + (kind ? ' ' + kind : '');
 }
@@ -1156,7 +1188,7 @@ function fillFromStock(r) {
   setField('f-bin', loc.LGPLA);
   setField('f-gmc', '05');
   setField('f-bwart', '501');
-  if (F('f-menge').textContent === EMPTY) setStamp('NOT POSTED', '');
+  // A stock lookup alone does not create a write draft.
   dfootEl.textContent = 'Read from SAP. Nothing has been written.';
 
   lastStock = { labst: r.total_unrestricted, meins: r.MEINS };
@@ -1198,7 +1230,7 @@ function awaitingConfirmation() {
 function showDraftRow(args) {          // yazma ucus halinde
   setField('f-menge', args.quantity ? `${args.quantity}` : EMPTY);
   setStamp('POSTING…', 'posting');
-  dfootEl.textContent = 'CSRF token held · POST A_MaterialDocumentHeader in flight.';
+  dfootEl.textContent = 'Checking the confirmed draft. Waiting for the system result.';
 }
 
 // ---------------------------------------------------------------------------
@@ -1280,6 +1312,33 @@ function receiveScopedEvent(e) {
   if (evt.type === 'tool' && d.tool === 'get_stock' && d.ok && d.result) {
     fillFromStock(d.result);
 
+  } else if (evt.type === 'write_draft_cleared') {
+    postReveal++;
+    clearDoc();
+    clearPending();
+  } else if (evt.type === 'write_draft') {
+    postReveal++;
+    clearDoc();
+    for (const [id, value] of Object.entries({'f-matnr':d.MATNR, 'f-maktx':d.MAKTX,
+      'f-menge':`${d.MENGE} ${d.MEINS}`, 'f-werks':`${d.WERKS} / ${d.LGORT}`, 'f-bin':d.LGPLA})) setField(id,value);
+    if (d.document) { F('row-ref').hidden=false; setField('f-ref',d.document); }
+    awaitingConfirmation();
+    const draftGeneration = postReveal;
+    setTimeout(() => {
+      if (draftGeneration === postReveal && stampEl.classList.contains('waiting')) {
+        setStamp('DRAFT EXPIRED', 'waiting');
+        dfootEl.textContent = 'Ask your guide to prepare these details again. Nothing recorded.';
+      }
+    }, (d.expires_in || 120) * 1000);
+    dfootEl.textContent = 'Draft · check these details and say “confirm”. Valid for two minutes. Nothing recorded yet.';
+  } else if (evt.type === 'write_rejected') {
+    postReveal++;
+    setStamp('CHECK AGAIN', 'waiting');
+    dfootEl.textContent = d.message;
+    showPending(d.message);
+  } else if (evt.type === 'write_posting') {
+    setStamp('POSTING…', 'posting');
+    dfootEl.textContent = 'Recording your confirmed draft. Waiting for the system result.';
   } else if (evt.type === 'goods_receipt') {
     const reversal = !!d.reversal;
     // Staged reveal: the stamp thuds first, the document number appears a
@@ -1306,7 +1365,7 @@ function receiveScopedEvent(e) {
       dfootEl.textContent = `Reverses ${d.reverses} · ${when}${sess}. Both documents stay — nothing was deleted.`;
     } else {
       setStamp('POSTED', 'posted');
-      dfootEl.textContent = `Posted to SAP at ${when}${sess}, after spoken confirmation.`;
+      dfootEl.textContent = `Recorded at ${when}${sess}.`;
     }
     setTimeout(() => { if (rv === postReveal) setField('f-mblnr', d.MBLNR); }, 280);
     setTimeout(() => { if (rv === postReveal) countStock(d.new_stock_level, d.MEINS); }, 520);
@@ -1314,9 +1373,9 @@ function receiveScopedEvent(e) {
     refreshInventory();
 
   } else if (evt.type === 'duplicate_blocked') {
-    setStamp('REFUSED', 'refused');
+    setStamp('ALREADY EXISTS', 'waiting');
     dfootEl.textContent = `An identical posting already exists as ${d.MBLNR}. Nothing was written.`;
-    showPending(`Refused — ${d.MBLNR} already exists. Nothing was written.`);
+    showPending(`Similar receipt ${d.MBLNR} already exists. Is this a separate delivery?`);
     setTimeout(clearPending, 6000);
 
   } else if (evt.type === 'reset') {
@@ -1701,7 +1760,7 @@ async function start() {
         append('agent', 'gloveson', text);
         endToolPhase();
         // Ajan onay istiyorsa belgeyi "onay bekliyor" durumuna al.
-        if (/confirm\s*\?\s*$/i.test(text.trim())) awaitingConfirmation();
+        // Confirmation state comes from the server draft, not transcript guessing.
         break;
       }
 
@@ -1934,7 +1993,7 @@ function showWarehouseStage(stage) {
   if (stage === 'area') stage = 'tasks';
   const lookup = stage === 'work' && warehouseAreaKey === 'storage';
   warehouseShell.classList.toggle('is-lookup', lookup);
-  document.getElementById('conversationDetails').open = !lookup;
+  document.getElementById('conversationDetails').open = false;
   if (lookup && !document.querySelector('[data-scenario][aria-pressed="true"]')) { /* Custom task keeps its own brief. */ }
   else if (lookup) {
     document.getElementById('warehouseBriefTitle').textContent = 'Find your material';

@@ -51,13 +51,15 @@ number.
 
 - One extra turn per posting. Real cost in a high-volume shift; worth measuring
   against the cost of one reversal.
-- The rule lives in a prompt, and prompts are probabilistic. Mitigated, not solved,
-  by the gateway's own validation (ADR-0001). A deterministic mitigation — the
-  gateway rejecting a posting that no read-back preceded — would close this properly
-  and is not built.
-- Ambiguous confirmations ("okay", "yeah, and also…") are a real failure mode. The
-  prompt treats a bare "okay" mid-sentence as not a confirmation. This needs
-  adversarial testing, not reasoning.
+- The gateway now requires a scoped, two-minute, one-use draft token bound to
+  the exact operation, material, quantity and destination. Corrections require a
+  new preparation and invalidate the old draft. Consuming the token precedes the
+  ERP request; uncertain writes must be reconciled rather than retried.
+- Read-back and the standalone confirmation string are still reported by the
+  agent. The gateway does not independently prove that the worker spoke them.
+  This is a deterministic draft guard, not authenticated proof of spoken consent.
+- Ambiguous confirmation strings are rejected. Live microphone/barge-in and
+  adversarial speech verification remain necessary.
 
 ## Follow-up
 

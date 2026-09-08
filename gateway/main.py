@@ -29,7 +29,7 @@ import httpx
 from fastapi import Request, Body, FastAPI, Header, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 
-from . import session_scope, scoped_agent, audit, live, sap_client, sap_mock, store
+from . import confirmation, session_scope, scoped_agent, audit, live, sap_client, sap_mock, store
 from .sap_client import SapClient, SapError, env
 from .store import norm_matnr, pretty_matnr
 
@@ -73,6 +73,7 @@ async def lifespan(_: FastAPI):
     global _sap
     store.init_db()
     audit.init()
+    confirmation.init()
     live.init()
     try:
         yield
@@ -283,12 +284,44 @@ async def material_search(
 # TOOL 3 — mal girisi (YAZMA)
 # ---------------------------------------------------------------------------
 
+def draft_decision(body, operation, details):
+    scope = event_scope.get()
+    if body.get("prepare") is True:
+        if not scope:
+            return {"prepared": False, "message": "Start a private voice session first."}
+        token = confirmation.prepare(scope, operation, details)
+        publish("write_draft", {**details, "operation": operation, "expires_in": 120})
+        return {"prepared": True, "draft_token": token, "details": details,
+                "message": "Nothing recorded. Read back quantity, unit, description and bin (and document for reversal). Wait for explicit confirmation. Any correction requires a new draft."}
+    error = confirmation.consume(scope, body.get("draft_token"), operation, details,
+                                 body.get("user_confirmation") if body.get("confirmed_utterance") else None)
+    if error:
+        publish("write_rejected", {"message": error})
+        return {"posted": False, "reversed": False, "message": error}
+    publish("write_posting", {**details, "operation": operation})
+    return None
+
+
+@app.post("/erp/prepare-goods-receipt")
+async def prepare_receipt(body: dict = Body(...), x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret")):
+    return await post_goods_receipt({**body, "prepare": True}, x_tool_secret)
+
+
+@app.post("/erp/prepare-reversal")
+async def prepare_reversal(body: dict = Body(...), x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret")):
+    return await reverse_goods_receipt({**body, "prepare": True}, x_tool_secret)
+
+
 @app.post("/erp/goods-receipt")
 async def post_goods_receipt(
     body: dict = Body(...),
     x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret"),
 ) -> dict[str, Any]:
     require_tool_auth(x_tool_secret)
+    if body.get("prepare") is True:
+        confirmation.invalidate(event_scope.get())
+        publish("write_draft_cleared", {})
+
 
     material, quantity = body.get("material"), body.get("quantity")
     if material is None or quantity is None:
@@ -306,18 +339,17 @@ async def post_goods_receipt(
                     "message": (f"{quantity} is not a whole number of units. Ask the worker "
                                 f"for a whole number and read the line back again.")}
         quantity = int(as_float)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return {"posted": False, "message": "Quantity must be a whole number."}
     if quantity <= 0:
         return {"posted": False, "message": "Quantity must be greater than zero."}
 
     plant = str(body.get("plant") or "1000")
     lgort = str(body.get("storage_location") or "0001")
-    allow_duplicate = bool(body.get("allow_duplicate"))
+    allow_duplicate = body.get("allow_duplicate") is True
     matnr = norm_matnr(material)
     # Denetim izi icin: isciye okunup onaylanan cumle ve oturum referansi.
-    # Yoklugu yazmayi DURDURMAZ - izi zenginlestirir, sart kosmaz. Bir yazma
-    # kimlik dogrulamaya degil onaya dayanir; bkz. docs/adr/0002.
+    # Consent is agent-reported; the gateway binds it to a one-use draft.
     utterance = str(body.get("confirmed_utterance") or "")
     session_id = event_scope.get() or str(body.get("session_id") or "")
 
@@ -325,14 +357,26 @@ async def post_goods_receipt(
         rows = await sap().get_stock(matnr, plant)
         desc = await sap().get_description(matnr)
     except SapError as e:
+        publish("write_rejected", {"message": e.message})
         return {"posted": False, "message": e.message}
     if not rows:
         return {"posted": False,
                 "message": f"Material {pretty_matnr(matnr)} is not stocked in plant {plant}."}
 
-    unit = rows[0]["MaterialBaseUnit"]
-    bin_ = next((r["StorageBin"] for r in rows if r["StorageLocation"] == lgort), rows[0]["StorageBin"])
+    destination = next((r for r in rows if r["StorageLocation"] == lgort), None)
+    if destination is None:
+        return {"posted": False, "message": "Storage location not found. Look up the destination again."}
+    unit = destination["MaterialBaseUnit"]
+    bin_ = destination["StorageBin"]
     maktx = desc["ProductDescription"] if desc else ""
+
+    details = {"MATNR": pretty_matnr(matnr), "MENGE": quantity, "MEINS": unit,
+               "MAKTX": maktx, "WERKS": plant, "LGORT": lgort, "LGPLA": bin_,
+               "purchase_order": body.get("purchase_order") or None,
+               "allow_duplicate": allow_duplicate}
+    decision = draft_decision(body, "receipt", details)
+    if decision is not None:
+        return decision
 
     # --- Ayni niyet iki kere kaydedilmesin ---------------------------------
     # Zaman asimina ugrayan bir yazma belirsizdir: belge dusmus ama cevap
@@ -342,7 +386,7 @@ async def post_goods_receipt(
         dup = await _recent_identical(matnr, quantity, plant, lgort, body.get("purchase_order"))
         if dup is not None:
             seconds = int(time.time() - float(dup["CreationDateTime"]))
-            publish("duplicate_blocked", {"MBLNR": dup["MaterialDocument"]})
+            publish("duplicate_blocked", {"MBLNR": dup["MaterialDocument"], "seconds_ago": seconds})
             return {
                 "posted": False, "duplicate": True,
                 "MBLNR": dup["MaterialDocument"], "seconds_ago": seconds,
@@ -351,7 +395,7 @@ async def post_goods_receipt(
                     f"material document {dup['MaterialDocument']}: {quantity} {unit} of "
                     f"{maktx} into bin {bin_}. Nothing was posted this time. Ask the worker "
                     f"whether this is a second, separate delivery. If it is, call again with "
-                    f"allow_duplicate set to true."),
+                    f"prepare a new draft with allow_duplicate true, read it back and obtain fresh confirmation."),
             }
 
     payload = sap_client.goods_receipt_payload(
@@ -361,6 +405,7 @@ async def post_goods_receipt(
     try:
         d = await sap().post_material_document(payload)
     except SapError as e:
+        publish("write_rejected", {"message": e.message})
         return {"posted": False, "message": e.message}
 
     item = d["to_MaterialDocumentItem"]["results"][0]
@@ -454,6 +499,10 @@ async def reverse_goods_receipt(
     x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret"),
 ) -> dict[str, Any]:
     require_tool_auth(x_tool_secret)
+    if body.get("prepare") is True:
+        confirmation.invalidate(event_scope.get())
+        publish("write_draft_cleared", {})
+
 
     document = str(body.get("document") or "").strip()
     if not document:
@@ -464,6 +513,7 @@ async def reverse_goods_receipt(
     try:
         docs = await sap().list_documents(10)
     except SapError as e:
+        publish("write_rejected", {"message": e.message})
         return {"reversed": False, "message": e.message}
 
     original = next((d for d in docs if d["MaterialDocument"] == document), None)
@@ -485,6 +535,15 @@ async def reverse_goods_receipt(
 
     try:
         desc = await sap().get_description(original["Material"])
+        details = {"MATNR": pretty_matnr(original["Material"]),
+                   "MENGE": int(float(original["QuantityInEntryUnit"])),
+                   "MEINS": original["EntryUnit"], "MAKTX": desc["ProductDescription"] if desc else "",
+                   "WERKS": original["Plant"], "LGORT": original["StorageLocation"],
+                   "LGPLA": original["StorageBin"], "document": document,
+                   "original_movement": original["GoodsMovementType"]}
+        decision = draft_decision(body, "reversal", details)
+        if decision is not None:
+            return decision
         payload = sap_client.reversal_payload(
             original["Material"], original["Plant"], original["StorageLocation"],
             original["EntryUnit"], document, original["GoodsMovementType"],
@@ -492,6 +551,7 @@ async def reverse_goods_receipt(
             session_ref=session_id or None)
         d = await sap().post_material_document(payload)
     except SapError as e:
+        publish("write_rejected", {"message": e.message})
         return {"reversed": False, "message": e.message}
 
     item = d["to_MaterialDocumentItem"]["results"][0]
@@ -673,6 +733,7 @@ def reset(x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret"
     require_tool_auth(x_tool_secret)
     store.init_db(force=True)
     audit.init()
+    confirmation.init()
     live.init()
     publish("reset", {})
     return {"status": "reset"}
