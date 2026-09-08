@@ -608,7 +608,11 @@ body:not(.in-warehouse) > .trust-line,body:not(.in-warehouse) > footer { positio
  body:not(.in-warehouse) .hero .eyebrow { justify-content:center; }
  body:not(.in-warehouse) .hero-copy>p { margin-left:auto; margin-right:auto; }
  body:not(.in-warehouse) .hero-actions { justify-content:center; }
- body:not(.in-warehouse) .hero-image { display:block; position:static; order:1; align-self:center; width:auto; max-width:78%; height:min(46svh,420px); object-fit:contain; object-position:center bottom; margin-top:10px; filter:drop-shadow(0 18px 26px rgba(138,101,60,.3)); }
+ /* 46svh put her shins across the fold on an 812px phone — a figure cut at
+    the calf reads as a broken image, not as a page that scrolls. 40svh lands
+    the boots just above it. Shorter handsets still scroll; three lines of
+    headline plus copy, CTA and a standing figure do not fit 667px. */
+ body:not(.in-warehouse) .hero-image { display:block; position:static; order:1; align-self:center; width:auto; max-width:78%; height:min(40svh,400px); object-fit:contain; object-position:center bottom; margin-top:10px; filter:drop-shadow(0 18px 26px rgba(138,101,60,.3)); }
 }
 
 #warehouseLobby .avatar-travelling .warehouse-entry { opacity:0; pointer-events:none; }
@@ -656,6 +660,12 @@ body:not(.in-warehouse) > .hero { height:calc(100svh - 84px); min-height:480px; 
 
 .landing-hackathon { position:fixed; bottom:14px; left:0; width:100%; text-align:center; font-size:11px; line-height:1.5; color:#394631; pointer-events:none; z-index:2; }
 body.in-warehouse .landing-hackathon { display:none; }
+/* Below the poster breakpoint the figure runs to the bottom of the hero, so a
+   viewport-pinned credit line printed across her legs. In the flow it sits
+   under her instead, and the page ends where the scene ends. */
+@media(max-width:900px) {
+ .landing-hackathon { position:static; width:auto; margin:0 20px; padding:16px 0 22px; }
+}
 
 .lookup-result { display:none; }
 .is-lookup .lookup-result { display:block; padding:28px; color:#253b2c; }
@@ -781,7 +791,6 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 </head>
 <body>
 
-<div class="landing-hackathon">AssemblyAI Voice Agent Hackathon · 2026</div>
 <nav class="site-nav" aria-label="Main navigation">
   <a class="brand" href="#top" aria-label="GlovesOn home"><span class="brand-mark" aria-hidden="true">↗</span>GlovesOn</a>
   <div class="nav-links"><a href="#how">How it works</a></div>
@@ -799,6 +808,10 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
   <div class="hero-chip hero-chip-doc" aria-hidden="true">DOC 4923041877 · POSTED ✓</div>
   <div class="hero-caption">01 / THE RECEIVING FLOOR</div>
 </div>
+<!-- Declared after the hero, not before the nav: below 901px this line leaves
+     fixed positioning and falls back into the flow, and from up there it would
+     have landed above the logo. -->
+<div class="landing-hackathon">AssemblyAI Voice Agent Hackathon · 2026</div>
 <div class="trust-line"><span>VOICE POWERED BY <strong>AssemblyAI</strong></span><span>GOODS RECEIPT · STOCK · REVERSAL</span><span><strong>SAP OData</strong> · Demo environment</span></div>
 <div class="demo-intro" id="demo"><div><div class="eyebrow">Step onto the receiving floor</div><h2>Your voice. A recorded result.</h2></div><p>Choose a scenario, then start talking. Follow your conversation through to the material document.</p></div>
 <section class="warehouse-shell" id="warehouseShell" hidden aria-label="Interactive warehouse">
