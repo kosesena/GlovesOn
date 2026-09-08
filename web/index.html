@@ -1018,6 +1018,13 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
  body:not(.in-warehouse) .hero-attribution {grid-column:1/-1;justify-self:center;text-align:center;}
  body:not(.in-warehouse) .hero-image {grid-column:1/-1;width:170px;height:260px;max-width:none;justify-self:start;margin-left:calc(50% + 30px);}
 }
+#warehouseWork .console-wrap header {padding:14px 22px;gap:10px 12px;}
+#warehouseWork #talkBtn {min-height:44px;padding:10px 20px;font-size:15px;border-radius:24px;}
+#warehouseWork #meter {display:none;}
+#warehouseWork header:has(#talkBtn.live) #meter {display:block;}
+#warehouseWork #dot {width:6px;height:6px;}
+#warehouseWork #status {font-family:system-ui,sans-serif;font-size:13px;}
+#warehouseWork .voice-credit {font-size:10px;}
 </style>
 </head>
 <body>
