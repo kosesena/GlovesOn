@@ -66,9 +66,9 @@ posted the document and been too slow to say so. The agent reports failure, the 
 repeats the sentence, and stock is double-counted. This was the most serious defect in
 the design.
 
-It is now handled. The gateway remembers when each material document was posted and
-refuses a second one for the same material, quantity, plant, storage location and
-purchase order inside a 120-second window. Instead of posting, it returns the document
+It is now handled. The gateway reads recent documents back from SAP — it remembers
+nothing itself — and refuses a second one for the same material, quantity, plant,
+storage location and purchase order inside a 120-second window. Instead of posting, it returns the document
 that already exists and the agent reads it back: *"this already went through forty
 seconds ago as document 4919786625 — is this a second delivery?"* Only an explicit
 confirmation, carried as `allow_duplicate`, opens a second posting.
@@ -87,6 +87,12 @@ surfaces the question to the person who can know, and does nothing until answere
   false question is cheaper than a silent double count, so the trade is deliberate.
 - The window is a constant (`DUPLICATE_WINDOW_SECONDS`), not tuned against real
   warehouse timings.
+- The read-back is bounded: `_recent_identical` compares against the **last ten**
+  documents. More than ten postings inside the 120-second window would push the
+  duplicate out of view and it would pass. One voice confirmation takes longer
+  than twelve seconds, so a single session cannot reach it; concurrent sessions
+  on a busy floor could. The bound is a consequence of asking SAP rather than
+  keeping state, which is the trade this design already accepted.
 
 ## 4. Security and data protection
 
