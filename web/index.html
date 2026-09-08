@@ -733,14 +733,14 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
     landing on the fixed hackathon credit line on 800px-tall screens. */
  body:not(.in-warehouse) > .hero { flex-direction:column; justify-content:flex-start; align-items:center; padding:0 24px; min-height:520px; height:calc(100svh - 112px); }
  body:not(.in-warehouse) .hero-copy { position:static; z-index:auto; flex:0 0 auto; width:100%; max-width:none; padding:10px 0 0; text-align:center; }
- body:not(.in-warehouse) .hero .eyebrow { font-size:11px; justify-content:center; }
+ body:not(.in-warehouse) .hero .eyebrow { font-size:11px; justify-content:center; position:absolute; top:-64px; left:50%; transform:translateX(-50%); width:max-content; max-width:calc(100% - 360px); margin:0; z-index:6; }
  body:not(.in-warehouse) .hero .eyebrow-credit { display:inline; }
- body:not(.in-warehouse) .hero h1 { margin:20px 0 0; font-size:clamp(44px,min(10vw,17.5svh),170px); }
+ body:not(.in-warehouse) .hero h1 { margin:46px 0 0; font-size:clamp(44px,min(10vw,17.5svh),170px); }
  body:not(.in-warehouse) .hero h1 em { white-space:nowrap; position:relative; z-index:3;
    text-shadow:0 0 22px #f6e5ce, 0 0 60px rgba(246,229,206,.85); }
  body:not(.in-warehouse) .hero-copy>p,body:not(.in-warehouse) .hero-attribution { display:none; }
  body:not(.in-warehouse) .hero-image { display:block; position:absolute; left:50%; transform:translateX(-50%);
-   bottom:20px; width:auto; height:min(82svh,740px); z-index:2;
+   top:-36px; bottom:auto; width:auto; height:min(86svh,780px); max-height:calc(100% - 92px); margin-top:0; z-index:2;
    filter:drop-shadow(0 24px 34px rgba(138,101,60,.33)); }
  body:not(.in-warehouse) > .hero:after { content:''; display:block; position:absolute; left:50%; transform:translateX(-50%);
    bottom:14px; width:min(60svh,560px); height:56px; z-index:-1;
@@ -752,7 +752,7 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 .eyebrow-credit { display:none; }
 .hero-chip { display:none; }
 @media(min-width:1100px) {
- body:not(.in-warehouse) .hero-chip { display:block; position:absolute; top:47%; z-index:4;
+ body:not(.in-warehouse) .hero-chip { display:block; position:absolute; top:auto; bottom:90px; z-index:4;
    font:13px var(--mono); letter-spacing:.04em; color:#20241f;
    background:#fffdf7; border:1px solid #ded5c2; padding:12px 18px;
    box-shadow:0 8px 22px rgba(138,113,83,.19); }
@@ -760,6 +760,23 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
  body:not(.in-warehouse) .hero-chip-doc { right:8.5vw; transform:rotate(2.5deg); color:#244b35; font-weight:700; border-radius:16px 16px 4px 16px; }
 }
 
+ .hero-depth-outline { display:none; }
+@media(min-width:901px) { body:not(.in-warehouse) > .hero { overflow:visible; } }
+/* Outline copies sit above the figure, masked to its exact alpha silhouette.
+   Their positioned parents have no z-index so the filled text stays behind. */
+@media(min-width:901px) {
+ .hero-depth-line { position:relative; display:inline-block; }
+ .hero-depth-outline {
+   display:block; position:absolute; inset:0; z-index:3;
+   color:transparent; -webkit-text-fill-color:transparent;
+   -webkit-text-stroke:1.25px #fff3dc;
+   pointer-events:none; user-select:none;
+   mask-image:url('/assets/worker-3d.webp');
+   mask-repeat:no-repeat;
+   mask-size:var(--figure-width,0px) var(--figure-height,0px);
+   mask-position:var(--figure-x,0px) var(--figure-y,0px);
+ }
+}
 </style>
 </head>
 <body>
@@ -773,7 +790,7 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
   <img class="hero-image" src="/assets/worker-3d.webp" alt="A warehouse worker wearing gloves and a headset carries a box with both hands." width="742" height="1165" fetchpriority="high" />
   <div class="hero-copy">
     <div class="eyebrow">Built for hands that are busy<span class="eyebrow-credit">· Powered by AssemblyAI</span></div>
-    <h1>Gloves on.<br>Hands full.<br><em>Just speak.<span class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></em></h1>
+    <h1><span class="hero-depth-line" >Gloves on.<span class="hero-depth-outline" aria-hidden="true">Gloves on.</span></span><br><span class="hero-depth-line" >Hands full.<span class="hero-depth-outline" aria-hidden="true">Hands full.</span></span><br><em>Just speak.<span class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></em></h1>
     <p>Receive goods, check stock and review receipts — by voice.</p>
     <div class="hero-actions"><button class="hero-start" id="heroStart">Start your shift ↗</button></div>
     <div class="hero-attribution">Powered by <strong>AssemblyAI</strong></div>
@@ -1867,5 +1884,41 @@ window.addEventListener('pagehide', () => { if (live) end(); });
 <video id="receivingIntroVideo" playsinline controls preload="none" aria-label="Your warehouse guide receives and checks a delivery"></video>
 <footer><p>Receiving bay · Your first delivery</p><div class="intro-actions"><button id="playReceivingIntro" type="button">Play scene ▶</button><button id="receivingGotIt" type="button" hidden>Got it →</button></div></footer>
 </dialog>
+<script>
+// Keep outline lettering registered to the responsive avatar and font metrics.
+(() => {
+ const figure = document.querySelector('.hero-image');
+ const lines = document.querySelectorAll('.hero-depth-line');
+ const align = () => {
+   const box = figure.getBoundingClientRect();
+   // object-fit:contain can leave space inside the image element. Match the
+   // painted bitmap, not the element box; object-position is center bottom.
+   const scale = Math.min(box.width / figure.naturalWidth, box.height / figure.naturalHeight);
+   if (!Number.isFinite(scale)) return;
+   const avatar = {
+     width: figure.naturalWidth * scale,
+     height: figure.naturalHeight * scale,
+     left: box.left + (box.width - figure.naturalWidth * scale) / 2,
+     top: box.bottom - figure.naturalHeight * scale
+   };
+   lines.forEach(line => {
+     const bounds = line.getBoundingClientRect();
+     line.style.setProperty('--figure-width', `${avatar.width}px`);
+     line.style.setProperty('--figure-height', `${avatar.height}px`);
+     line.style.setProperty('--figure-x', `${avatar.left - bounds.left}px`);
+     line.style.setProperty('--figure-y', `${avatar.top - bounds.top}px`);
+   });
+ };
+ const observer = new ResizeObserver(align);
+ observer.observe(document.querySelector('.hero'));
+ observer.observe(figure);
+ lines.forEach(line => observer.observe(line));
+ figure.addEventListener('load', align);
+ window.addEventListener('resize', align);
+ window.addEventListener('hashchange', () => requestAnimationFrame(align));
+ document.fonts.ready.then(align);
+ align();
+})();
+</script>
 </body>
 </html>
