@@ -653,6 +653,7 @@ body:not(.in-warehouse) > .hero { height:calc(100svh - 84px); min-height:480px; 
 .hero-attribution { margin-top:18px; font-size:12px; color:#49553e; letter-spacing:.015em; }
 .hero-attribution strong { font-weight:650; }
 .project-context { grid-column:1/-1; color:#49553e; font-size:13px; }
+.project-context span { display:block; }
 @media(max-width:900px) { body:not(.in-warehouse) > .hero { height:auto; min-height:calc(100svh - 84px); } }
 
 
@@ -729,6 +730,45 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 #how .project-context { order:2; border-top:1px solid #cbd1c0; padding-top:20px; font-size:12px; }
 #how article { border:1px solid #ced5c4; background:#edf0e5; border-radius:18px; padding:24px; }
 #how article p { color:#46563f; }
+#how article .warehouse-art { width:116px; margin:-4px 0 4px -8px; mix-blend-mode:multiply; }
+/* The dialog is the explanation: three quoted lines show what to say, what
+   comes back, and that nothing happens before the yes. The prose above each
+   one shrank to a single sentence because the dialog now carries the rest. */
+#how .how-dialog { margin:16px 0 0; padding:14px 16px; display:grid; gap:10px; background:#fffdf7; border:1px solid #d6dbc6; border-radius:12px; }
+#how .how-dialog p { margin:0; font:12px var(--mono); line-height:1.55; color:#253b2c; }
+#how .how-dialog p b { display:block; font:600 9px var(--mono); letter-spacing:.16em; color:#98a08a; margin-bottom:2px; }
+#how .how-dialog .g { color:#2f5e44; }
+#how .how-outcome { margin:14px 0 0; font:600 11px var(--mono); letter-spacing:.04em; color:#244b35; }
+#how .how-outcome:before { content:'→ '; color:#ce5428; }
+#how .how-rules { grid-column:1/-1; order:1; display:flex; align-items:baseline; gap:10px 28px; flex-wrap:wrap; border:1px dashed #b6bda4; border-radius:14px; padding:16px 22px; }
+#how .how-rules span { font-size:13.5px; color:#3f4c3a; }
+#how .how-rules span:before { content:'✓ '; color:#244b35; font-weight:700; }
+#how .how-cta { grid-column:1/-1; order:1; justify-self:center; background:#244b35; color:#fffaf0; border-radius:30px; padding:14px 26px; font-size:13px; font-weight:600; margin-top:4px; }
+/* On a desktop the page is a reference card, not an article: everything —
+   three dialogs, the rules, the CTA — fits one viewport, so nobody decides
+   whether the fold is worth crossing. Art floats beside the title instead of
+   sitting above it, the rules share their row with the CTA, and the context
+   block collapses to one line of flexed spans. Below 901px the
+   stacked, scrolling layout stays — a phone page is meant to scroll. */
+@media(min-width:901px) {
+ body > #how:target { margin:0 auto; padding:6px 32px 10px; gap:10px; align-content:start; }
+ #how .how-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 18px; }
+ #how .how-heading a { flex-basis:100%; padding:2px 0; font-size:13px; }
+ .how-heading h1 { margin:0; font-size:clamp(26px,2.6vw,38px); }
+ .how-heading p { margin:0; flex-basis:100%; font-size:14px; }
+ #how article { padding:16px 18px; }
+ #how article .warehouse-art { float:right; width:clamp(54px,9svh,86px); margin:-2px -4px 2px 10px; }
+ .how h3 { font-size:18px; }
+ .how p { font-size:12.5px; line-height:1.55; }
+ #how .how-dialog { margin-top:10px; padding:10px 12px; gap:7px; }
+ #how .how-dialog p { font-size:11.5px; }
+ #how .how-outcome { margin-top:10px; }
+ #how .how-rules { grid-column:1/3; padding:9px 18px; gap:6px 22px; align-self:center; }
+ #how .how-rules span { font-size:12.5px; }
+ #how .how-cta { grid-column:3; justify-self:end; align-self:center; margin:0; }
+ #how .project-context { display:flex; flex-wrap:wrap; gap:6px 22px; padding-top:10px; font-size:11px; }
+ #how .project-context span { display:inline; }
+}
 @media(max-width:700px) { body > #how:target { grid-template-columns:1fr; padding:18px 22px 40px; } }
 
 /* Depth poster: the headline's first two lines pass behind the figure and
@@ -929,10 +969,21 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
   </section>
 </main>
 </div>
-<div class="how" id="how"><div class="how-heading"><a href="#top">← Back to home</a><h1>How GlovesOn works</h1><p>Choose a warehouse task. Speak to your guide. See the result.</p></div><p class="project-context">GlovesOn · Built for the receiving floor.<br>Goods receipt · Stock · Reversal<br>SAP OData · Demo environment<br>AssemblyAI Voice Agent Hackathon / 2026</p>
-<article><small>01 / RECEIVE</small><h3>Check in a delivery.</h3><p>Tell your guide what arrived and how many. Review the details, correct anything that is wrong, then confirm to record the receipt and update stock.</p></article>
-<article><small>02 / FIND</small><h3>Find material and stock.</h3><p>Ask where a material is stored and how much is available. Your guide returns its location and stock level. This is a lookup: no confirmation or inventory change.</p></article>
-<article><small>03 / REVIEW</small><h3>Undo the right receipt.</h3><p>Find the receipt you want to reverse. Review the material and quantity, then confirm the reversal. Stock is adjusted and both the original and reversal records remain visible.</p></article>
+<div class="how" id="how"><div class="how-heading"><a href="#top">← Back to home</a><h1>How GlovesOn works</h1><p>Every delivery has to end up in SAP. That used to mean gloves off and a walk to a terminal — here it takes one spoken sentence.</p></div><p class="project-context"><span>GlovesOn · Built for the receiving floor.</span><span>Goods receipt · Stock · Reversal</span><span>SAP OData · Demo environment</span><span>AssemblyAI Voice Agent Hackathon / 2026</span></p>
+<!-- The dialogs quote the demo's real seed data — material 4711, hex bolt
+     M8x40, bin A-03-02, 240 on hand — and the guide's line is the read-back
+     format agent.json itself prescribes. If the seed changes, change these. -->
+<article><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><small>01 / RECEIVE</small><h3>Check in a delivery.</h3><p>Say what arrived and how many. The bin, the unit and the description are looked up for you.</p>
+<div class="how-dialog"><p><b>YOU</b>“Forty M8 bolts arrived.”</p><p class="g"><b>YOUR GUIDE</b>“Forty pieces of hex bolt M8x40 into bin A-03-02 — confirm?”</p><p><b>YOU</b>“Yes.”</p></div>
+<p class="how-outcome">Receipt posted · stock 240 → 280</p></article>
+<article><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><small>02 / FIND</small><h3>Find material and stock.</h3><p>Ask where a material lives and how much is on hand. A lookup — nothing changes.</p>
+<div class="how-dialog"><p><b>YOU</b>“Where are the M8 bolts?”</p><p class="g"><b>YOUR GUIDE</b>“Bin A-03-02 — 240 on hand.”</p></div>
+<p class="how-outcome">No confirmation asked · inventory untouched</p></article>
+<article><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><small>03 / REVIEW</small><h3>Reverse the right receipt.</h3><p>A wrong receipt is corrected with a reversal document. Nothing is ever deleted.</p>
+<div class="how-dialog"><p><b>YOU</b>“That last receipt was wrong.”</p><p class="g"><b>YOUR GUIDE</b>“Reversing it — forty hex bolts back out of A-03-02. Confirm?”</p><p><b>YOU</b>“Yes.”</p></div>
+<p class="how-outcome">Reversal posted · both documents stay</p></article>
+<div class="how-rules"><small>THE RULES OF THE FLOOR</small><span>Every write is read back before it happens.</span><span>Nothing posts without your spoken yes.</span><span>Nothing is deleted — a reversal keeps both records.</span></div>
+<a class="how-cta" href="#warehouse">Start your shift ↗</a>
 </div>
 <footer><span>GlovesOn · Built for the receiving floor.</span><span>AssemblyAI Voice Agent Hackathon / 2026</span></footer>
 
