@@ -733,6 +733,16 @@ body:not(.in-warehouse):not(:has(#how:target)) { background-size:auto 100svh; ba
  body:not(.in-warehouse) .hero-copy>p { font-size:clamp(16px,2.3svh,20px); }
  body:not(.in-warehouse) .hero-actions { margin-top:24px; }
 }
+
+/* Blend the fitted scene into the cream canvas on extra-wide screens. */
+body:not(.in-warehouse):not(:has(#how:target)) { background-image:none; isolation:isolate; }
+body:not(.in-warehouse):not(:has(#how:target))::before {
+ content:''; position:fixed; top:0; right:0; height:100svh; width:150svh;
+ z-index:-1; pointer-events:none;
+ background:url('/assets/hero-scene.png') right top/auto 100% no-repeat;
+ -webkit-mask-image:linear-gradient(to right,transparent,#000 24%);
+ mask-image:linear-gradient(to right,transparent,#000 24%);
+}
 </style>
 </head>
 <body>
