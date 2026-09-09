@@ -51,9 +51,16 @@ haritasında — yani aynı ajan Türk depolarında konuşulan dili bugün anlı
 **İngiliz aksanı:** `anna`, `charles`, `paul`, `vera`
 **Diğer diller:** `giovanni` (İT), `lola` (ES), `juergen` (DE), `rafael` (PT), `estelle` (FR)
 
-Bizde `alba` seçili. Önemli kısıt: **ses oturum başladıktan sonra değiştirilemiyor**,
-yani seçim bağlantıdan önce yapılıyor. Beğenmezsen `agent.json`'da değiştirip yeniden
-publish et.
+Bizde `eve` seçili (Amerikan). Önce `anna` (İngiliz) vardı; kulakta yorgun/bıkkın
+duruyordu ve bu, "elleri dolu bir işçiye yardım eden uyanık bir sesi" istediğimiz
+yerde yanlış sinyaldi.
+
+Önemli kısıt: **ses oturum başladıktan sonra değiştirilemiyor**, yani seçim
+bağlantıdan önce yapılıyor.
+
+Deneme artık ucuz: `session_config` her `/api/voice-token` isteğinde `agent.json`'dan
+kuruluyor, yani `voice_id`'yi değiştirip push etmek yeterli — `./publish.sh`
+gerekmiyor. Bir sonraki oturum yeni sesle açılır.
 
 ---
 

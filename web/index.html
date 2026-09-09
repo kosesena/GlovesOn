@@ -1489,6 +1489,11 @@ function receiveScopedEvent(e) {
     dfootEl.textContent = 'Recording your confirmed draft. Waiting for the system result.';
   } else if (evt.type === 'goods_receipt') {
     const reversal = !!d.reversal;
+    // A document just landed, so the record it landed in stops being optional
+    // reading. The reversal case is the one that needs this most: two rows are
+    // the whole point, and they are invisible behind a closed summary.
+    const records = document.querySelector('.record-details');
+    if (records) records.open = true;
     document.querySelector('#doc .srv').textContent = `${reversal ? 'Receipt reversal' : 'Goods receipt'} / Warehouse ${d.WERKS || '1000'}`;
     F('reversalLink').hidden = !reversal;
     if (reversal) {
@@ -1667,6 +1672,12 @@ requestAnimationFrame(drawFrame);
 
 function append(kind, who, text) {
   primerEl.hidden = true;
+  // The transcript opens itself the moment there is something in it. It stays
+  // collapsed on an empty screen because an empty box is clutter — but a
+  // worker mid-sentence should never have to reach for a mouse to see what
+  // was heard, and that is exactly what a closed <details> asks of them.
+  const conversation = document.getElementById('conversationDetails');
+  if (conversation && !conversation.open) conversation.open = true;
   const el = document.createElement('div');
   el.className = `msg ${kind}`;
   el.innerHTML = who ? `<div class="who">${who}</div>` : '';
