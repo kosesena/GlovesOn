@@ -71,12 +71,12 @@ Run the suite yourself:
 
 ```bash
 pip install -r requirements.txt pytest
-pytest checks/                               # 24 tests: no database, no keys, no setup
+pytest checks/                               # 32 tests: no database, no keys, no setup
 export TEST_DATABASE_URL=postgresql://…      # any empty Postgres; see below
-pytest                                       # all 63
+pytest                                       # all 71
 ```
 
-63 tests, in two suites. `checks/` (24) needs nothing at all: it exercises
+71 tests, in two suites. `checks/` (32) needs nothing at all: it exercises
 the draft protocol itself — confirmation, one-use tokens, session scoping,
 provider cleanup — against an in-memory app, so it is the part you can run
 thirty seconds after cloning. `tests/` (39) needs a Postgres because the

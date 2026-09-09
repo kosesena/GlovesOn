@@ -152,7 +152,7 @@
       <path class="wire" d="M286,306 L286,390"/>
 
       <text class="wire-label" x="126" y="82">audio</text>
-      <text class="wire-label" x="126" y="182">HTTPS tool calls</text>
+      <text class="wire-label" x="126" y="182">tool calls, via the page</text>
       <text class="wire-label" x="126" y="316">OData + CSRF</text>
       <text class="wire-label" x="126" y="416">in-process ASGI</text>
 
@@ -168,7 +168,7 @@
         <rect x="18" y="92" width="200" height="66" rx="12" fill="var(--sand)" stroke="#c3b79c" stroke-width="1.5"/>
         <text class="n-title" x="34" y="118">AssemblyAI Voice Agent</text>
         <text class="n-sub" x="34" y="134">STT · turn-taking · LLM · TTS</text>
-        <text class="n-sub" x="34" y="149">JSON-Schema HTTP tools</text>
+        <text class="n-sub" x="34" y="149">JSON-Schema tools, run by the page</text>
       </g>
 
       <!-- 3 gateway (emphasised) -->
@@ -294,12 +294,12 @@ const NODES = {
   },
   assemblyai: {
     kicker:'Supplier', title:'AssemblyAI Voice Agent API',
-    what:'The whole voice loop through one connection: streaming speech-to-text, turn detection, LLM routing, speech out, and JSON-Schema HTTP tool calls into the gateway. Recognition is tuned to this floor with a transcription prompt and keyterms for SAP material numbers and warehouse vocabulary.',
+    what:'The whole voice loop through one connection: streaming speech-to-text, turn detection, LLM routing, speech out, and JSON-Schema tool calls. The agent is configured at connection time rather than registered in advance, and its tool calls come back to this page, which forwards them to the gateway with a short-lived capability — the permanent tool secret never leaves the server. Recognition is tuned to this floor with a transcription prompt and keyterms for SAP material numbers and warehouse vocabulary.',
     files:[{p:'agent/agent.json',l:null,label:'tools, keyterms, turn_detection, voice_focus'},
            {p:'agent/publish.py',l:null,label:'publishes the definition; fills secrets from .env'}],
     rules:['Both write tools run in execution_mode: hold — the agent waits for the ERP instead of narrating an optimistic success.',
            'turn_detection is pinned at 800/2000 because adaptive pacing cut a non-native speaker off mid-sentence. We do not claim per-speaker adaptation.'],
-    verify:['pytest checks/test_scoped_agent.py'],
+    verify:['pytest checks/test_voice_diagnostic.py','pytest checks/test_scoped_agent.py'],
     counts:['tools','keyterms']
   },
   gateway: {
@@ -309,8 +309,10 @@ const NODES = {
            {p:'gateway/main.py',l:60,label:'refuses to start without TOOL_SHARED_SECRET'},
            {p:'gateway/sap_client.py',l:33,label:'SAP_BASE_URL — the one variable that moves it to a real tenant'}],
     rules:['Every /erp/* endpoint requires the shared secret. A missing or wrong one is 401 before anything is read.',
-           'The gateway refuses to boot without a secret. Refusing to start is loud; serving unprotected writes is quiet.'],
+           'The gateway refuses to boot without a secret. Refusing to start is loud; serving unprotected writes is quiet.',
+           'The page never holds that secret. It gets a capability derived from its own session, and /api/voice-tools proxies to the same /erp/* routes with the same draft protocol behind it.'],
     verify:['curl -s -o /dev/null -w "%{http_code}" https://gloveson.vercel.app/erp/stock?material=4711   # 401',
+            'curl -s -o /dev/null -w "%{http_code}" -X POST https://gloveson.vercel.app/api/voice-tools/get_stock   # 401',
             'pytest checks/test_scope_routes.py']
   },
   draft: {
