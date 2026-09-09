@@ -1746,8 +1746,10 @@ async function startMic() {
     audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true },
   });
   micCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+  if (micCtx.state === 'suspended') await micCtx.resume();
   const url = URL.createObjectURL(new Blob([WORKLET], { type: 'application/javascript' }));
-  await micCtx.audioWorklet.addModule(url);
+  try { await micCtx.audioWorklet.addModule(url); }
+  finally { URL.revokeObjectURL(url); }
   micNode = new AudioWorkletNode(micCtx, 'cap');
   micNode.port.onmessage = (e) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -1773,12 +1775,18 @@ function stopMic() {
 async function start() {
   setStatus('connecting…');
   talkBtn.disabled = true;
-  await ensurePlayback();   // open audio while the click gesture still counts
+  try {
+    await ensurePlayback();   // open audio while the click gesture still counts
+  } catch (error) {
+    failSession('Audio could not start. Check browser audio settings and retry.');
+    return;
+  }
 
-  let token, agentId, scopeToken;
+  let token, agentId, sessionConfig, scopeToken, toolCapability;
   let scenarioUpdatePending = false;
   try {
-    ({ token, agent_id: agentId, scope_token: scopeToken } = await fetch('/api/voice-token').then(r => {
+    ({ token, agent_id: agentId, session_config: sessionConfig, scope_token: scopeToken,
+       tool_capability: toolCapability } = await fetch('/api/voice-token', {cache:'no-store'}).then(r => {
       if (!r.ok) throw new Error('token endpoint failed');
       return r.json();
     }));
@@ -1786,7 +1794,7 @@ async function start() {
     append('sys', '', 'Could not mint a token. Is ASSEMBLYAI_API_KEY set in .env?');
     setStatus('error'); talkBtn.disabled = false; return;
   }
-  if (!agentId) {
+  if (!sessionConfig && !agentId) {
     append('sys', '', 'The voice session could not be set up: the token endpoint returned no agent.');
     setStatus('no agent'); talkBtn.disabled = false; return;
   }
@@ -1811,15 +1819,42 @@ async function start() {
   } catch (error) { append('sys', '', 'Private result channel could not connect. Please restart.'); cleanup(); return; }
   const socket = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
   ws = socket;
+  let lastToolEvent = null, toolEpoch = 0;
+  const toolResults = [], handledCalls = new Set();
+  function flushToolResults() {
+    if (ws !== socket || socket.readyState !== WebSocket.OPEN || lastToolEvent !== 'reply.done') return;
+    while (toolResults.length) socket.send(JSON.stringify(toolResults.shift()));
+  }
+  async function runVoiceTool(message) {
+    if (!message.call_id || handledCalls.has(message.call_id)) return;
+    handledCalls.add(message.call_id);
+    const epoch = toolEpoch;
+    let result, failed = false;
+    try {
+      const response = await fetch('/api/voice-tools/' + encodeURIComponent(message.name), {
+        method:'POST', headers:{'Content-Type':'application/json',
+          'X-Event-Scope':scopeToken, 'X-Voice-Capability':toolCapability},
+        body:JSON.stringify(message.arguments ?? {})
+      });
+      result = await response.json(); failed = !response.ok;
+    } catch (error) {
+      failed = true;
+      result = {error:'Tool result unavailable. Do not retry a write. Check recent documents before deciding what happened.'};
+    }
+    if (ws !== socket || epoch !== toolEpoch) return;
+    toolResults.push({type:'tool.result',call_id:message.call_id,result:JSON.stringify(result),is_error:failed});
+    flushToolResults();
+  }
 
   ws.onopen = () => {
     if (ws !== socket) return;
-    ws.send(JSON.stringify({ type: 'session.update', session: { agent_id: agentId } }));
+    ws.send(JSON.stringify({ type: 'session.update', session: sessionConfig ?? { agent_id: agentId } }));
   };
 
   ws.onmessage = async (event) => {
     if (ws !== socket) return;
     const m = JSON.parse(event.data);
+    if (m.type === 'reply.started' || m.type === 'input.speech.started') lastToolEvent = m.type;
     switch (m.type) {
       case 'session.ready':
         if (activeScenario) {
@@ -1869,6 +1904,7 @@ async function start() {
         break;
 
       case 'tool.call': {
+        if (sessionConfig) void runVoiceTool(m);
         const args = m.arguments ?? {};
         append('tool', '', `\u2192 ${m.name}(${JSON.stringify(args)})`);
         pendingTool = m.name;
@@ -1888,7 +1924,7 @@ async function start() {
       }
 
       case 'reply.audio':
-        if (m.audio) playChunk(base64ToFloat32(m.audio));
+        if (m.data ?? m.audio) playChunk(base64ToFloat32(m.data ?? m.audio));
         endToolPhase();
         setStatus('agent speaking', true);
         break;
@@ -1903,14 +1939,19 @@ async function start() {
       }
 
       case 'reply.done':
+        lastToolEvent = 'reply.done';
+        if (m.status === 'interrupted') { toolEpoch++; toolResults.length = 0; lastToolEvent = null; }
+        else flushToolResults();
         endToolPhase();
         setStatus('listening', true);
         break;
 
       case 'session.error':
         clearTimeout(sessionSetupTimer);
-        if (scenarioUpdatePending) { scenarioUpdatePending = false; end(); }
-        append('sys', '', `Session error [${m.code ?? '?'}]: ${m.message ?? ''}`);
+        scenarioUpdatePending = false;
+        failSession(m.code === 'agent_not_found'
+          ? 'The voice service could not find this session’s agent. Please start a new session.'
+          : `Session error [${m.code ?? '?'}]: ${m.message ?? ''}`);
         break;
 
       case 'session.ended':
@@ -1931,6 +1972,13 @@ async function beginMicrophone() {
   if (!channel || sse !== channel) { stopMic(); return; }
   live = true; talkBtn.disabled = false; talkBtn.textContent = 'End session';
   talkBtn.classList.replace('primary', 'live'); setStatus('listening', true);
+}
+
+function failSession(message) {
+  cleanup();
+  append('sys', '', message);
+  document.getElementById('conversationDetails').open = true;
+  setStatus('Connection error');
 }
 
 function end() {

@@ -1,0 +1,65 @@
+{
+  "test": "synthetic audio, read-only stock query",
+  "inline_config": true,
+  "stored_agent_id_present": false,
+  "event_order": [
+    "session.updated",
+    "session.ready",
+    "reply.started",
+    "transcript.agent",
+    "input.speech.started",
+    "reply.done",
+    "input.speech.stopped",
+    "transcript.user",
+    "reply.started",
+    "tool.call",
+    "reply.done",
+    "reply.started",
+    "transcript.agent",
+    "reply.done"
+  ],
+  "resolved_output": {
+    "type": "audio",
+    "voice": "alba",
+    "format": {
+      "encoding": "audio/pcm",
+      "sample_rate": 24000
+    },
+    "volume": null
+  },
+  "session_ready": true,
+  "tool_count": 8,
+  "audio_event_keys": [
+    "reply_id",
+    "data",
+    "type",
+    "timestamp"
+  ],
+  "recognized_speech": [
+    "How many pieces of material 4711 are in stock?"
+  ],
+  "tools_called": [
+    "get_stock"
+  ],
+  "tool_results": [
+    {
+      "name": "get_stock",
+      "status": 200,
+      "found": true,
+      "total_unrestricted": 271
+    }
+  ],
+  "spoken_reply": [
+    "There are two hundred seventy one pieces of hex bolt M8x40 Zinc Plated in aisle A, level three, position two."
+  ],
+  "audio_after_tool": true,
+  "session_ended": true,
+  "cleanup": {
+    "closed": true,
+    "cleanup_pending": false
+  },
+  "closed_capability_status": 401,
+  "inventory_unchanged": true,
+  "deployment_id": "dpl_DujJtEFNeGdkzxvycczEKkY5teai",
+  "verified_date": "2026-09-09"
+}

@@ -29,9 +29,9 @@ from typing import Any
 
 import httpx
 from fastapi import Body, FastAPI, Header, HTTPException, Query, Request
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, Response
 
-from . import audit, confirmation, live, sap_client, sap_mock, scoped_agent, session_scope, store
+from . import audit, confirmation, live, sap_client, sap_mock, scoped_agent, session_scope, store, voice_diagnostic, voice_tools
 from .sap_client import SapClient, SapError, env
 from .store import norm_matnr, pretty_matnr
 
@@ -166,7 +166,10 @@ async def bind_event_scope(request: Request, call_next):
         return JSONResponse({"detail": "Event scope expired or invalid"}, status_code=401)
     reset = event_scope.set(scope)
     try:
-        return await call_next(request)
+        response = await call_next(request)
+        if request.url.path == '/api/voice-token':
+            response.headers['Cache-Control'] = 'no-store'
+        return response
     finally:
         event_scope.reset(reset)
 
@@ -640,6 +643,9 @@ VOICE_TOKEN_MAX = int(env("VOICE_TOKEN_MAX_PER_HOUR", "40"))
 async def clean_scoped_agents(client: httpx.AsyncClient, scope: str | None = None) -> bool:
     """Bound provider cleanup; retain failed rows for a later expiry sweep."""
     async def remove(row):
+        if row['agent_id'] == voice_tools.INLINE_AGENT:
+            await asyncio.to_thread(live.forget_agent, row['scope'])
+            return True
         try:
             response = await client.delete(
                 f"https://agents.assemblyai.com/v1/agents/{row['agent_id']}",
@@ -665,7 +671,10 @@ async def close_voice_session(body: dict = Body(...)) -> dict:
 
 
 @app.get("/api/voice-token")
-async def voice_token() -> dict[str, Any]:
+async def voice_token(diagnostic: bool = False,
+                      x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret")) -> dict[str, Any]:
+    if diagnostic:
+        require_tool_auth(x_tool_secret)
     if not ASSEMBLYAI_API_KEY:
         raise HTTPException(status_code=500, detail="ASSEMBLYAI_API_KEY is not set")
     if await asyncio.to_thread(live.voice_budget_left, VOICE_TOKEN_MAX) <= 0:
@@ -687,8 +696,21 @@ async def voice_token() -> dict[str, Any]:
     scope_token = session_scope.issue(TOOL_SHARED_SECRET, ttl=600)
     scope = session_scope.verify(scope_token, TOOL_SHARED_SECRET)
     gateway_url = env("GATEWAY_PUBLIC_URL").rstrip("/")
+    if not diagnostic:
+        template = json.loads((ROOT / "agent/agent.json").read_text())
+        config = voice_tools.inline_config(template, gateway_url)
+        async with httpx.AsyncClient(timeout=15) as client:
+            await clean_scoped_agents(client)
+        await asyncio.to_thread(live.save_agent, scope, voice_tools.INLINE_AGENT, time.time() + 600)
+        return {"token": r.json()["token"], "session_config": config, "scope_token": scope_token,
+                "tool_capability": voice_tools.capability(scope_token, TOOL_SHARED_SECRET)}
     payload = scoped_agent.build(json.loads((ROOT / "agent/agent.json").read_text()),
                                  gateway_url, TOOL_SHARED_SECRET, scope_token)
+    if diagnostic:
+        # Same template and provider route, but no working ERP credentials.
+        payload = scoped_agent.build(json.loads((ROOT / "agent/agent.json").read_text()),
+                                     gateway_url, "invalid-diagnostic-secret", "invalid-diagnostic-scope")
+    diagnostic_result = None
     async with httpx.AsyncClient(timeout=30) as client:
         await clean_scoped_agents(client)
         created = await client.post("https://agents.assemblyai.com/v1/agents",
@@ -704,7 +726,54 @@ async def voice_token() -> dict[str, Any]:
             await client.delete(f"https://agents.assemblyai.com/v1/agents/{agent_id}",
                                 headers={"Authorization": ASSEMBLYAI_API_KEY})
             raise
-    return {"token": r.json()["token"], "agent_id": agent_id, "scope_token": scope_token}
+        if diagnostic:
+            diagnostic_result = {
+                "payload_sha256": voice_diagnostic.payload_digest(payload),
+                "created": voice_diagnostic.response_summary(created, payload),
+            }
+            try:
+                lookup = await client.get(f"https://agents.assemblyai.com/v1/agents/{agent_id}",
+                                          headers={"Authorization": ASSEMBLYAI_API_KEY})
+                diagnostic_result["server_lookup"] = voice_diagnostic.response_summary(lookup, payload)
+            except httpx.RequestError:
+                # The tracked agent can still be closed normally after a failed probe.
+                diagnostic_result["server_lookup"] = {"transport_error": True}
+    result = {"token": r.json()["token"], "agent_id": agent_id, "scope_token": scope_token}
+    if diagnostic_result is not None:
+        result["diagnostic"] = diagnostic_result
+    return result
+
+
+@app.post('/api/voice-tools/{tool_name}')
+async def execute_voice_tool(tool_name: str, request: Request) -> Response:
+    scope_token = request.headers.get('X-Event-Scope', '')
+    access = request.headers.get('X-Voice-Capability', '')
+    if not voice_tools.authorized(scope_token, access, TOOL_SHARED_SECRET):
+        raise HTTPException(status_code=401, detail='Invalid voice capability')
+    scope = session_scope.verify(scope_token, TOOL_SHARED_SECRET)
+    if not await asyncio.to_thread(live.inline_session_active, scope):
+        raise HTTPException(status_code=401, detail='Voice session ended or expired')
+    allowed = voice_tools.routes(json.loads((ROOT / 'agent/agent.json').read_text()))
+    if tool_name not in allowed:
+        raise HTTPException(status_code=404, detail='Unknown voice tool')
+    method, path = allowed[tool_name]
+    try:
+        arguments = await request.json()
+    except ValueError:
+        raise HTTPException(status_code=400, detail='Tool arguments must be JSON')
+    if not isinstance(arguments, dict):
+        raise HTTPException(status_code=422, detail='Tool arguments must be an object')
+    # Reuse the exact ERP routes, schema validation, draft protocol and audit path.
+    # The permanent tool secret never leaves this process or reaches the browser.
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://internal') as client:
+        result = await client.request(method, path,
+                                      params=arguments if method == 'GET' else None,
+                                      json=arguments if method == 'POST' else None,
+                                      headers={'X-Tool-Secret': TOOL_SHARED_SECRET,
+                                               'X-Event-Scope': scope_token,
+                                               'Content-Type': 'application/json'})
+    return Response(result.content, status_code=result.status_code,
+                    media_type='application/json', headers={'Cache-Control': 'no-store'})
 
 
 @app.get("/api/inventory")

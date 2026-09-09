@@ -132,3 +132,12 @@ def agents_to_clean(scope: str | None = None) -> list[dict]:
 def forget_agent(scope: str) -> None:
     with store.db() as conn:
         conn.execute("DELETE FROM scoped_agents WHERE scope = %s", (scope,))
+
+
+def inline_session_active(scope: str) -> bool:
+    from .voice_tools import INLINE_AGENT
+    with store.db() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM scoped_agents WHERE scope = %s AND agent_id = %s AND expires_at > %s",
+            (scope, INLINE_AGENT, time.time())).fetchone()
+    return row is not None

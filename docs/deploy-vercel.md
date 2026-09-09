@@ -109,14 +109,15 @@ judges are watching.
 by the SSE stream. If it ever feels slow, `EVENT_POLL_SECONDS` in `gateway/main.py` is
 the dial, and every poll is a database query.
 
-**The secret has to match in two places**: the Vercel environment variable and the
+**For separately published stored agents, the secret has to match in two places**: the Vercel environment variable and the
 local `.env` value that `publish.sh` bakes into the agent definition. When they differ,
 every tool call comes back 401 and the agent says it cannot reach the system — which
 sounds like a network problem and is not.
 
-**Publishing the agent is a separate act from deploying the gateway.** Changing
+**Publishing a stored agent is a separate act from deploying the gateway.** Changing
 `agent/agent.json` and redeploying does nothing; AssemblyAI holds its own copy of the
-definition. `./publish.sh` is what moves it.
+definition. `./publish.sh` is what moves it. Browser sessions load the bundled
+template directly and therefore receive template changes on gateway deployment.
 
 **Going back to a process host is cheap.** The code still runs unchanged on an
 always-on machine — Fly.io, Render, a Replit Reserved VM. Set `DATABASE_URL` and it
@@ -125,15 +126,19 @@ back.
 
 ## Private browser sessions
 
-The gateway now creates a stored AssemblyAI agent for each browser session from
-`agent/agent.json`. Include that file in the deployment bundle. Tool authentication
-and signed event-routing headers are configured server-side; the browser receives
-an agent id and expiring scope token, never the shared tool secret.
+The gateway supplies inline AssemblyAI session configuration from `agent/agent.json`.
+Include that file in the deployment bundle. Browser sessions do not depend on a
+stored agent ID. Tools use client-side function calls through the allowlisted
+`/api/voice-tools/{name}` bridge. The browser receives an expiring signed scope and
+a separate tool capability, never the shared tool secret. The bridge requires both
+credentials and an active database session, then invokes the existing ERP routes
+with server-side authentication. Existing validation and confirmation rules apply.
 
-`live.init()` adds `scoped_agents` without resetting warehouse data. Normal browser
-teardown deletes the temporary agent; failed deletions are retried after expiry on
-later token requests. There is no scheduled sweep when the app is idle. The scope
-expires after ten minutes; provider voice sessions are limited to five minutes.
+`live.init()` adds `scoped_agents` without resetting warehouse data. Inline sessions
+store a local marker; browser teardown removes it and revokes tool access. Legacy
+stored agents still receive provider cleanup, retried after expiry on later token
+requests. There is no scheduled sweep when the app is idle. The scope expires after
+ten minutes; provider voice sessions are limited to five minutes.
 
 Preview deployments must point GATEWAY_PUBLIC_URL to their own reachable gateway
 when testing scoped results; a production callback URL routes events to production.

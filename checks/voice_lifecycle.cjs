@@ -5,10 +5,11 @@ const assert = require('node:assert/strict');
 const html = readFileSync('web/index.html', 'utf8');
 const source = html.slice(html.indexOf('async function start() {'), html.indexOf('const scenarios = {'));
 const timers = new Map(); let timerId = 0; const sockets = [];
+const transcript = {open:false}; let status = ''; const messages = [];
 class Socket {
   static OPEN = 1;
-  constructor() {this.readyState = 1; sockets.push(this);}
-  send() {} close() {this.readyState = 3;}
+  constructor() {this.readyState = 1; this.sent=[]; sockets.push(this);}
+  send(message) {this.sent.push(JSON.parse(message));} close() {this.readyState = 3;}
 }
 class Events {
   constructor() {queueMicrotask(() => this.onopen?.());}
@@ -21,7 +22,8 @@ const context = vm.createContext({
   talkBtn:{disabled:false, textContent:'', classList:{replace(){}}},
   stampEl:{classList:{contains(){return false;}}},
   pendingTool:null, playCtx:null, playSources:[],
-  setStatus(){}, ensurePlayback:async()=>{}, append(){}, receiveScopedEvent(){},
+  document:{getElementById(){return transcript;}},
+  setStatus(value){status=value;}, ensurePlayback:async()=>{}, append(...args){messages.push(args);}, receiveScopedEvent(){},
   clearPending(){}, clearDoc(){}, stopMic(){}, stopPlayback(){}, startMic:async()=>{},
   setTimeout(fn) {const id=++timerId; timers.set(id,fn); return id;},
   clearTimeout(id) {timers.delete(id);},
@@ -43,5 +45,46 @@ vm.runInContext(source, context);
   await current.onmessage({data:JSON.stringify({type:'session.ended'})});
   assert.equal(context.ws,null,'provider end tears down transports');
   assert.equal(context.activeScopeToken,null,'provider end releases private agent');
-  console.log('Voice lifecycle: 3 checks passed');
+  await context.start();
+  await context.ws.onmessage({data:JSON.stringify({type:'session.error',code:'agent_not_found',message:'Agent not found'})});
+  assert.equal(context.ws,null,'provider error tears down transports before readiness');
+  assert.equal(context.activeScopeToken,null,'provider error releases private agent');
+  assert.equal(transcript.open,true,'failure is visible outside a collapsed transcript');
+  assert.equal(status,'Connection error','failure does not masquerade as ready');
+  assert.match(messages.at(-1)[2],/could not find/);
+  transcript.open=false;
+  context.ensurePlayback=async()=>{throw new Error('unsupported audio');};
+  await context.start();
+  assert.equal(context.talkBtn.disabled,false,'audio setup failure permits retry');
+  assert.equal(transcript.open,true,'audio failure is visible');
+  assert.equal(status,'Connection error');
+  context.ensurePlayback=async()=>{};
+  context.activeScenario=null;
+  context.TOOL_LABEL={}; context.endToolPhase=()=>{};
+  let completeTool;
+  context.fetch=async(path)=>path.startsWith('/api/voice-tools/')
+    ? new Promise(resolve=>{completeTool=()=>resolve({ok:true,json:async()=>({found:true,total:240})});})
+    : {ok:true,json:async()=>({token:'test',session_config:{system_prompt:'base',tools:[]},scope_token:'scope',tool_capability:'ephemeral'})};
+  await context.start();
+  const inline=context.ws;
+  inline.onopen();
+  assert.equal(inline.sent[0].session.system_prompt,'base');
+  assert.equal(inline.sent[0].session.agent_id,undefined,'inline connection never resolves a stored agent');
+  await inline.onmessage({data:JSON.stringify({type:'tool.call',call_id:'one',name:'get_stock',arguments:{material:'4711'}})});
+  completeTool(); await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(inline.sent.filter(x=>x.type==='tool.result').length,0,'result waits for reply boundary');
+  await inline.onmessage({data:JSON.stringify({type:'reply.done',status:'completed'})});
+  assert.equal(inline.sent.filter(x=>x.type==='tool.result').length,1);
+  assert.equal(JSON.parse(inline.sent.at(-1).result).total,240);
+  await inline.onmessage({data:JSON.stringify({type:'tool.call',call_id:'two',name:'get_stock',arguments:{material:'4711'}})});
+  await inline.onmessage({data:JSON.stringify({type:'reply.done',status:'interrupted'})});
+  completeTool(); await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(inline.sent.filter(x=>x.type==='tool.result').length,1,'interruption discards late results');
+  let played;
+  context.base64ToFloat32=value=>value;
+  context.playChunk=value=>{played=value;};
+  await inline.onmessage({data:JSON.stringify({type:'reply.audio',data:'PCM16-test-chunk'})});
+  assert.equal(played,'PCM16-test-chunk','provider data field reaches audio playback');
+  context.end();
+  console.log('Voice lifecycle: 9 checks passed');
 })().catch(error=>{console.error(error);process.exitCode=1;});

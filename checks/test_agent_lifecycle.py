@@ -63,7 +63,7 @@ class AgentLifecycleTests(unittest.IsolatedAsyncioTestCase):
               patch.object(main.live, 'save_agent', side_effect=RuntimeError('DB unavailable')),
               patch.object(main.scoped_agent, 'build', return_value={}),
               self.assertRaisesRegex(RuntimeError, 'DB unavailable')):
-            await main.voice_token()
+            await main.voice_token(diagnostic=True, x_tool_secret=main.TOOL_SHARED_SECRET)
         self.assertIn(('DELETE', '/v1/agents/new-temp'), requests)
 
     async def test_empty_cleanup_is_idempotent(self):
