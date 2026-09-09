@@ -22,21 +22,27 @@ means gloves off and a walk to a shared terminal, for every delivery.
 **What GlovesOn does.** The worker says one sentence — *"Forty M8 bolts
 arrived."* The agent looks the material up itself (bin, unit, description),
 reads the whole posting back aloud — *"Forty pieces of hex bolt M8x40 into bin
-A-03-02, confirm?"* — and only on an unmistakable yes posts a **real goods
-receipt** through SAP's released OData API. Stock moves on screen in the moment.
-A wrong receipt is corrected by voice too — with a reversal document, never a
-deletion, so both records stay and the audit trail ties each document back to
-the sentence the worker confirmed.
+A-03-02, confirm?"* — and only on an unmistakable yes **posts a material
+document**: a numbered goods receipt through SAP's released OData API, against
+a mock S/4HANA that speaks that contract exactly. Stock moves on screen in the
+moment. Click the document afterwards and it tells you the sentence that caused
+it, and the second it was confirmed. A wrong receipt is corrected by voice too —
+with a reversal document, never a deletion, so both records stay.
 
 **Why it is different.** Voice in warehouses is decades old, but every incumbent
 voice-*guides planned work*: the WMS issues a task, the worker answers fixed
 prompts. The unplanned pallet has no voice path. SAP's own assistant (Joule)
 does this by chat and has voice on its roadmap for its top cloud tiers — proof
-the problem is real. GlovesOn demonstrates it working today, on a browser and a
-consumer headset, with a write discipline built in: spoken read-back of the
-material *description* (what catches nuts-for-bolts), an explicit yes, a
-duplicate guard, reversal instead of deletion, and an audit trail from document
-to sentence.
+the problem is real.
+
+Plenty of voice agents now stop and ask before they act. What is rarer is
+finishing the job inside an ERP's own rules and leaving something behind that
+survives the demo: an 18-character material number, movement type 101 or 501,
+a duplicate guard that lives in our gateway *because real S/4HANA will accept
+the same receipt twice without complaint*, and a correction that is a 102
+against the 101 rather than a delete. Both documents stay, because that is what
+a ledger is. Every one of those claims maps to a file, a test and a command in
+the repo's judge guide.
 
 **Built on AssemblyAI.** The Voice Agent API runs the whole loop — streaming
 speech-to-text, LLM routing, voice output, turn-taking — with JSON-Schema HTTP
@@ -51,9 +57,13 @@ judge. The scenery is the only fiction: underneath sit SAP's released OData
 contract, numbered documents, reversals and one-use write drafts, and pointing
 one environment variable at a real tenant takes the costume off.
 
-**Honest about limits.** The posting is made by a service user, not the worker
-(SAP cannot yet say who did it); noise robustness is untested; the demo serves
-one session at a time. These are written up in the repo, not hidden.
+**Honest about limits.** The ERP behind this is a **mock** — faithful to the
+released OData contract, CSRF handshake and all, and one environment variable
+away from a real tenant, but not proven against one. The posting is made by a
+service user, not the worker, so SAP cannot yet say who did it. Noise
+robustness is set up but unmeasured. The demo serves one session at a time.
+Nobody is authenticated. These are written up in the repo, not hidden — the
+judge guide ends with them.
 
 Live demo · GitHub repo · every claim mapped to a file and a test in the judge guide.
 
