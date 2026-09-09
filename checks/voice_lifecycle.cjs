@@ -24,7 +24,7 @@ const context = vm.createContext({
   pendingTool:null, playCtx:null, playSources:[],
   document:{getElementById(){return transcript;}},
   setStatus(value){status=value;}, ensurePlayback:async()=>{}, append(...args){messages.push(args);}, receiveScopedEvent(){},
-  clearPending(){}, clearDoc(){}, stopMic(){}, stopPlayback(){}, startMic:async()=>{},
+  showToolCard(){}, pendingFactCards:[], clearPending(){}, clearDoc(){}, stopMic(){}, stopPlayback(){}, startMic:async()=>{},
   setTimeout(fn) {const id=++timerId; timers.set(id,fn); return id;},
   clearTimeout(id) {timers.delete(id);},
   fetch:async()=>({ok:true,json:async()=>({token:'test',agent_id:'temp',scope_token:'scope'})})

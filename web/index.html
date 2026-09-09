@@ -1203,6 +1203,21 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 #warehouseWork .console-wrap main>.right:not(:has(#doc:not([hidden]))):not(:has(#pending:not([hidden]))):not(:has(.lookup-result.is-found)) {display:none;}
 @media(max-width:650px) {#warehouseWork #workspaceExtras {inset:76px 16px auto;width:calc(100vw - 32px);padding:16px;}#workspaceExtras table {font-size:10px;}}
 
+
+#warehouseWork #voiceSuggestions {max-width:680px;margin:0 auto 18px;padding:0 20px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+#warehouseWork #voiceSuggestions[hidden] {display:none;}
+#voiceSuggestions>span,#voiceSuggestions>small {flex-basis:100%;text-align:center;font:12px system-ui;color:#798078;}
+#voiceSuggestions q {font:12px system-ui;color:#536154;padding:8px 12px;border:1px solid #e1e7df;border-radius:20px;background:#f8faf7;}
+#voiceSuggestions>small {margin-top:6px;letter-spacing:.06em;}
+#warehouseWork #log .msg {opacity:.62;transition:opacity .25s;}
+#warehouseWork #log .msg.is-latest,#warehouseWork #log .msg.sys {opacity:1;}
+#warehouseWork #log .voice-fact-card {margin:12px 0 4px;padding:14px 16px;border:1px solid #dce7ea;border-radius:16px;background:linear-gradient(120deg,#f1f7fa,#f8faf6);font:13px system-ui;color:#34443a;white-space:normal;}
+.voice-fact-card>strong {font-size:12px;font-weight:600;}
+.voice-fact-card dl {display:flex;flex-wrap:wrap;gap:12px 24px;margin:12px 0;}
+.voice-fact-card dt {font-size:10px;color:#738078;margin-bottom:4px;}
+.voice-fact-card dd {margin:0;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;}
+.voice-fact-card>small {font-size:10px;color:#758078;}
+
 </style>
 </head>
 <body>
@@ -1299,6 +1314,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 
   <button id="talkBtn" class="primary">Start talking</button>
 </header>
+<div id="voiceSuggestions" aria-label="Things you can ask"><span>Try saying</span><q>Check stock for material 4711</q><q>Receive twenty pieces of 4711</q><q>Show my recent receipts</q><small>Speak. Review. Confirm.</small></div>
 <section id="conversationDetails" class="live-conversation" aria-label="Live conversation">
   <div id="log" role="log" aria-live="polite" aria-relevant="additions text"><p class="conversation-empty">Your conversation will appear here as you speak.</p></div>
 </section>
@@ -1619,6 +1635,7 @@ function receiveScopedEvent(e) {
     setStamp('POSTING…', 'posting');
     dfootEl.textContent = 'Recording your confirmed draft. Waiting for the system result.';
   } else if (evt.type === 'goods_receipt') {
+    showToolCard('recorded_document', d);
     const reversal = !!d.reversal;
     // A document just landed, so the record it landed in stops being optional
     // reading. The reversal case is the one that needs this most: two rows are
@@ -1825,7 +1842,44 @@ function drawFrame(now) {
 }
 requestAnimationFrame(drawFrame);
 
+let pendingFactCards = [];
+function showToolCard(name, result) {
+  if (!result || typeof result !== 'object') return;
+  let title, rows;
+  if (name === 'get_stock' && result.found) {
+    title = 'Stock checked';
+    rows = [['Material', result.MATNR], ['Available', `${result.total_unrestricted} ${result.MEINS || ''}`],
+      ['Bin', (result.locations || []).map(x => x.LGPLA).filter(Boolean).join(' · ')]];
+  } else if (name === 'get_purchase_order' && result.found) {
+    title = 'Purchase order found';
+    rows = [['Order',result.EBELN],['Material',result.MATNR],['Quantity',result.MENGE],['Status',result.status]];
+  } else if (name === 'get_recent_documents' && result.documents?.length) {
+    const d = result.documents[0]; title = 'Most recent document';
+    rows = [['Document',d.MBLNR],['Material',d.MATNR],['Quantity',`${d.MENGE} ${d.MEINS || ''}`],['Bin',d.LGPLA]];
+  } else if (name === 'recorded_document' && result.MBLNR) {
+    title = result.reversal ? 'Reversal recorded' : 'Receipt recorded';
+    rows = [['Document',result.MBLNR],['Material',result.MATNR],['Quantity',`${result.MENGE} ${result.MEINS || ''}`]];
+  } else return;
+  const card = document.createElement('aside'); card.className = 'voice-fact-card';
+  const label = document.createElement('strong'); label.textContent = title; card.appendChild(label);
+  const fields = document.createElement('dl');
+  for (const [key,value] of rows) {
+    if (value === undefined || value === null || value === '') continue;
+    const field = document.createElement('div');
+    const dt = document.createElement('dt'); dt.textContent = key;
+    const dd = document.createElement('dd'); dd.textContent = String(value);
+    field.append(dt,dd); fields.appendChild(field);
+  }
+  card.appendChild(fields);
+  const note = document.createElement('small');note.textContent = 'Demo ERP · verified tool result';card.appendChild(note);
+  logEl.appendChild(card);pendingFactCards.push(card);logEl.scrollTop = logEl.scrollHeight;
+}
+
 function append(kind, who, text) {
+  if (/^(user|agent)/.test(kind)) {
+    document.getElementById('voiceSuggestions').hidden = true;
+    logEl.querySelectorAll('.msg.is-latest').forEach(x => x.classList.remove('is-latest'));
+  }
   primerEl.hidden = true;
   // The transcript opens itself the moment there is something in it. It stays
   // collapsed on an empty screen because an empty box is clutter — but a
@@ -1835,10 +1889,14 @@ function append(kind, who, text) {
   const conversation = document.getElementById('conversationDetails');
   if (conversation && !conversation.open) conversation.open = true;
   const el = document.createElement('div');
-  el.className = `msg ${kind}`;
+  el.className = `msg ${kind}${/^(user|agent)/.test(kind) ? " is-latest" : ""}`;
   el.innerHTML = who ? `<div class="who">${who}</div>` : '';
   el.appendChild(document.createTextNode(text));
   logEl.appendChild(el);
+  if (kind === 'agent') {
+    pendingFactCards.filter(card => card.isConnected).forEach(card => el.appendChild(card));
+    pendingFactCards = [];
+  }
   logEl.scrollTop = logEl.scrollHeight;
   return el;
 }
@@ -2020,6 +2078,7 @@ async function start() {
       result = {error:'Tool result unavailable. Do not retry a write. Check recent documents before deciding what happened.'};
     }
     if (ws !== socket || epoch !== toolEpoch) return;
+    if (!failed) showToolCard(message.name, result);
     toolResults.push({type:'tool.result',call_id:message.call_id,result:JSON.stringify(result),is_error:failed});
     flushToolResults();
   }
@@ -2063,6 +2122,7 @@ async function start() {
         await beginMicrophone();
         break;
       case 'input.speech.started':
+        pendingFactCards = [];
         stopPlayback();               // barge-in: cut the agent's voice
         // Unless a write is awaiting confirmation, do not leave the old strip up
         if (!pendingTool) clearPending();
