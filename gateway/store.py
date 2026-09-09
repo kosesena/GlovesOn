@@ -97,8 +97,14 @@ def pool() -> ConnectionPool:
                 "(see docs/adr/0005); point DATABASE_URL at your database — locally in "
                 ".env, on Vercel through the storage integration."
             )
+        # A frozen serverless instance freezes the pool's maintenance thread
+        # with it; Neon closes the idle connection meanwhile, and the thawed
+        # instance discovers the dead socket only mid-query ("SSL connection
+        # has been closed unexpectedly", /api/voice-token, 9 Sep). check pings
+        # every connection at checkout and replaces a dead one silently — one
+        # extra round trip per checkout, paid so a warm demo cannot 500.
         _pool = ConnectionPool(url, min_size=0, max_size=4, kwargs={"row_factory": dict_row},
-                               open=True, timeout=10)
+                               open=True, timeout=10, check=ConnectionPool.check_connection)
     return _pool
 
 
