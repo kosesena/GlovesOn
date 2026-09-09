@@ -1842,6 +1842,21 @@ function drawFrame(now) {
 }
 requestAnimationFrame(drawFrame);
 
+let userTurnEl = null, userTurnText = '';
+function finishUserTurn() { userTurnEl = null; userTurnText = ''; }
+function updateUserTranscript(text, final) {
+  const fragment = String(text || '').trim();
+  if (!fragment) return;
+  if (!userTurnEl?.isConnected) {
+    userTurnText = '';
+    userTurnEl = append('user', 'operator', '');
+  }
+  const combined = [userTurnText, fragment].filter(Boolean).join(' ');
+  userTurnEl.lastChild.textContent = combined;
+  userTurnEl.classList.toggle('partial', !final);
+  if (final) userTurnText = combined;
+  logEl.scrollTop = logEl.scrollHeight;
+}
 let pendingFactCards = [];
 function showToolCard(name, result) {
   if (!result || typeof result !== 'object') return;
@@ -2009,6 +2024,7 @@ function stopMic() {
 
 // --- the session ------------------------------------------------------------
 async function start() {
+  finishUserTurn();
   setStatus('connecting…');
   talkBtn.disabled = true;
   try {
@@ -2130,14 +2146,11 @@ async function start() {
         break;
 
       case 'transcript.user.delta':
-        if (!partialEl) partialEl = append('user partial', 'operator', '');
-        partialEl.lastChild.textContent = m.text ?? m.delta ?? '';
-        logEl.scrollTop = logEl.scrollHeight;
+        updateUserTranscript(m.text ?? m.delta ?? '', false);
         break;
 
       case 'transcript.user':
-        if (partialEl) { partialEl.remove(); partialEl = null; }
-        append('user', 'operator', m.text ?? '');
+        updateUserTranscript(m.text ?? '', true);
         setStatus('thinking', true, true);
         break;
 
@@ -2162,12 +2175,14 @@ async function start() {
       }
 
       case 'reply.audio':
+        finishUserTurn();
         if (m.data ?? m.audio) playChunk(base64ToFloat32(m.data ?? m.audio));
         endToolPhase();
         setStatus('agent speaking', true);
         break;
 
       case 'transcript.agent': {
+        finishUserTurn();
         const text = m.text ?? '';
         append('agent', 'gloveson', text);
         endToolPhase();

@@ -365,9 +365,8 @@
       "pieces",
       "units"
     ],
+    "transcription_mode": "max_accuracy",
     "turn_detection": {
-      "min_silence": 800,
-      "max_silence": 2000,
       "interrupt_response": true
     },
     "voice_focus": "far-field"
