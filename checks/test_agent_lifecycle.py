@@ -1,9 +1,11 @@
 """Provider failures simulated over HTTP; no network, database or ERP writes."""
+import os
 import unittest
 from unittest.mock import patch
 
 import httpx
 
+os.environ.setdefault('TOOL_SHARED_SECRET', 'scope-test-secret')
 from gateway import main, session_scope
 
 

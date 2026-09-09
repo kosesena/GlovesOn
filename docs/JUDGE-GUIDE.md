@@ -39,7 +39,7 @@ curl -s -H "X-Tool-Secret: $S" https://gloveson.vercel.app/erp/recent-documents
 curl -s https://gloveson.vercel.app/api/provenance/<MBLNR from step 4>
 ```
 
-Step 3 is the one worth watching, and it worth watching because it **fails**.
+Step 3 is the one worth watching, and it is worth watching because it **fails**.
 This guide used to post a document here; since the draft protocol it cannot:
 a write is accepted only inside a verified voice session that first *prepared*
 the exact details and then confirmed them, so the strongest thing a curl can
@@ -61,7 +61,7 @@ voice and look again.)
 | A repeated receipt is refused, not posted twice | [`gateway/main.py`](../gateway/main.py) `_recent_identical`, `DUPLICATE_WINDOW_SECONDS = 120` | `test_an_identical_repeat_is_refused_and_writes_nothing` |
 | The guard is ours, not the mock's | [`gateway/sap_mock.py`](../gateway/sap_mock.py) deliberately accepts repeats | `test_the_mock_accepts_the_same_receipt_twice` |
 | Nothing is deleted; a wrong document is reversed | [`gateway/sap_client.py`](../gateway/sap_client.py) `reversal_payload` — 102 against 101, 502 against 501 | `test_a_reversal_posts_a_second_document_and_returns_the_stock` |
-| A reversal cannot be reversed, and nothing is reversed twice | [`gateway/main.py`](../gateway/main.py) `reverse_goods_receipt` | two tests of the same name |
+| A reversal cannot be reversed, and nothing is reversed twice | [`gateway/main.py`](../gateway/main.py) `reverse_goods_receipt` | `test_a_reversal_cannot_itself_be_reversed` · `test_a_document_is_not_reversed_twice` |
 | It speaks SAP's real API, with the CSRF handshake | [`gateway/sap_client.py`](../gateway/sap_client.py) `_fetch_csrf` · [`sap_mock.py`](../gateway/sap_mock.py) refuses a write without a token | `test_a_write_without_a_csrf_token_is_refused` |
 | Material numbers are 18-character MATNR | [`gateway/store.py`](../gateway/store.py) `norm_matnr` | `test_a_spoken_material_number_becomes_an_18_character_matnr` |
 | Every document traces back to the sentence that caused it | [`gateway/audit.py`](../gateway/audit.py) · `/api/provenance/{mblnr}` · click any row in **Recent documents** | `test_a_document_can_be_traced_back_to_the_sentence_that_caused_it` |
@@ -71,15 +71,20 @@ Run the suite yourself:
 
 ```bash
 pip install -r requirements.txt pytest
+pytest checks/                               # 24 tests: no database, no keys, no setup
 export TEST_DATABASE_URL=postgresql://…      # any empty Postgres; see below
-pytest
+pytest                                       # all 63
 ```
 
-37 tests. They need a Postgres because the mock's data lives in one
+63 tests, in two suites. `checks/` (24) needs nothing at all: it exercises
+the draft protocol itself — confirmation, one-use tokens, session scoping,
+provider cleanup — against an in-memory app, so it is the part you can run
+thirty seconds after cloning. `tests/` (39) needs a Postgres because the
+mock's data lives in one
 ([ADR-0005](adr/0005-serverless-deployment-and-shared-state.md)) and because a
 stubbed database would test none of what matters — the CSRF handshake, the
-movement-type rules, the duplicate window. If you would rather not provide one,
-the same suite runs on every push in
+movement-type rules, the duplicate window. If you would rather not provide
+one, the same suite runs on every push in
 [CI](https://github.com/kosesena/GlovesOn/actions/workflows/ci.yml) against a
 Postgres service container; the badge above is that run.
 

@@ -1,8 +1,10 @@
 """Draft guard tests without database resets or real ERP writes."""
 import hashlib
+import os
 import unittest
 from unittest.mock import AsyncMock, patch
 
+os.environ.setdefault('TOOL_SHARED_SECRET', 'scope-test-secret')
 from gateway import confirmation, main
 
 
