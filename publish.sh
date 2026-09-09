@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-# Ajani yayinla. Hangi sekmede olursan ol calisir.
+# Publish the agent. Works from any tab.
 cd "$(dirname "$0")" || exit 1
 exec .venv/bin/python agent/publish.py "$@"

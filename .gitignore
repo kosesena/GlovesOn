@@ -3,7 +3,7 @@
 __pycache__/
 *.pyc
 
-# Kisisel planlama dosyasi repoya girmez
+# Personal planning file, never in the repo
 PLAN.md
 
 # pytest / ruff
@@ -11,6 +11,6 @@ PLAN.md
 __pycache__/
 .ruff_cache/
 
-# Yerel arac zinciri (Higgsfield skills), urunun parcasi degil
+# Local toolchain (Higgsfield skills), not part of the product
 .agents/
 skills-lock.json

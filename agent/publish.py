@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-agent.json'daki tanimi AssemblyAI'ye yayinlar.
+Publishes the definition in agent.json to AssemblyAI.
 
-  python agent/publish.py            -> yeni agent olusturur (veya AGENT_ID varsa gunceller)
-  python agent/publish.py --force-new -> AGENT_ID olsa bile yenisini olusturur
+  python agent/publish.py             -> creates a new agent (or updates it if AGENT_ID is set)
+  python agent/publish.py --force-new -> creates a fresh one even if AGENT_ID is set
 
-Yayindan sonra donen agent id'yi .env icindeki AGENT_ID'ye yaz.
+After publishing, write the returned agent id into AGENT_ID in .env.
 """
 
 from __future__ import annotations
@@ -30,25 +30,25 @@ AGENT_ID = os.getenv("AGENT_ID", "").strip()
 
 
 def fail(message: str) -> None:
-    print(f"\n  HATA: {message}\n", file=sys.stderr)
+    print(f"\n  ERROR: {message}\n", file=sys.stderr)
     raise SystemExit(1)
 
 
 def preflight() -> None:
     if not API_KEY:
-        fail("ASSEMBLYAI_API_KEY bos. .env dosyasini doldur.")
+        fail("ASSEMBLYAI_API_KEY is empty. Fill in the .env file.")
     if not GATEWAY_URL:
-        fail("GATEWAY_PUBLIC_URL bos. Once tuneli ac, sonra adresi .env'e yaz.")
+        fail("GATEWAY_PUBLIC_URL is empty. Open the tunnel first, then write the address into .env.")
     if not GATEWAY_URL.startswith("https://"):
         fail(
-            "GATEWAY_PUBLIC_URL https:// ile baslamali.\n"
-            "  AssemblyAI HTTP tool'lari localhost'a ve http'ye BAGLANAMAZ.\n"
-            "  Cozum:  cloudflared tunnel --url http://localhost:8000"
+            "GATEWAY_PUBLIC_URL must start with https://.\n"
+            "  AssemblyAI HTTP tools CANNOT reach localhost or plain http.\n"
+            "  Fix:  cloudflared tunnel --url http://localhost:8000"
         )
     if "localhost" in GATEWAY_URL or "127.0.0.1" in GATEWAY_URL:
-        fail("GATEWAY_PUBLIC_URL localhost olamaz - AssemblyAI disaridan cagiriyor.")
-    if not TOOL_SECRET or TOOL_SECRET == "degistir-beni-lutfen":
-        print("  UYARI: TOOL_SHARED_SECRET varsayilan degerde. Degistirmen onerilir.\n")
+        fail("GATEWAY_PUBLIC_URL cannot be localhost - AssemblyAI calls it from the outside.")
+    if not TOOL_SECRET or TOOL_SECRET in ("change-me-please", "degistir-beni-lutfen"):
+        print("  WARNING: TOOL_SHARED_SECRET is still the placeholder. Change it.\n")
 
 
 def build_payload() -> dict:
@@ -70,19 +70,19 @@ def main() -> None:
     updating = bool(AGENT_ID) and not args.force_new
 
     if updating:
-        # Guncelleme fiili dokumanda net degil; desteklenen ilkini kullan.
+        # The update verb is not clear in the docs; use the first one that works.
         url = f"{API_BASE}/agents/{AGENT_ID}"
-        print(f"  Guncelleniyor: {AGENT_ID}")
+        print(f"  Updating: {AGENT_ID}")
         response = None
         for method in ("PUT", "PATCH", "POST"):
             response = httpx.request(method, url, headers=headers, json=payload, timeout=30)
             if response.status_code != 405:
-                print(f"  ({method} kabul edildi)")
+                print(f"  ({method} accepted)")
                 break
-            print(f"  {method} desteklenmiyor, sonrakini deniyorum...")
+            print(f"  {method} not supported, trying the next...")
     else:
         url, method = f"{API_BASE}/agents", "POST"
-        print("  Yeni agent olusturuluyor...")
+        print("  Creating a new agent...")
         response = httpx.request(method, url, headers=headers, json=payload, timeout=30)
 
     if response.status_code >= 400:
@@ -90,26 +90,26 @@ def main() -> None:
         print(f"  HTTP {response.status_code}\n", file=sys.stderr)
         _print_error(response)
         if updating:
-            print("\n  Ipucu: guncelleme calismazsa --force-new ile yenisini olustur.")
+            print("\n  Hint: if updating fails, create a fresh agent with --force-new.")
         raise SystemExit(1)
 
     data = response.json()
     agent_id = data.get("id") or data.get("agent_id") or "?"
 
-    print("\n  Yayinlandi.")
+    print("\n  Published.")
     print(f"  agent id : {agent_id}")
     print(f"  gateway  : {GATEWAY_URL}")
     print(f"  tools    : {', '.join(t['name'] for t in payload['tools'])}")
     if not updating:
-        print(f"\n  Simdi .env icine yaz:  AGENT_ID={agent_id}\n")
+        print(f"\n  Now write into .env:  AGENT_ID={agent_id}\n")
 
 
 def _redact(text: str) -> str:
     """
-    Dogrulama hatalarinda API gonderdigimiz govdeyi geri yansitiyor - ve o
-    govdenin icinde alti tool basliginda TOOL_SHARED_SECRET var. Terminalde
-    zararsiz gorunur; bir CI logunda ya da paylasilan bir kabukta, yazma
-    uclarini koruyan tek sey oraya dusmus olur.
+    On validation errors the API reflects the body we sent back at us — and
+    inside that body TOOL_SHARED_SECRET sits in six tool headers. Harmless
+    in a terminal; in a CI log or a shared shell, the only thing protecting
+    the write endpoints would have landed there.
     """
     secret = os.getenv("TOOL_SHARED_SECRET", "").strip()
     return text.replace(secret, "***") if secret else text
@@ -117,8 +117,9 @@ def _redact(text: str) -> str:
 
 def _print_error(response) -> None:
     """
-    Hatayi okunabilir bas. Dogrulama hatalarinda API tum govdeyi geri
-    yansitiyor; icinde bogulmak yerine hangi alanin nesi bozuk onu goster.
+    Print the error readably. On validation errors the API reflects the
+    whole body back; instead of drowning in it, show which field is broken
+    and how.
     """
     try:
         data = response.json()
@@ -130,8 +131,8 @@ def _print_error(response) -> None:
     if isinstance(detail, list):
         for item in detail:
             loc = ".".join(str(x) for x in item.get("loc", []))
-            print(f"  ALAN : {loc}", file=sys.stderr)
-            print(f"  SORUN: {item.get('msg','')}  [{item.get('type','')}]\n", file=sys.stderr)
+            print(f"  FIELD  : {loc}", file=sys.stderr)
+            print(f"  PROBLEM: {item.get('msg','')}  [{item.get('type','')}]\n", file=sys.stderr)
         return
 
     if isinstance(detail, dict):

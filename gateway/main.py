@@ -55,7 +55,7 @@ ENABLE_RESET = env("GLOVESON_ENABLE_RESET", "0") in ("1", "true", "yes")
 # that was harmless; on a public address, a documented default secret is no
 # secret at all. If it is missing we stop at startup — better not to run
 # than to run unprotected in silence.
-if not TOOL_SHARED_SECRET or TOOL_SHARED_SECRET == "degistir-beni-lutfen":
+if not TOOL_SHARED_SECRET or TOOL_SHARED_SECRET in ("change-me-please", "degistir-beni-lutfen"):
     raise RuntimeError(
         "TOOL_SHARED_SECRET is unset or still the placeholder from .env.example. "
         "Set it to a value of your own (locally in .env, on Vercel in the project's "

@@ -1,6 +1,6 @@
-# Iddialarin kaniti. Her push'ta calisir ve depoya bakan biri sonucu
-# rozette gorur - "yazma garantileri var" cumlesi ile o cumlenin test
-# edildigi arasindaki fark budur.
+# The proof behind the claims. Runs on every push, and anyone looking at
+# the repo sees the result in the badge - this is the difference between
+# saying "there are write guarantees" and that sentence being tested.
 name: CI
 
 on:
@@ -12,9 +12,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    # Mock S/4HANA verisini Postgres'te tutuyor (docs/adr/0005). Testler sahte
-    # bir veritabanina degil gercegine kosuyor: CSRF el sikismasi, hareket
-    # turu kurallari ve tekrar korumasi ancak orada anlamli.
+    # The mock S/4HANA keeps its data in Postgres (docs/adr/0005). The tests
+    # run against a real database, not a fake one: the CSRF handshake, the
+    # movement-type rules and the duplicate guard only mean something there.
     services:
       postgres:
         image: postgres:16
@@ -27,8 +27,8 @@ jobs:
         ports: ["5432:5432"]
 
     env:
-      # Dagitimda kullanilan veritabani DEGIL. conftest ikisinin ayni olmasini
-      # reddediyor, cunku her test semayi dusurup yeniden kuruyor.
+      # NOT the database a deployment uses. conftest refuses to run when the
+      # two are the same, because every test drops and rebuilds the schema.
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gloveson_test
       TOOL_SHARED_SECRET: ci-secret-not-a-real-one
 
