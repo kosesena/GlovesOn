@@ -29,20 +29,19 @@ That is the whole project. A chat agent that answers wrongly is corrected by ask
 An agent that posts a wrong material document leaves a document a human has to reverse.
 Every design decision below follows from that difference.
 
-**Why this project knows what it is talking about.** The details it gets right are the
-ones you only meet by working with the system: material numbers are eighteen characters,
-zero-padded, though nobody says them that way out loud. A goods receipt against a purchase
-order is movement type 101 and a receipt without one is 501. A mistake is never deleted —
-it is a 102 posted against the 101, and both documents stay, because that is what a ledger
-is. Real S/4HANA will accept the same goods receipt twice without complaint, so the
-duplicate guard lives in *our* gateway rather than the mock. And the honest limit is named
-in the same breath: the posting is made by a service user, so SAP cannot say *who* spoke —
-closing that needs principal propagation, and [`docs/clean-core.md`](docs/clean-core.md)
-says so at length instead of hiding it.
+**Built by someone who spent an internship on SAP projects** — which is why the details
+this agent gets right are the ones you only meet inside the system. Material numbers are
+eighteen characters, zero-padded, though nobody says them that way out loud. A goods
+receipt against a purchase order is movement type 101; without one it is 501. A mistake is
+never deleted — it is a 102 posted against the 101, and both documents stay, because that
+is what a ledger is. And real S/4HANA will accept the same goods receipt twice without
+complaining, which is why the duplicate guard lives in *our* gateway rather than in the
+mock, where it would have made the demo pass and the product wrong.
 
-<!-- Sena: one clause about your own SAP background belongs right here — it is the
-     single highest-value sentence in this README for the Business Value criterion.
-     Something like: "Built by <role/experience with SAP>, which is why …" -->
+The same experience is why the limit is named rather than buried: the posting is made by a
+service user, so SAP cannot say *who* spoke. Closing that needs principal propagation, and
+[`docs/clean-core.md`](docs/clean-core.md) spends a page on it instead of hoping nobody
+asks.
 
 Built for the AssemblyAI Voice Agent Hackathon, September 2026.
 

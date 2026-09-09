@@ -17,6 +17,7 @@ Run:
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import hmac
 import json
 import secrets
@@ -813,12 +814,48 @@ def reset(x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret"
 
 
 @app.get("/health")
-def health() -> dict[str, Any]:
+def health(x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret")
+           ) -> dict[str, Any]:
     # agent_id no longer lives here: it was the second piece needed to open
     # a voice session, and anyone can call this endpoint. The browser gets
     # it from the /api/voice-token response instead.
-    return {"ok": True, "agent_configured": bool(AGENT_ID),
-            "sap_base_url": sap_target()}
+    #
+    # What IS here is which pieces are configured. A voice session needs four
+    # things to line up across two systems, and when one of them is wrong the
+    # symptom is a silent agent — which reads like a network fault and is not.
+    # Answering "which of them is actually set" without a microphone is the
+    # difference between finding that in a minute and finding it in an evening.
+    out: dict[str, Any] = {
+        "ok": True,
+        "agent_configured": bool(AGENT_ID),
+        "sap_base_url": sap_target(),
+        "configured": {
+            "assemblyai_key": bool(ASSEMBLYAI_API_KEY),
+            "tool_secret": bool(TOOL_SHARED_SECRET),
+            "gateway_public_url": bool(env("GATEWAY_PUBLIC_URL")),
+            "agent_id": bool(AGENT_ID),
+            "database": False,
+        },
+    }
+    with suppress(Exception), store.db() as conn:
+        conn.execute("SELECT 1")
+        out["configured"]["database"] = True
+
+    # Fingerprints only for a caller who already holds the secret. Twelve hex
+    # characters of a SHA-256 cannot be walked back to a key, but they answer
+    # the one question a deployment cannot otherwise answer: is the key up
+    # there the same key as the one down here? Comparing two values you are
+    # not allowed to read is the whole problem.
+    with suppress(HTTPException):
+        require_tool_auth(x_tool_secret)
+        fp = lambda s: hashlib.sha256(s.encode()).hexdigest()[:12] if s else None  # noqa: E731
+        out["fingerprints"] = {
+            "assemblyai_key": fp(ASSEMBLYAI_API_KEY),
+            "tool_secret": fp(TOOL_SHARED_SECRET),
+            "gateway_public_url": env("GATEWAY_PUBLIC_URL"),
+            "agent_id": AGENT_ID or None,
+        }
+    return out
 
 
 @app.get("/")
