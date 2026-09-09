@@ -153,8 +153,8 @@ were read back, consumed together with the spoken yes.
 | `search_material` | interactive | find a material by description |
 | `get_purchase_order` | interactive | PO status and open quantity |
 | `get_recent_documents` | interactive | what was posted just now |
-| `prepare_goods_receipt` | interactive | mints the one-use draft a receipt must present |
-| `prepare_reversal` | interactive | the same, for a reversal |
+| `prepare_goods_receipt` | hold | mints the one-use draft a receipt must present |
+| `prepare_reversal` | hold | the same, for a reversal |
 | **`post_goods_receipt`** | **hold** | posts a material document — draft token required |
 | **`reverse_goods_receipt`** | **hold** | posts the reversal of one — draft token required |
 
@@ -205,11 +205,16 @@ them — it maps each one to a file and a command, and ends with what this syste
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env     # ASSEMBLYAI_API_KEY and TOOL_SHARED_SECRET are required
+cp .env.example .env     # ASSEMBLYAI_API_KEY, TOOL_SHARED_SECRET and DATABASE_URL are required
 ```
 
 `TOOL_SHARED_SECRET` has no default: the gateway refuses to start without one. Refusing to
 start is loud; serving unprotected writes is quiet.
+
+`DATABASE_URL` is required even locally: the mock S/4HANA keeps its data in Postgres,
+because a serverless deployment has no disk to keep it on
+([ADR-0005](docs/adr/0005-serverless-deployment-and-shared-state.md)). There is no
+offline mode. A free Neon database works; use its pooled connection string.
 
 Three tabs — the scripts find the virtualenv themselves:
 
@@ -257,7 +262,7 @@ always-on host if that trade ever stops being worth it.
 ## Layout
 
 ```
-agent/agent.json        system prompt + 6 HTTP tools
+agent/agent.json        system prompt + 8 HTTP tools
 agent/publish.py        publishes it; fills placeholders from .env
 gateway/main.py         tool endpoints, SSE feed, token minting, write guardrails
 gateway/sap_client.py   the only thing that speaks SAP — OData + CSRF
