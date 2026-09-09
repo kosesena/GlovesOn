@@ -1787,7 +1787,7 @@ async function start() {
     setStatus('error'); talkBtn.disabled = false; return;
   }
   if (!agentId) {
-    append('sys', '', 'AGENT_ID is empty. Run: python agent/publish.py, then put the id in .env');
+    append('sys', '', 'The voice session could not be set up: the token endpoint returned no agent.');
     setStatus('no agent'); talkBtn.disabled = false; return;
   }
 
