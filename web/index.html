@@ -169,9 +169,51 @@
     100% { background: transparent; }
   }
 
-  /* Audio level */
-  #meter { font-size:48px; width:.72em; height:.75em; color:var(--green, #244c38); }
+  /* Audio level. Everything in .voice-wave is em-based — the same component
+     carries the hero's "Just speak" — so presence is one font-size, and the
+     agent's own turn gets the big one. When the machine is talking, that is
+     the only thing on screen worth looking at. */
+  #meter { font-size:58px; width:.72em; height:.75em; color:var(--green, #244c38);
+           transition:font-size .26s cubic-bezier(.2,.9,.3,1), color .26s ease; }
+  #meter.agent-speaking { font-size:112px; }
   #meter i { animation:none; transition:transform 90ms ease-out; }
+  @media(prefers-reduced-motion:reduce) { #meter, #meter.agent-speaking { font-size:58px; transition:none; } }
+
+  /* The orb. The five bars stay the brand mark on the landing — this is the
+     working screen, where the only question is "is it my turn or its turn?",
+     and a shape that breathes answers it faster than a label. Everything is
+     em-based like the wave, so size is one property. --lvl is written by the
+     draw loop; the two drifting gradient layers are what keep it from
+     reading as a plain pulsing circle. */
+  .voice-orb {
+    --lvl:0; --hue:#2f8f5e; --core:#7fd6a2;
+    position:relative; flex:none; display:none; font-size:62px;
+    width:1em; height:1em; border-radius:50%; isolation:isolate;
+    background:radial-gradient(circle at 36% 28%, var(--core), var(--hue) 52%, color-mix(in srgb, var(--hue) 72%, #0d3324) 92%);
+    box-shadow:0 0 calc(.08em + var(--lvl) * .34em) rgba(45,155,80,calc(.22 + var(--lvl) * .5)),
+               inset 0 0 .2em rgba(255,255,255,.32);
+    transform:scale(calc(1 + var(--lvl) * .17));
+    transition:transform 90ms ease-out, font-size .3s cubic-bezier(.2,.9,.3,1),
+               background .3s ease, box-shadow .12s ease-out;
+  }
+  .voice-orb:before, .voice-orb:after {
+    content:''; position:absolute; inset:0; border-radius:inherit;
+    background:radial-gradient(circle at 68% 70%, rgba(226,255,238,.85), transparent 48%);
+    filter:blur(.085em); animation:orb-drift 7s linear infinite;
+  }
+  .voice-orb:after {
+    background:radial-gradient(circle at 24% 72%, rgba(140,236,190,.7), transparent 52%);
+    filter:blur(.11em); animation-duration:11.5s; animation-direction:reverse;
+  }
+  .voice-orb.agent-speaking { font-size:118px; }
+  /* The worker's turn is a colder orb — the same shape, unmistakably not the
+     machine's voice. */
+  .voice-orb.listening { --hue:#2f6f9f; --core:#8fc9ef; }
+  @keyframes orb-drift { to { transform:rotate(360deg); } }
+  @media(prefers-reduced-motion:reduce) {
+    .voice-orb, .voice-orb.agent-speaking { font-size:62px; transform:none; transition:none; }
+    .voice-orb:before, .voice-orb:after { animation:none; }
+  }
 
   /* ---- The document-centred right panel -----------------------------------
      The hero is the material document. White paper sits on a dark terminal:
@@ -1025,8 +1067,15 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 }
 #warehouseWork .console-wrap header {padding:14px 22px;gap:10px 12px;}
 #warehouseWork #talkBtn {min-height:44px;padding:10px 20px;font-size:15px;border-radius:24px;}
+/* On the working screen the orb takes the wave's place; the wave stays on the
+   landing, where it belongs to the word "speak".
+   The row reserves the orb's largest size for the whole session, so the orb
+   breathes without the page breathing with it — a document list that jumps up
+   and down every time the agent starts a sentence is unreadable. */
 #warehouseWork #meter {display:none;}
-#warehouseWork header:has(#talkBtn.live) #meter {display:inline-flex;}
+#warehouseWork header:has(#talkBtn.live) #meter {display:none;}
+#warehouseWork header:has(#talkBtn.live) #orb {display:block;}
+#warehouseWork header:has(#talkBtn.live) {min-height:152px; align-items:center;}
 #warehouseWork #dot {width:7px;height:7px;background:#42925b;box-shadow:0 0 0 3px #42925b18,0 0 8px #42925b55;}
 #warehouseWork #dot.on {background:#2d9b50;box-shadow:0 0 0 4px #2d9b5020,0 0 12px #2d9b5070;}
 #warehouseWork #dot[data-state="error"] {background:#b54b35;box-shadow:none;}
@@ -1165,6 +1214,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
   <div class="voice-credit">VOICE BY <svg class="aai-mark" role="img" aria-label="AssemblyAI"><use href="#aai-light"/></svg></div>
   <div class="spacer"></div>
   <span id="meter" class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+  <span id="orb" class="voice-orb" aria-hidden="true"></span>
   <div class="dot" id="dot"></div>
   <div class="status" id="status">idle</div>
 
@@ -1595,6 +1645,7 @@ let partialEl = null, live = false;
 // The "measured" column of the latency budget in the NFR fills from here.
 // ---------------------------------------------------------------------------
 const meterEl = document.getElementById('meter');
+const orbEl = document.getElementById('orb');
 const meterBars = [...meterEl.querySelectorAll('i')];
 const reducedVoiceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -1638,7 +1689,7 @@ function endToolPhase() {
 }
 
 function drawFrame(now) {
-  // durum metni
+  // the status line
   if (now > holdUntil) {
     statusEl.textContent = statusTimed
       ? `${statusLabel} · ${((now - statusSince) / 1000).toFixed(1)}s`
@@ -1647,7 +1698,7 @@ function drawFrame(now) {
     statusEl.textContent = statusLabel;
   }
 
-  // mikrofon seviyesi
+  // the microphone level
   if (micAnalyser) {
     const buf = new Uint8Array(micAnalyser.fftSize);
     micAnalyser.getByteTimeDomainData(buf);
@@ -1660,10 +1711,23 @@ function drawFrame(now) {
   agentLevel *= 0.88;
 
   // Match the landing's five rounded bars, responding to the active speaker.
-  const level = Math.max(agentLevel, micLevel);
+  // The agent's turn is announced rather than merged into one level: the wave
+  // grows to fill the bar, and drops back the moment the floor is the
+  // worker's again. Two speakers, two sizes, no label needed.
+  const speaking = agentLevel > 0.02;
+  const level = speaking ? agentLevel : micLevel;
+  meterEl.classList.toggle('agent-speaking', speaking);
+  if (orbEl) {
+    orbEl.style.setProperty('--lvl', level.toFixed(3));
+    orbEl.classList.toggle('agent-speaking', speaking);
+    orbEl.classList.toggle('listening', !speaking);
+  }
   meterBars.forEach((bar, i) => {
     const pulse = .65 + .35 * Math.sin(now / 210 + [0, .4, .8, .2, .6][i] * Math.PI);
-    const scale = reducedVoiceMotion.matches ? .7 : Math.min(1, .35 + level * 1.8 * pulse);
+    // A bigger wave earns a deeper trough: the same floor that reads as alive
+    // at 58px reads as barely moving at 112px.
+    const floor = speaking ? .18 : .35, gain = speaking ? 2.4 : 1.8;
+    const scale = reducedVoiceMotion.matches ? .7 : Math.min(1, floor + level * gain * pulse);
     bar.style.transform = `scaleY(${scale})`;
   });
   requestAnimationFrame(drawFrame);
