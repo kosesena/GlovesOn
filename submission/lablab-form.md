@@ -65,7 +65,11 @@ robustness is set up but unmeasured. The demo serves one session at a time.
 Nobody is authenticated. These are written up in the repo, not hidden — the
 judge guide ends with them.
 
-Live demo · GitHub repo · every claim mapped to a file and a test in the judge guide.
+**Check it in ninety seconds.** `/how-it-works` on the live site is a map of the
+system where every box names the file it lives in, the rule it cannot break and
+the command that proves it — and every figure on it is computed at request time,
+so the diagram cannot claim more than exists. The same evidence is in the repo's
+judge guide, and 24 of the 63 tests run with no database and no keys at all.
 
 ## Technology & category tags
 AssemblyAI Voice Agent API · Speech-to-Text · Voice Agents · SAP · S/4HANA ·
@@ -73,5 +77,6 @@ OData · ERP · FastAPI · Python · Postgres · Enterprise · Logistics · Ware
 
 ## Links
 - Application URL: https://gloveson.vercel.app
+- How it works (claim → file → rule → test): https://gloveson.vercel.app/how-it-works
 - GitHub repository: https://github.com/kosesena/GlovesOn  (make public before submitting)
 - Demo platform: Vercel (serverless) + Neon Postgres

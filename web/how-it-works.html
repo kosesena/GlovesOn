@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GlovesOn — how it works, and how to check it</title>
+<meta name="description" content="Every claim GlovesOn makes, the file it lives in, the rule that holds it, and the command that proves it.">
+<style>
+  /* The judge screen. docs/JUDGE-GUIDE.md says the same things, but a judge
+     with ninety seconds opens a URL, not a markdown file in a repo they have
+     not cloned. Same evidence, reachable format.
+
+     Every number on this page comes from /api/facts, which derives it at
+     request time from agent.json, docs/adr/, tests/ and the database. A count
+     typed by hand drifts from the thing it describes, and a page that invites
+     checking cannot afford that. */
+  :root{
+    --ink:#20241f; --muted:#6a7568; --line:#d7dccc; --paper:#fffdf7;
+    --green:#244b35; --green-soft:#e8f0e6; --orange:#ce5428; --sand:#f3ede1;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:0 0 60px;
+    font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    color:var(--ink);
+    background:radial-gradient(1000px 620px at 50% 0,#faf0dd,#f6e5ce 70%,#f0dbbc) fixed;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+  a{color:inherit}
+  header{padding:26px 0 6px}
+  .back{font:12px/1 var(--mono);color:var(--muted);text-decoration:none;letter-spacing:.06em}
+  .back:hover{color:var(--orange)}
+  h1{font-size:clamp(28px,4vw,44px);letter-spacing:-.03em;margin:16px 0 8px}
+  .lede{max-width:62ch;color:#4a5346;font-size:17px;margin:0 0 4px}
+  .lede b{color:var(--green)}
+
+  /* live facts strip */
+  .facts{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 6px}
+  .fact{
+    background:var(--paper);border:1px solid var(--line);border-radius:12px;
+    padding:9px 14px;font:12px/1.35 var(--mono);color:var(--muted);
+  }
+  .fact b{display:block;font-size:19px;color:var(--green);font-family:inherit}
+  .fact.live b{color:var(--orange)}
+  .facts-note{font:11px/1.5 var(--mono);color:var(--muted);margin:6px 0 0}
+
+  .cols{display:grid;grid-template-columns:1.15fr 1fr;gap:26px;margin-top:26px;align-items:start}
+  /* Without this, the panel's pre-formatted commands set a min-content width
+     that eats the map's column and squeezes the diagram to a third of its
+     share. The commands scroll inside themselves instead. */
+  .cols > *{min-width:0}
+  @media(max-width:960px){.cols{grid-template-columns:1fr}}
+
+  .map{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px 16px 10px;overflow-x:auto}
+  /* No min-width: the whole viewBox has to be visible without a horizontal
+     scroll, because a node a reader never scrolls to is a node they never
+     click. It scales down instead. */
+  .map svg{display:block;width:100%;height:auto}
+  .maphint{font:11px/1.5 var(--mono);color:var(--muted);padding:2px 6px 6px}
+
+  .node rect,.node path.shape{transition:filter .15s,stroke-width .15s}
+  .node{cursor:pointer}
+  .node:hover rect,.node:hover path.shape{filter:brightness(.97)}
+  .node.on rect,.node.on path.shape{stroke:var(--orange);stroke-width:3}
+  .node text{pointer-events:none;font-family:ui-sans-serif,system-ui,sans-serif}
+  .n-title{font-size:14.5px;font-weight:650}
+  .n-sub{font-size:11px;fill:var(--muted);font-family:var(--mono)}
+  .n-title.on-dark{fill:#f4efe2} .n-sub.on-dark{fill:#a9bfae}
+  .wire{stroke:#b9c2ae;stroke-width:2;fill:none}
+  .wire-label{font:10px var(--mono);fill:var(--muted)}
+
+  /* detail panel */
+  .panel{
+    background:var(--paper);border:1px solid var(--line);border-radius:18px;
+    padding:22px 24px 26px;position:sticky;top:20px;
+  }
+  .panel h2{font-size:21px;margin:0 0 4px;letter-spacing:-.01em}
+  .kicker{font:11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--orange);margin-bottom:10px}
+  .what{color:#4a5346;font-size:15px;margin:0 0 18px}
+  .sec{margin-top:18px}
+  .sec h3{
+    font:10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 9px;padding-bottom:7px;border-bottom:1px solid var(--line);
+  }
+  .sec ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+  .sec li{font-size:14px;line-height:1.5}
+  .rule{padding-left:15px;position:relative;color:#3c4539}
+  .rule:before{content:'';position:absolute;left:0;top:8px;width:6px;height:6px;border-radius:50%;background:var(--orange)}
+  code,.file{font-family:var(--mono);font-size:12.5px}
+  .file{
+    display:inline-block;background:var(--green-soft);border:1px solid #cadbc9;
+    border-radius:7px;padding:3px 8px;color:var(--green);text-decoration:none;
+  }
+  .file:hover{border-color:var(--green)}
+  .file .ln{color:var(--orange)}
+  .flabel{display:block;color:var(--muted);font-size:12px;font-family:ui-sans-serif,system-ui,sans-serif;margin-top:3px}
+  .cmd{
+    display:block;background:#1c2620;color:#dce8d8;border-radius:9px;
+    padding:9px 12px;font-family:var(--mono);font-size:12px;overflow-x:auto;white-space:pre;
+  }
+  .cmd .c{color:#8fbf9d}
+  .empty{color:var(--muted);font-size:14px}
+
+  footer{margin-top:34px;border-top:1px solid #ddd6c4;padding-top:22px}
+  .runs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}
+  .run{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .run b{display:block;font-size:14px;margin-bottom:7px}
+  .run p{margin:8px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5}
+  .limits{background:#fdf6e8;border:1px solid #e8dcc0;border-radius:14px;padding:18px 20px;margin-top:22px}
+  .limits h3{margin:0 0 10px;font-size:15px}
+  .limits ul{margin:0;padding-left:18px;color:#5b6355;font-size:13.5px;line-height:1.65}
+  .foot-links{margin-top:20px;font:12px var(--mono);color:var(--muted);display:flex;gap:18px;flex-wrap:wrap}
+  .foot-links a{color:var(--green)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <a class="back" href="/">← BACK TO GLOVESON</a>
+  <h1>How it works — and how to check it</h1>
+  <p class="lede"><span id="partcount">Every part</span>, and for each one: <b>what it does</b>, the <b>file it lives in</b>,
+  the <b>rule it must not break</b>, and the <b>command that proves it</b>. Click any box on the map.</p>
+
+  <div class="facts" id="facts"></div>
+  <p class="facts-note" id="facts-note">Reading live figures from /api/facts…</p>
+</header>
+
+<div class="cols">
+  <section class="map">
+    <svg viewBox="0 0 720 560" role="img" aria-label="Dataflow from the worker's voice through AssemblyAI and the GlovesOn gateway into the mock S/4HANA, with the draft protocol, duplicate guard, audit trail and live screen attached to the gateway.">
+      <defs>
+        <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#b9c2ae"/>
+        </marker>
+      </defs>
+
+      <!-- wires first so boxes sit on top -->
+      <path class="wire" d="M118,58 L118,92" marker-end="url(#arw)"/>
+      <path class="wire" d="M118,158 L118,192" marker-end="url(#arw)"/>
+      <path class="wire" d="M118,292 L118,326" marker-end="url(#arw)"/>
+      <path class="wire" d="M118,392 L118,426" marker-end="url(#arw)"/>
+      <!-- gateway to the guards on the right -->
+      <path class="wire" d="M226,222 L286,222"/>
+      <path class="wire" d="M286,138 L286,306"/>
+      <path class="wire" d="M286,138 L336,138" marker-end="url(#arw)"/>
+      <path class="wire" d="M286,222 L336,222" marker-end="url(#arw)"/>
+      <path class="wire" d="M286,306 L336,306" marker-end="url(#arw)"/>
+      <!-- gateway to live screen -->
+      <path class="wire" d="M286,390 L336,390" marker-end="url(#arw)"/>
+      <path class="wire" d="M286,306 L286,390"/>
+
+      <text class="wire-label" x="126" y="82">audio</text>
+      <text class="wire-label" x="126" y="182">HTTPS tool calls</text>
+      <text class="wire-label" x="126" y="316">OData + CSRF</text>
+      <text class="wire-label" x="126" y="416">in-process ASGI</text>
+
+      <!-- 1 worker -->
+      <g class="node" data-node="worker">
+        <rect x="18" y="14" width="200" height="44" rx="12" fill="var(--sand)" stroke="#c3b79c" stroke-width="1.5"/>
+        <text class="n-title" x="34" y="34">A worker, hands full</text>
+        <text class="n-sub" x="34" y="49">“post a goods receipt, forty…”</text>
+      </g>
+
+      <!-- 2 assemblyai -->
+      <g class="node" data-node="assemblyai">
+        <rect x="18" y="92" width="200" height="66" rx="12" fill="var(--sand)" stroke="#c3b79c" stroke-width="1.5"/>
+        <text class="n-title" x="34" y="118">AssemblyAI Voice Agent</text>
+        <text class="n-sub" x="34" y="134">STT · turn-taking · LLM · TTS</text>
+        <text class="n-sub" x="34" y="149">JSON-Schema HTTP tools</text>
+      </g>
+
+      <!-- 3 gateway (emphasised) -->
+      <g class="node" data-node="gateway">
+        <rect x="18" y="192" width="208" height="100" rx="14" fill="var(--green)" stroke="#16321f" stroke-width="2"/>
+        <text class="n-title on-dark" x="34" y="220">GlovesOn gateway</text>
+        <text class="n-sub on-dark" x="34" y="238">/erp/* · X-Tool-Secret</text>
+        <text class="n-sub on-dark" x="34" y="254">every guardrail lives here</text>
+        <text class="n-sub on-dark" x="34" y="276">the agent never sees SAP</text>
+      </g>
+
+      <!-- 4 sap_client -->
+      <g class="node" data-node="sapclient">
+        <rect x="18" y="326" width="200" height="66" rx="12" fill="var(--green-soft)" stroke="#7fa389" stroke-width="1.5"/>
+        <text class="n-title" x="34" y="352">sap_client</text>
+        <text class="n-sub" x="34" y="368">the only file that speaks OData</text>
+        <text class="n-sub" x="34" y="383">CSRF fetch → POST → retry once</text>
+      </g>
+
+      <!-- 5 mock -->
+      <g class="node" data-node="mock">
+        <rect x="18" y="426" width="200" height="66" rx="12" fill="var(--paper)" stroke="#7fa389" stroke-width="2" stroke-dasharray="7 5"/>
+        <text class="n-title" x="34" y="452">mock S/4HANA</text>
+        <text class="n-sub" x="34" y="468">its own app · not routed publicly</text>
+        <text class="n-sub" x="34" y="483">one env var → a real tenant</text>
+      </g>
+
+      <!-- guards -->
+      <g class="node" data-node="draft">
+        <rect x="336" y="112" width="200" height="52" rx="12" fill="var(--paper)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="n-title" x="352" y="136">Draft protocol</text>
+        <text class="n-sub" x="352" y="152">prepare → read back → confirm</text>
+      </g>
+      <g class="node" data-node="duplicate">
+        <rect x="336" y="196" width="200" height="52" rx="12" fill="var(--paper)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="n-title" x="352" y="220">Duplicate guard</text>
+        <text class="n-sub" x="352" y="236">ours, not SAP’s — 120 s window</text>
+      </g>
+      <g class="node" data-node="audit">
+        <rect x="336" y="280" width="200" height="52" rx="12" fill="var(--paper)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="n-title" x="352" y="304">Audit trail</text>
+        <text class="n-sub" x="352" y="320">document → the sentence said</text>
+      </g>
+      <g class="node" data-node="live">
+        <rect x="336" y="364" width="200" height="52" rx="12" fill="var(--paper)" stroke="#b9c2ae" stroke-width="1.5"/>
+        <text class="n-title" x="352" y="388">Live ERP screen</text>
+        <text class="n-sub" x="352" y="404">SSE, scoped to your session</text>
+      </g>
+
+      <!-- reversal note -->
+      <g class="node" data-node="reversal">
+        <rect x="336" y="448" width="200" height="52" rx="12" fill="var(--paper)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="n-title" x="352" y="472">Reversal, never delete</text>
+        <text class="n-sub" x="352" y="488">a 102 against the 101</text>
+      </g>
+    </svg>
+    <p class="maphint">Click a box. Every file link opens the exact line on GitHub.</p>
+  </section>
+
+  <aside class="panel" id="panel"></aside>
+</div>
+
+<footer>
+  <h2 style="font-size:20px;margin:0">Check it yourself</h2>
+  <div class="runs">
+    <div class="run">
+      <b>No database, no keys, 24 tests</b>
+      <span class="cmd"><span class="c"># the draft protocol, confirmation, scoping</span>
+pip install -r requirements.txt pytest
+pytest checks/</span>
+      <p>The part the submission is actually about, thirty seconds after a clone.</p>
+    </div>
+    <div class="run">
+      <b>The whole suite</b>
+      <span class="cmd"><span class="c"># needs any empty Postgres</span>
+export TEST_DATABASE_URL=postgresql://…
+pytest</span>
+      <p>The CSRF handshake, movement-type rules and the duplicate window need a real database to mean anything.</p>
+    </div>
+    <div class="run">
+      <b>Watch a bare call refuse to post</b>
+      <span class="cmd">curl -s -X POST -H "X-Tool-Secret: $S" \
+  -H "Content-Type: application/json" \
+  -d '{"material":"4711","quantity":20}' \
+  https://gloveson.vercel.app/erp/goods-receipt</span>
+      <p>Valid input, correct secret, no document. The refusal is the exhibit.</p>
+    </div>
+  </div>
+
+  <div class="limits">
+    <h3>What this does not do — said here, not left for you to find</h3>
+    <ul>
+      <li><b>The ERP is a mock.</b> The OData contract and the CSRF handshake are real; no claim is made that this has run against a live tenant.</li>
+      <li><b>Nobody is authenticated</b>, and the posting is made by a service user — SAP cannot say <i>who</i> spoke. Closing that needs principal propagation; it is the largest gap in <code>docs/clean-core.md</code>.</li>
+      <li><b>Noise robustness is unmeasured.</b> <code>voice_focus: far-field</code> is set, but a config change is a claim, not a measurement.</li>
+      <li><b>One session at a time</b>, by design. Two people speaking at once would share a session reference.</li>
+    </ul>
+  </div>
+
+  <div class="foot-links">
+    <a href="https://github.com/kosesena/GlovesOn">GitHub repository</a>
+    <a href="https://github.com/kosesena/GlovesOn/blob/main/docs/JUDGE-GUIDE.md">Judge guide</a>
+    <a href="https://github.com/kosesena/GlovesOn/tree/main/docs/adr">Decision records</a>
+    <a href="/">Live demo</a>
+  </div>
+</footer>
+</div>
+
+<script>
+const REPO = 'https://github.com/kosesena/GlovesOn/blob/main/';
+
+/* Each entry mirrors the shape a claim has to have here to count:
+   what it does, where it lives, the rule it cannot break, how you check it.
+   A node with an empty `verify` would be a claim with no evidence, which is
+   the thing this page exists to make impossible to hide. */
+const NODES = {
+  worker: {
+    kicker:'The moment', title:'A worker with both hands full',
+    what:'A pallet lands. Until it is a material document, the company does not know it owns the goods — and today that means gloves off and a walk to a terminal. The agent asks for two things only: material and quantity. Bin, unit, description, plant and storage location are looked up, because asking “which bin?” is the exact friction this removes.',
+    files:[{p:'agent/agent.json',l:null,label:'the system prompt, including the two-questions rule'}],
+    rules:['The agent asks for material and quantity. Never the bin.'],
+    verify:[]
+  },
+  assemblyai: {
+    kicker:'Supplier', title:'AssemblyAI Voice Agent API',
+    what:'The whole voice loop through one connection: streaming speech-to-text, turn detection, LLM routing, speech out, and JSON-Schema HTTP tool calls into the gateway. Recognition is tuned to this floor with a transcription prompt and keyterms for SAP material numbers and warehouse vocabulary.',
+    files:[{p:'agent/agent.json',l:null,label:'tools, keyterms, turn_detection, voice_focus'},
+           {p:'agent/publish.py',l:null,label:'publishes the definition; fills secrets from .env'}],
+    rules:['Both write tools run in execution_mode: hold — the agent waits for the ERP instead of narrating an optimistic success.',
+           'turn_detection is pinned at 800/2000 because adaptive pacing cut a non-native speaker off mid-sentence. We do not claim per-speaker adaptation.'],
+    verify:['pytest checks/test_scoped_agent.py'],
+    counts:['tools','keyterms']
+  },
+  gateway: {
+    kicker:'The boundary', title:'The GlovesOn gateway',
+    what:'The agent speaks in warehouse terms — /erp/stock, /erp/goods-receipt — and never sees SAP. Everything SAP-specific lives behind this line: authentication, field translation, and every guardrail below. Swapping the mock for a real tenant is one environment variable, because there is no second code path.',
+    files:[{p:'gateway/main.py',l:216,label:'require_tool_auth — constant-time secret check'},
+           {p:'gateway/main.py',l:60,label:'refuses to start without TOOL_SHARED_SECRET'},
+           {p:'gateway/sap_client.py',l:33,label:'SAP_BASE_URL — the one variable that moves it to a real tenant'}],
+    rules:['Every /erp/* endpoint requires the shared secret. A missing or wrong one is 401 before anything is read.',
+           'The gateway refuses to boot without a secret. Refusing to start is loud; serving unprotected writes is quiet.'],
+    verify:['curl -s -o /dev/null -w "%{http_code}" https://gloveson.vercel.app/erp/stock?material=4711   # 401',
+            'pytest checks/test_scope_routes.py']
+  },
+  draft: {
+    kicker:'Hard rule', title:'No write without a prepared draft',
+    what:'A write happens in two turns. The agent first prepares a draft — the gateway mints a one-use token and publishes the intent to the screen, writing nothing. Only a second call carrying that token, inside the same verified voice session, can post. A bare HTTP call cannot reach the write path at all.',
+    files:[{p:'gateway/confirmation.py',l:44,label:'prepare — mints the one-use draft'},
+           {p:'gateway/confirmation.py',l:56,label:'consume — spends it, once'},
+           {p:'gateway/main.py',l:297,label:'draft_decision — the fork every write passes'}],
+    rules:['No draft, no document. The unreachability of the bare path is the guarantee.',
+           'The read-back names four things: quantity, unit, material description, and destination bin. The description is what lets a worker catch that they are holding nuts, not bolts.',
+           'A timed-out write is never retried by the agent — a write whose result you cannot see may already have happened.'],
+    verify:['pytest tests/test_write_guarantees.py -k a_bare_call_without_a_draft_writes_nothing',
+            'pytest tests/test_write_guarantees.py -k the_reply_names_the_description_not_only_the_number']
+  },
+  duplicate: {
+    kicker:'Hard rule', title:'The same intent is not recorded twice',
+    what:'A timed-out write is ambiguous: the document may have landed while the response was lost. The worker repeats the sentence and stock doubles. So an identical receipt inside a two-minute window is refused, and the agent is told the document number so it can ask whether this is a second, separate delivery.',
+    files:[{p:'gateway/main.py',l:443,label:'_recent_identical — asks SAP, keeps no memory'},
+           {p:'gateway/main.py',l:440,label:'DUPLICATE_WINDOW_SECONDS = 120'},
+           {p:'gateway/sap_mock.py',l:172,label:'the mock deliberately does NOT dedupe'}],
+    rules:['The guard lives in the gateway, not the mock, because real S/4HANA accepts the same goods receipt twice without complaint. Moving it into the mock would make the demo pass and the product wrong.'],
+    verify:['pytest tests/test_write_guarantees.py -k an_identical_repeat_is_refused_and_writes_nothing',
+            'pytest tests/test_sap_fidelity.py -k the_mock_accepts_the_same_receipt_twice']
+  },
+  reversal: {
+    kicker:'Hard rule', title:'Nothing is deleted',
+    what:'A wrong receipt is corrected with a reversal document — a 102 against a 101, a 502 against a 501. Stock comes back down and both documents stay in the history. The agent says “reverse”, never “delete”. A reversal cannot itself be reversed, and a document is not reversed twice.',
+    files:[{p:'gateway/sap_client.py',l:182,label:'reversal_payload — the 102/101 pairing'},
+           {p:'gateway/main.py',l:511,label:'reverse_goods_receipt — same guards as a receipt'}],
+    rules:['A reversal is a write in the fullest sense, and sits behind the same draft, read-back and confirmation as the receipt.',
+           'The reversal carries the ORIGINAL quantity. A hardcoded 1 once hid here because the mock silently corrected it; a real S/4HANA would have left stock 19 too high.'],
+    verify:['pytest tests/test_write_guarantees.py -k a_reversal_posts_a_second_document_and_returns_the_stock',
+            'pytest tests/test_write_guarantees.py -k a_reversal_cannot_itself_be_reversed',
+            'pytest tests/test_write_guarantees.py -k a_document_is_not_reversed_twice']
+  },
+  sapclient: {
+    kicker:'The contract', title:'sap_client — the only file that speaks OData',
+    what:'Released S/4HANA APIs, spoken properly: fetch a CSRF token from the service root, POST the material document with it, refresh once and retry on a 403. Material numbers become 18-character zero-padded MATNR. Everything SAP-shaped is here, which is why moving to a real tenant changes a URL and nothing else.',
+    files:[{p:'gateway/sap_client.py',l:76,label:'_fetch_csrf — the mandatory handshake'},
+           {p:'gateway/store.py',l:139,label:'norm_matnr — “4711” becomes 000000000000004711'}],
+    rules:['A write without a CSRF token is refused, exactly as a real tenant would refuse it.',
+           'The document records its origin, never an identity. A spoken name is not authentication, and putting one on the document would place an unverified field beside verified ones.'],
+    verify:['pytest tests/test_sap_fidelity.py -k a_write_without_a_csrf_token_is_refused',
+            'pytest tests/test_sap_fidelity.py -k a_spoken_material_number_becomes_an_18_character_matnr']
+  },
+  mock: {
+    kicker:'Honest boundary', title:'The mock S/4HANA',
+    what:'A second FastAPI application that implements the released OData surface and is reached over HTTP like any external system — not mounted on the public app. It was briefly, and an anonymous CSRF fetch plus one POST wrote a material document with no secret, no read-back and no audit row. That is now a regression test.',
+    files:[{p:'gateway/sap_mock.py',l:95,label:'create_material_document — movement-type rules'},
+           {p:'tests/test_public_surface.py',l:16,label:'the mock must not be reachable from outside'},
+           {p:'docs/adr/0003-mock-erp-behind-a-faithful-contract.md',l:null,label:'why faithful rather than convenient'}],
+    rules:['The mock is faithful, not helpful. Where real SAP is permissive, the mock is permissive too — the guardrails belong to us.',
+           'It is never routed publicly. Do not remount it for convenience.'],
+    verify:['pytest tests/test_public_surface.py','curl -s https://gloveson.vercel.app/health   # names the ERP target'],
+    counts:['target','materials','documents']
+  },
+  audit: {
+    kicker:'Evidence', title:'From a document back to the sentence',
+    what:'The SAP document records what happened; this records why. Click any row in Recent documents and the panel shows the sentence the worker confirmed, the second it happened, and the session it came from — and says, in the same panel, that a session reference is not an identity. An audit trail written but never read is not an audit trail.',
+    files:[{p:'gateway/audit.py',l:48,label:'record — written on every posting'},
+           {p:'gateway/audit.py',l:57,label:'provenance — what the screen shows'},
+           {p:'docs/clean-core.md',l:null,label:'why this is not identity, and what would be'}],
+    rules:['Consent is agent-reported and bound to a one-use draft. It is a mistake control, never an authorisation control — stated plainly rather than dressed up.'],
+    verify:['pytest tests/test_write_guarantees.py -k a_document_can_be_traced_back_to_the_sentence_that_caused_it',
+            'curl -s https://gloveson.vercel.app/api/provenance/<MBLNR>']
+  },
+  live: {
+    kicker:'The screen', title:'The live ERP view',
+    what:'Events travel through the database, not process memory, because the instance holding your screen and the instance taking the tool call need not be the same one. Each browser session gets a signed scope, so a document posted in someone else’s session never appears on yours.',
+    files:[{p:'gateway/live.py',l:null,label:'the event bus, in Postgres'},
+           {p:'gateway/session_scope.py',l:null,label:'signed per-session routing'},
+           {p:'docs/adr/0005-serverless-deployment-and-shared-state.md',l:null,label:'what leaving process memory cost'}],
+    rules:['Half a second of lag, paid on purpose: a lost document would be noticed, this is not.'],
+    verify:['pytest checks/test_session_scope.py','pytest checks/test_scope_routes.py']
+  }
+};
+
+const panel = document.getElementById('panel');
+let FACTS = {};
+
+function factBits(keys){
+  const map = {
+    tools:      () => FACTS.tools && `${FACTS.tools.count} HTTP tools, ${FACTS.tools.hold.length} of them execution_mode: hold`,
+    keyterms:   () => FACTS.recognition && `${FACTS.recognition.keyterms} keyterms · voice_focus: ${FACTS.recognition.voice_focus}`,
+    target:     () => FACTS.erp && `ERP target: ${FACTS.erp.target}`,
+    materials:  () => FACTS.erp && FACTS.erp.materials != null && `${FACTS.erp.materials} materials seeded`,
+    documents:  () => FACTS.erp && FACTS.erp.documents != null && `${FACTS.erp.documents} documents posted so far`
+  };
+  return keys.map(k => map[k] && map[k]()).filter(Boolean);
+}
+
+function render(id){
+  const n = NODES[id];
+  document.querySelectorAll('.node').forEach(e => e.classList.toggle('on', e.dataset.node === id));
+  const live = n.counts ? factBits(n.counts) : [];
+  panel.innerHTML = `
+    <div class="kicker">${n.kicker}</div>
+    <h2>${n.title}</h2>
+    <p class="what">${n.what}</p>
+    ${live.length ? `<div class="sec"><h3>Live, from this deployment</h3><ul>${
+      live.map(t => `<li class="rule">${t}</li>`).join('')}</ul></div>` : ''}
+    ${n.rules.length ? `<div class="sec"><h3>Rules it cannot break</h3><ul>${
+      n.rules.map(r => `<li class="rule">${r}</li>`).join('')}</ul></div>` : ''}
+    <div class="sec"><h3>Where it lives</h3><ul>${
+      n.files.map(f => `<li><a class="file" href="${REPO}${f.p}${f.l ? '#L'+f.l : ''}" target="_blank" rel="noopener">${f.p}${
+        f.l ? `<span class="ln">:${f.l}</span>` : ''}</a><span class="flabel">${f.label}</span></li>`).join('')}</ul></div>
+    <div class="sec"><h3>How you check it</h3>${
+      n.verify.length ? n.verify.map(v => `<span class="cmd">${v.replace(/</g,'&lt;')}</span>`).join('')
+                      : '<p class="empty">Prose, not a guarantee — nothing here claims a test it does not have.</p>'}</div>`;
+}
+
+document.querySelectorAll('.node').forEach(el => {
+  el.addEventListener('click', () => { render(el.dataset.node); location.hash = el.dataset.node; });
+});
+
+fetch('/api/facts').then(r => r.json()).then(f => {
+  FACTS = f;
+  const strip = [];
+  if (f.tools)       strip.push(['HTTP tools', f.tools.count, `${f.tools.writes.length} of them write`]);
+  if (f.evidence)    strip.push(['Tests', f.evidence.tests, 'green on every push']);
+  if (f.evidence)    strip.push(['Decision records', f.evidence.adrs, 'each names what it rejected']);
+  if (f.recognition) strip.push(['Keyterms', f.recognition.keyterms, 'tuned to SAP vocabulary']);
+  if (f.erp && f.erp.documents != null) strip.push(['Documents posted', f.erp.documents, 'in this deployment, live']);
+  document.getElementById('facts').innerHTML = strip.map(([label, value, sub], i) =>
+    `<div class="fact${i === strip.length - 1 ? ' live' : ''}"><b>${value}</b>${label} · ${sub}</div>`).join('');
+  document.getElementById('facts-note').textContent =
+    'Every figure above is computed at request time from agent.json, docs/adr/, tests/ and the database — a diagram cannot claim more than exists.';
+}).catch(() => {
+  document.getElementById('facts-note').textContent =
+    'Live figures unavailable — the gateway did not answer /api/facts. Nothing is shown rather than something stale.';
+});
+
+/* Even this count is derived. A page that tells you not to trust typed
+   numbers should not open with one. */
+const WORDS = ['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve'];
+const N = Object.keys(NODES).length;
+document.getElementById('partcount').textContent = `${WORDS[N] ?? N} parts`;
+
+render(location.hash.slice(1) in NODES ? location.hash.slice(1) : 'gateway');
+</script>
+</body>
+</html>

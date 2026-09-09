@@ -21,7 +21,7 @@ import hmac
 import json
 import secrets
 import time
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
@@ -719,6 +719,62 @@ def inventory() -> dict[str, Any]:
                        "MENGE": d["menge"], "MEINS": d["meins"], "LGPLA": d["lgpla"],
                        "BUDAT": d["budat"], "created_at": d["created_at"]} for d in docs],
     }
+
+
+@app.get("/api/facts")
+def facts() -> dict[str, Any]:
+    """
+    Every number the how-it-works page prints, derived at request time from the
+    files and tables that hold the truth.
+
+    A diagram that carries hand-typed counts drifts from the thing it claims to
+    describe, and the drift is invisible until a reader checks — which is the
+    one thing a page like that exists to invite. Anything that cannot be
+    derived here is omitted rather than guessed: a missing number is honest,
+    a stale one is not.
+    """
+    out: dict[str, Any] = {}
+
+    # Each section is suppressed on its own: a deployment that does not bundle
+    # the test tree should still report its tools, and a database blip should
+    # not blank the page. A missing section is visible as a missing number.
+    with suppress(Exception):
+        spec = json.loads((ROOT / "agent/agent.json").read_text())
+        tools = spec.get("tools", [])
+        out["tools"] = {
+            "count": len(tools),
+            "writes": [t["name"] for t in tools if t["name"] in
+                       ("post_goods_receipt", "reverse_goods_receipt")],
+            "hold": [t["name"] for t in tools if t.get("execution_mode") == "hold"],
+        }
+        listen = spec.get("input", {})
+        out["recognition"] = {
+            "keyterms": len(listen.get("keyterms", [])),
+            "voice_focus": listen.get("voice_focus"),
+            "turn_detection": listen.get("turn_detection", {}),
+        }
+
+    with suppress(Exception):
+        out["evidence"] = {
+            "adrs": len(sorted((ROOT / "docs/adr").glob("0*.md"))),
+            "tests": sum(p.read_text().count("def test_")
+                         for d in ("tests", "checks")
+                         for p in (ROOT / d).glob("*.py")),
+        }
+
+    out["erp"] = {"target": sap_target()}
+    with suppress(Exception), store.db() as conn:
+        out["erp"]["materials"] = conn.execute(
+            "SELECT COUNT(*) AS c FROM mard").fetchone()["c"]
+        out["erp"]["documents"] = conn.execute(
+            "SELECT COUNT(*) AS c FROM mkpf").fetchone()["c"]
+
+    return out
+
+
+@app.get("/how-it-works", include_in_schema=False)
+def how_it_works() -> FileResponse:
+    return FileResponse(WEB_DIR / "how-it-works.html")
 
 
 @app.get("/api/provenance/{mblnr}")
