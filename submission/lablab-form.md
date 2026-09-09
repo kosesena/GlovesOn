@@ -14,12 +14,12 @@ spoken, read back for confirmation, and reversible, never deleted.
 
 ## Long description
 
-**The moment.** A pallet lands on the receiving dock. The worker has both hands
-under a box and gloves on. That delivery has to become a material document in
+**The moment.** A pallet lands on Lena's receiving dock. Both hands are under
+the box, gloves on. That delivery has to become a material document in
 SAP — until it does, the company does not know it owns the goods. Today that
 means gloves off and a walk to a shared terminal, for every delivery.
 
-**What GlovesOn does.** The worker says one sentence — *"Forty M8 bolts
+**What GlovesOn does.** Lena says one sentence — *"Forty M8 bolts
 arrived."* The agent looks the material up itself (bin, unit, description),
 reads the whole posting back aloud — *"Forty pieces of hex bolt M8x40 into bin
 A-03-02, confirm?"* — and only on an unmistakable yes **posts a material

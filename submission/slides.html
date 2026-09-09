@@ -35,14 +35,14 @@
  .cover{ padding:0; }
  .cover img{ width:100%; height:100%; object-fit:cover; }
 
- /* the read-back exchange, reused on 3 */
+ /* the read-back exchange, reused on 4 */
  .xchg{ background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:26px 30px;
    font:19px/1.75 var(--mono); color:var(--ink); box-shadow:0 10px 30px rgba(138,113,83,.14); }
  .xchg .r{ color:var(--muted); }
  .xchg .r b{ display:inline-block; width:58px; color:#98a08a; font:600 11px var(--mono); letter-spacing:.14em; vertical-align:1px; }
  .xchg .out{ margin-top:14px; padding-top:14px; border-top:1px solid var(--line); color:var(--green); font-weight:600; }
 
- /* dark console card, slides 4 + 5 */
+ /* dark console card, slides 5 + 6 */
  .console{ background:var(--dbg); border-radius:14px; color:var(--dtext); overflow:hidden;
    box-shadow:0 20px 50px rgba(20,27,24,.28); border:1px solid var(--dline); }
  .console .top{ display:flex; align-items:center; gap:12px; padding:14px 20px; border-bottom:1px solid var(--dline);
@@ -60,34 +60,51 @@
  .doc .row{ display:flex; justify-content:space-between; gap:16px; }
  .doc .row span:first-child{ color:#7d857a; }
 
- /* four-point discipline list */
+ /* the discipline list, slide 6 */
  .pts{ display:grid; gap:26px; margin:auto 0; }
  .pt{ display:flex; gap:16px; align-items:flex-start; }
  .pt .n{ flex:none; width:30px; height:30px; border-radius:8px; background:var(--green); color:#fffaf0;
    display:grid; place-items:center; font:600 14px var(--mono); }
  .pt b{ font-size:20px; } .pt p{ color:var(--muted); font-size:15px; line-height:1.45; margin-top:2px; }
 
- /* chips, slide 7 */
+ /* The task bundle: a shift written out, each task tagged with what we do to
+    it. The honest majority is UNTOUCHED, and that is the point — the three
+    that vanish only exist because the record lives on a screen. */
+ .bundle{ display:grid; grid-template-columns:1fr 1fr; gap:2px 34px; margin:14px 0 20px; }
+ .task{ display:flex; align-items:baseline; gap:12px; font-size:17px; padding:13px 0;
+        border-bottom:1px dotted var(--line); }
+ .task span{ flex:1; color:var(--ink); }
+ .task i{ font-style:normal; font:9.5px var(--mono); letter-spacing:.1em; padding:4px 9px;
+          border-radius:6px; flex:none; white-space:nowrap; }
+ .task.off span{ color:#9a9179; }
+ .t-keep{ background:#efe9db; color:#8a8168; }
+ .t-gone{ background:#f7e0d4; color:var(--orange); }
+ .t-auto{ background:#e2ede2; color:var(--green); }
+ .t-new { border:1px dashed #7fa389; color:var(--green); padding:3px 8px; }
+ .legend{ display:flex; gap:18px; flex-wrap:wrap; font:10px var(--mono); letter-spacing:.08em;
+          color:var(--muted); text-transform:uppercase; }
+ .legend b{ display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:6px; }
+ /* chips, slide 8 */
  .chips{ display:flex; flex-wrap:wrap; gap:12px; }
  .chip{ background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:12px 16px;
    font:14px var(--mono); color:var(--ink); }
  .chip b{ color:var(--green); }
 
- /* two columns, slide 8 */
+ /* two columns, slide 9 */
  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:26px; }
  .card{ background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:26px 28px; }
  .card h3{ font-size:22px; letter-spacing:-.02em; margin-bottom:10px; }
  .card p{ color:var(--muted); font-size:16px; line-height:1.5; }
  .card .who{ font:10px var(--mono); letter-spacing:.12em; color:var(--orange); text-transform:uppercase; margin-bottom:14px; }
 
- /* metric row, slide 9 */
+ /* metric row, slide 10 */
  .mrow{ display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
  .metric{ background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:26px; }
  .metric .big{ font-size:40px; font-weight:650; letter-spacing:-.03em; color:var(--green); }
  .metric .big.o{ color:var(--orange); }
  .metric .cap{ color:var(--muted); font-size:14px; line-height:1.4; margin-top:8px; }
 
- /* limits, slide 10 */
+ /* limits, slide 11 */
  .lim{ display:grid; gap:22px; margin:auto 0; }
  .lim .row{ display:flex; gap:14px; align-items:flex-start; font-size:17px; line-height:1.4; }
  .lim .row:before{ content:'—'; color:var(--orange); font-weight:700; }
@@ -104,17 +121,44 @@
 <section class="slide cover"><img src="cover-16x9.jpg" alt="GlovesOn"></section>
 
 <!-- 2 · PROBLEM -->
-<section class="slide"><span class="tag">02 · THE PROBLEM</span>
- <div class="kicker">The receiving floor</div>
- <h1 style="font-size:74px;margin:26px 0 34px">Every delivery has to<br>end up in SAP.</h1>
- <div class="lede" style="max-width:19ch">A pallet lands. Both hands are on the box, gloves on. Until that delivery is a
-   document, the company does not know it owns the goods —<br><b class="g">purchasing chases it, production plans without it.</b></div>
- <div style="margin-top:auto"><div class="lede" style="color:var(--ink);font-weight:600;font-size:24px">Today that costs a walk: gloves off, to a shared terminal. <b class="o">Every delivery.</b></div></div>
+<section class="slide"><span class="tag">02 · THE WORKER</span>
+ <div class="kicker">Receiving dock · morning shift</div>
+ <h1 style="font-size:70px;margin:26px 0 32px">Lena has both hands<br>under a box.</h1>
+ <div class="lede" style="max-width:34ch;font-size:23px">The pallet landed four minutes ago and it is on no one's books yet. Until that
+   delivery is a document in SAP, the company does not know it owns the goods —<br><b class="g">purchasing chases it, production plans without it.</b></div>
+ <div style="margin-top:auto;margin-bottom:26px"><div class="lede" style="color:var(--ink);font-weight:600;font-size:24px">Booking it costs Lena a walk: gloves off, across the floor, to a shared terminal. <b class="o">Every delivery, every shift.</b></div></div>
  <div class="foot">GlovesOn · <svg class="aai" role="img" aria-label="AssemblyAI"><use href="#aai"/></svg> Voice Agent Hackathon · 2026</div>
 </section>
 
-<!-- 3 · SOLUTION -->
-<section class="slide"><span class="tag">03 · THE SOLUTION</span>
+<!-- 3 · THE SHIFT AS A BUNDLE OF TASKS -->
+<section class="slide"><span class="tag">03 · THE SHIFT</span>
+ <div class="kicker">What this touches — and what it does not</div>
+ <h1 style="font-size:50px;margin:20px 0 10px">A shift is a bundle of tasks.</h1>
+ <div class="lede" style="font-size:18px;margin-bottom:6px">Lena's morning, task by task. Most of it is not ours to change.</div>
+ <div class="bundle">
+   <div class="task off"><span>Unload the pallet</span><i class="t-keep">UNTOUCHED</i></div>
+   <div class="task"><span>Type the material number</span><i class="t-gone">GONE</i></div>
+   <div class="task off"><span>Check the packing slip</span><i class="t-keep">UNTOUCHED</i></div>
+   <div class="task"><span>Look up which bin it goes to</span><i class="t-auto">AUTOMATIC</i></div>
+   <div class="task off"><span>Set damaged cartons aside</span><i class="t-keep">UNTOUCHED</i></div>
+   <div class="task"><span>Post the goods receipt</span><i class="t-auto">BY VOICE</i></div>
+   <div class="task"><span>Take the gloves off</span><i class="t-gone">GONE</i></div>
+   <div class="task"><span>Correct a wrong posting</span><i class="t-auto">BY VOICE</i></div>
+   <div class="task"><span>Walk to the shared terminal</span><i class="t-gone">GONE</i></div>
+   <div class="task"><span>Hear the line before it is true</span><i class="t-new">NEW</i></div>
+ </div>
+ <div class="legend">
+   <span><b style="background:#efe9db"></b>Untouched</span>
+   <span><b style="background:#f7e0d4"></b>Removed</span>
+   <span><b style="background:#e2ede2"></b>Done by voice</span>
+   <span><b style="background:transparent;border:1px dashed #7fa389"></b>New task</span>
+ </div>
+ <div style="margin-top:auto;margin-bottom:26px"><div class="lede" style="color:var(--ink);font-weight:600;font-size:22px">GlovesOn cannot unload the pallet. It removes the <b class="o">three tasks that exist only because the record lives on a screen</b> — and adds one worth doing.</div></div>
+ <div class="foot">GlovesOn · <svg class="aai" role="img" aria-label="AssemblyAI"><use href="#aai"/></svg> Voice Agent Hackathon · 2026</div>
+</section>
+
+<!-- 4 · SOLUTION -->
+<section class="slide"><span class="tag">04 · THE SOLUTION</span>
  <div class="kicker">Say it. It posts.</div>
  <h1 style="font-size:60px;margin:24px 0 30px">One spoken sentence<br>becomes a real document.</h1>
  <div class="xchg" style="max-width:9.6in">
@@ -127,8 +171,8 @@
  <div class="foot">GlovesOn · <svg class="aai" role="img" aria-label="AssemblyAI"><use href="#aai"/></svg> Voice Agent Hackathon · 2026</div>
 </section>
 
-<!-- 4 · SEE IT WORK -->
-<section class="slide"><span class="tag">04 · SEE IT WORK</span>
+<!-- 5 · SEE IT WORK -->
+<section class="slide"><span class="tag">05 · SEE IT WORK</span>
  <div class="kicker">A confirmed write, live</div>
  <h2 style="margin:22px 0 26px;font-size:40px">Every number on screen is real.</h2>
  <div class="console">
@@ -158,8 +202,8 @@
  <div class="foot">Replace with a GIF of the live demo before submitting.</div>
 </section>
 
-<!-- 5 · DISCIPLINE -->
-<section class="slide"><span class="tag">05 · THE DISCIPLINE</span>
+<!-- 6 · DISCIPLINE -->
+<section class="slide"><span class="tag">06 · THE DISCIPLINE</span>
  <div class="kicker">Asking is easy. Finishing is the hard part.</div>
  <h2 style="margin:22px 0 30px">Five guardrails, each one deliberate.</h2>
  <div class="pts">
@@ -172,8 +216,8 @@
  <div class="foot">Reasoning in full: docs/adr/0002-confirm-before-write.md</div>
 </section>
 
-<!-- 6 · ARCHITECTURE -->
-<section class="slide"><span class="tag">06 · ARCHITECTURE</span>
+<!-- 7 · ARCHITECTURE -->
+<section class="slide"><span class="tag">07 · ARCHITECTURE</span>
  <div class="kicker">The agent never sees SAP</div>
  <h2 style="margin:20px 0 22px;font-size:40px">One boundary carries every guardrail.</h2>
  <div style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:26px 30px;text-align:center">
@@ -183,8 +227,8 @@
  <div class="foot">docs/adr/0001 · docs/adr/0003</div>
 </section>
 
-<!-- 7 · ASSEMBLYAI -->
-<section class="slide"><span class="tag">07 · BUILT ON ASSEMBLYAI</span>
+<!-- 8 · ASSEMBLYAI -->
+<section class="slide"><span class="tag">08 · BUILT ON ASSEMBLYAI</span>
  <div class="kicker" style="justify-content:flex-start;gap:16px">The whole voice loop is the Voice Agent API<svg class="aai" role="img" aria-label="AssemblyAI" style="height:22px;margin-left:auto;margin-right:8px"><use href="#aai"/></svg></div>
  <h2 style="margin:22px 0 30px">One connection: speech, reasoning, voice, tools.</h2>
  <div class="chips">
@@ -203,8 +247,8 @@
  <div class="foot">agent/agent.json · docs/assemblyai-notlari.md</div>
 </section>
 
-<!-- 8 · WHY IT DOESN'T EXIST -->
-<section class="slide"><span class="tag">08 · WHY THIS IS NEW</span>
+<!-- 9 · WHY IT DOESN'T EXIST -->
+<section class="slide"><span class="tag">09 · WHY THIS IS NEW</span>
  <div class="kicker">Everyone else voice-guides planned work</div>
  <h2 style="margin:20px 0 26px;font-size:40px">The unplanned pallet has no voice path.</h2>
  <div class="cols">
@@ -215,8 +259,8 @@
  <div class="foot"><span class="src">sources with bias tags: docs/market.md §1–2</span></div>
 </section>
 
-<!-- 9 · MARKET + COST -->
-<section class="slide"><span class="tag">09 · MARKET &amp; COST</span>
+<!-- 10 · MARKET + COST -->
+<section class="slide"><span class="tag">10 · MARKET &amp; COST</span>
  <div class="kicker">An established budget line</div>
  <h2 style="margin:20px 0 30px">Zero per-seat hardware against a $5,000 norm.</h2>
  <div class="mrow">
@@ -228,8 +272,8 @@
  <div class="foot">GlovesOn · <svg class="aai" role="img" aria-label="AssemblyAI"><use href="#aai"/></svg> Voice Agent Hackathon · 2026</div>
 </section>
 
-<!-- 10 · LIMITS -->
-<section class="slide"><span class="tag">10 · HONEST LIMITS</span>
+<!-- 11 · LIMITS -->
+<section class="slide"><span class="tag">11 · HONEST LIMITS</span>
  <div class="kicker">Named, not hidden</div>
  <h2 style="margin:22px 0 30px">What this does not do yet.</h2>
  <div class="lim">
@@ -244,7 +288,7 @@
 </section>
 
 <!-- 11 · CLOSE -->
-<section class="slide"><span class="tag">11</span>
+<section class="slide"><span class="tag">12</span>
  <div class="kicker">GlovesOn</div>
  <h1 style="font-size:52px;margin:26px 0 24px;max-width:16ch">It doesn’t just stop and ask. It finishes — and leaves a document that can tell you why it exists.</h1>
  <div class="links" style="margin-top:14px">

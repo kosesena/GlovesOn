@@ -18,9 +18,9 @@
 
 ---
 
-A worker on a receiving dock has both hands on a pallet. Ask *"how many of material four
+Lena works a receiving dock, and both hands are under a box. Ask *"how many of material four
 seven one one do we have?"* and the answer comes back spoken. Say *"post a goods receipt,
-twenty pieces"* and — after the agent reads the line back and the worker confirms out
+twenty pieces"* and — after the agent reads the line back and Lena confirms out
 loud — a **numbered material document is posted** through SAP's released OData API, and
 stock moves on screen. The tenant behind it is a mock; the contract, the CSRF handshake
 and the document are not.
