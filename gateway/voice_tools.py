@@ -1,7 +1,7 @@
 """Ephemeral voice-tool capabilities, separate from read-only event scopes."""
-from copy import deepcopy
 import hashlib
 import hmac
+from copy import deepcopy
 from urllib.parse import urlsplit
 
 from . import session_scope

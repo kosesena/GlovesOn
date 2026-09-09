@@ -52,7 +52,7 @@ def init() -> None:
         conn.execute(SCHEMA)
 
 
-# --- olaylar ---------------------------------------------------------------
+# --- events ----------------------------------------------------------------
 
 def publish(event_type: str, payload: dict[str, Any]) -> None:
     message = json.dumps({"type": event_type, "ts": time.time(), "data": payload})
@@ -80,7 +80,7 @@ def since(last_id: int) -> list[tuple[int, str]]:
     return [(int(r["id"]), r["payload"]) for r in rows]
 
 
-# --- ses oturumlari --------------------------------------------------------
+# --- voice sessions --------------------------------------------------------
 
 def voice_budget_left(ceiling: int) -> int:
     with store.db() as conn:

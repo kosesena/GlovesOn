@@ -29,9 +29,20 @@ from typing import Any
 
 import httpx
 from fastapi import Body, FastAPI, Header, HTTPException, Query, Request
-from fastapi.responses import FileResponse, StreamingResponse, Response
+from fastapi.responses import FileResponse, Response, StreamingResponse
 
-from . import audit, confirmation, live, sap_client, sap_mock, scoped_agent, session_scope, store, voice_diagnostic, voice_tools
+from . import (
+    audit,
+    confirmation,
+    live,
+    sap_client,
+    sap_mock,
+    scoped_agent,
+    session_scope,
+    store,
+    voice_diagnostic,
+    voice_tools,
+)
 from .sap_client import SapClient, SapError, env
 from .store import norm_matnr, pretty_matnr
 
@@ -760,7 +771,7 @@ async def execute_voice_tool(tool_name: str, request: Request) -> Response:
     try:
         arguments = await request.json()
     except ValueError:
-        raise HTTPException(status_code=400, detail='Tool arguments must be JSON')
+        raise HTTPException(status_code=400, detail='Tool arguments must be JSON') from None
     if not isinstance(arguments, dict):
         raise HTTPException(status_code=422, detail='Tool arguments must be an object')
     # Reuse the exact ERP routes, schema validation, draft protocol and audit path.
