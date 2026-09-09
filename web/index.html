@@ -1218,6 +1218,10 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 .voice-fact-card dd {margin:0;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;}
 .voice-fact-card>small {font-size:10px;color:#758078;}
 
+.voice-settings {display:grid;gap:10px;margin:20px 0;padding:18px;border:1px solid #e4e5e0;border-radius:16px;}
+.voice-settings select,.voice-settings button {min-height:44px;font:inherit;border:1px solid #d9ddd7;border-radius:12px;background:white;padding:8px 12px;}
+.voice-settings small {color:#6c746d;font:12px/1.5 system-ui;}
+.voice-reference {display:block;font:12px/1.6 system-ui;margin-top:8px;}
 </style>
 </head>
 <body>
@@ -1294,6 +1298,11 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <div class="workspace-utilities"><button type="button" popovertarget="workspaceExtras">Records &amp; help <span aria-hidden="true">↗</span></button></div>
 <div id="workspaceExtras" popover="auto" aria-label="Records and help">
   <div class="extras-heading"><h2>Records &amp; help</h2><button type="button" popovertarget="workspaceExtras" popovertargetaction="hide" aria-label="Close records and help">×</button></div>
+  <div class="voice-settings"><label for="voiceMicrophone">Microphone</label>
+  <select id="voiceMicrophone"><option value="laptop">Laptop / speakerphone</option><option value="headset">Headset / close microphone</option></select>
+  <small>Applies to your next conversation. English · patient listening.</small>
+  <button id="downloadVoiceLog" type="button">Download session notes</button>
+  <small>Includes conversation text and tool outcomes. Audio is not included.</small></div>
 </div>
 
 <ol class="write-progress" aria-label="Receipt progress">
@@ -1407,6 +1416,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 </div>
 <footer><span>GlovesOn · Built for the receiving floor.</span><span><svg class="aai-mark" role="img" aria-label="AssemblyAI"><use href="#aai-dark"/></svg> Voice Agent Hackathon / 2026</span></footer>
 
+<script src="/voice-policy.js"></script>
 <script>
 // ---------------------------------------------------------------------------
 // Live ERP panel — Server-Sent Events'ten beslenir
@@ -1740,6 +1750,19 @@ const dotEl    = document.getElementById('dot');
 let ws = null, micCtx = null, micNode = null, micStream = null, micAnalyser = null;
 let playCtx = null, playCursor = 0, playSources = [];
 let partialEl = null, live = false;
+let recoveryTimer = null, recoveryDeadline = 0, recoveryGeneration = 0;
+let voiceSessionId = null, voiceBinding = null;
+let voiceNotes = {session_id:null, events:[]};
+function noteVoice(type, data) {
+  voiceNotes.events.push({at:new Date().toISOString(),type,data:GlovesOnVoice.safeDiagnostic(data)});
+  if (voiceNotes.events.length>800) voiceNotes.events.shift();
+}
+document.getElementById('downloadVoiceLog').onclick = () => {
+  const blob = new Blob([JSON.stringify(voiceNotes,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob), link=document.createElement('a');
+  link.href=url; link.download='gloveson-session-notes.json'; link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
 
 // ---------------------------------------------------------------------------
 // The status line: shows what is happening and how long it is taking,
@@ -2028,6 +2051,7 @@ function stopMic() {
 // --- the session ------------------------------------------------------------
 async function start() {
   finishUserTurn();
+  voiceNotes = {session_id:null, events:[]}; voiceSessionId = null; voiceBinding = null;
   setStatus('connecting…');
   talkBtn.disabled = true;
   try {
@@ -2037,11 +2061,11 @@ async function start() {
     return;
   }
 
-  let token, agentId, sessionConfig, scopeToken, toolCapability;
+  let token, agentId, sessionConfig, scopeToken, toolCapability, toolCatalog;
   let scenarioUpdatePending = false;
   try {
     ({ token, agent_id: agentId, session_config: sessionConfig, scope_token: scopeToken,
-       tool_capability: toolCapability } = await fetch('/api/voice-token', {cache:'no-store'}).then(r => {
+       tool_capability: toolCapability, tool_catalog: toolCatalog } = await fetch('/api/voice-token?microphone=' + encodeURIComponent(document.getElementById('voiceMicrophone').value), {cache:'no-store'}).then(r => {
       if (!r.ok) throw new Error('token endpoint failed');
       return r.json();
     }));
@@ -2072,47 +2096,91 @@ async function start() {
       channel.onmessage = receiveScopedEvent;
     });
   } catch (error) { append('sys', '', 'Private result channel could not connect. Please restart.'); cleanup(); return; }
-  const socket = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
-  ws = socket;
+  let socket;
+  const policy = new GlovesOnVoice.VoicePolicy(sessionConfig || {}, toolCatalog);
+  let policyDirty = false, expiryTimer = null;
   let lastToolEvent = null, toolEpoch = 0;
-  const toolResults = [], handledCalls = new Set();
+  const toolResults = [], handledCalls = new Map();
+  const voiceHeaders = {'Content-Type':'application/json','X-Event-Scope':scopeToken,'X-Voice-Capability':toolCapability};
   function flushToolResults() {
-    if (ws !== socket || socket.readyState !== WebSocket.OPEN || lastToolEvent !== 'reply.done') return;
+    if (activeScopeToken !== scopeToken || !socket || socket.readyState !== WebSocket.OPEN || lastToolEvent !== 'reply.done') return;
     while (toolResults.length) socket.send(JSON.stringify(toolResults.shift()));
+    if (policyDirty) { socket.send(JSON.stringify({type:'session.update',session:policy.update()})); policyDirty=false; }
   }
   async function runVoiceTool(message) {
-    if (!message.call_id || handledCalls.has(message.call_id)) return;
-    handledCalls.add(message.call_id);
+    if (!message.call_id) return;
+    if (handledCalls.has(message.call_id)) {
+      const cached = handledCalls.get(message.call_id);
+      if (cached) { toolResults.push(cached); flushToolResults(); }
+      return;
+    }
+    handledCalls.set(message.call_id, null);
     const epoch = toolEpoch;
     let result, failed = false;
+    const allowed = policy.allows(message.name);
+    policy.begin(message.name); policyDirty = true;
+    const progressTimer = setTimeout(() => {
+      if (activeScopeToken === scopeToken && socket?.readyState === WebSocket.OPEN && lastToolEvent === 'reply.done' &&
+          !handledCalls.get(message.call_id) && /prepare|post_goods|reverse_goods/.test(message.name)) {
+        socket.send(JSON.stringify({type:'reply.create',instructions:'The operation is still pending. Say one short sentence that we are waiting for the result. Do not imply success or request confirmation.'}));
+        lastToolEvent = 'reply.started';
+      }
+    }, 4500);
     try {
+      if (!allowed) throw new Error('Tool is not available in this workflow state');
       const response = await fetch('/api/voice-tools/' + encodeURIComponent(message.name), {
-        method:'POST', headers:{'Content-Type':'application/json',
-          'X-Event-Scope':scopeToken, 'X-Voice-Capability':toolCapability},
-        body:JSON.stringify(message.arguments ?? {})
+        method:'POST', headers:voiceHeaders, body:JSON.stringify(message.arguments ?? {})
       });
       result = await response.json(); failed = !response.ok;
     } catch (error) {
       failed = true;
-      result = {error:'Tool result unavailable. Do not retry a write. Check recent documents before deciding what happened.'};
-    }
-    if (ws !== socket || epoch !== toolEpoch) return;
+      result = {error:'Tool result unavailable or operation not permitted. Do not retry a write. Check recent documents before deciding what happened.'};
+    } finally { clearTimeout(progressTimer); }
+    const reply = {type:'tool.result',call_id:message.call_id,result:JSON.stringify(result),is_error:failed};
+    handledCalls.set(message.call_id, reply);
+    if (activeScopeToken !== scopeToken) return;
+    noteVoice('tool', {call_id:message.call_id,name:message.name,arguments:message.arguments,result,failed});
+    policy.result(message.name,result,failed); policyDirty=true;
+    clearTimeout(expiryTimer);
+    if (policy.draft) expiryTimer=setTimeout(()=>{policy.draft=null;policyDirty=true;flushToolResults();},115000);
     if (!failed) showToolCard(message.name, result);
-    toolResults.push({type:'tool.result',call_id:message.call_id,result:JSON.stringify(result),is_error:failed});
-    flushToolResults();
+    if (message.name === 'search_mm_knowledge' && result.references?.length) {
+      for (const ref of result.references) {
+        const row=append('sys','',ref.title + ' · ' + ref.applies_to);
+        const link=document.createElement('a'); link.className='voice-reference';
+        if (ref.url.startsWith('/knowledge/') || ref.url.startsWith('https://help.sap.com/')) {
+          link.href=ref.url;link.target='_blank';link.rel='noopener';link.textContent=ref.source;row.appendChild(link);
+        }
+      }
+    }
+    // Keep write outcomes for reconciliation even if the worker interrupted the reply.
+    if (epoch !== toolEpoch && !GlovesOnVoice.writes.has(message.name)) return;
+    toolResults.push(reply); flushToolResults();
   }
-
+  function connect(nextToken, resuming=false) {
+    const connection = new WebSocket(`${WS_URL}?token=${encodeURIComponent(nextToken)}`);
+    socket=connection; ws=connection;
   ws.onopen = () => {
-    if (ws !== socket) return;
-    ws.send(JSON.stringify({ type: 'session.update', session: sessionConfig ?? { agent_id: agentId } }));
+    if (ws !== connection) return;
+    ws.send(JSON.stringify(resuming ? {type:'session.resume',session_id:voiceSessionId} : { type: 'session.update', session: sessionConfig ?? { agent_id: agentId } }));
   };
 
   ws.onmessage = async (event) => {
-    if (ws !== socket) return;
+    if (ws !== connection) return;
     const m = JSON.parse(event.data);
     if (m.type === 'reply.started' || m.type === 'input.speech.started') lastToolEvent = m.type;
     switch (m.type) {
       case 'session.ready':
+        if (resuming && m.session_id !== voiceSessionId) {
+          failSession('The recovered conversation did not match. Check recent receipts before restarting.'); break;
+        }
+        recoveryDeadline=0; clearTimeout(recoveryTimer); recoveryTimer=null;
+        voiceSessionId=m.session_id || voiceSessionId; voiceNotes.session_id=voiceSessionId;
+        noteVoice(resuming ? 'resumed' : 'started',{session_id:voiceSessionId});
+        if (!resuming && voiceSessionId) voiceBinding=fetch('/api/voice-session/bind', {
+          method:'POST',headers:voiceHeaders,body:JSON.stringify({session_id:voiceSessionId})
+        }).then(r=>r.ok).catch(()=>false);
+        if (resuming) { policyDirty=true; flushToolResults(); await beginMicrophone(); break; }
         if (activeScenario) {
           const base = m.config?.system_prompt;
           if (!base) {
@@ -2154,10 +2222,13 @@ async function start() {
 
       case 'transcript.user':
         updateUserTranscript(m.text ?? '', true);
+        policy.user(m.text ?? ''); policyDirty=true;
+        noteVoice('user',{text:m.text ?? ''});
         setStatus('thinking', true, true);
         break;
 
       case 'tool.call': {
+        lastToolEvent = 'tool.call';
         if (sessionConfig) void runVoiceTool(m);
         const args = m.arguments ?? {};
         append('tool', '', `\u2192 ${m.name}(${JSON.stringify(args)})`);
@@ -2188,6 +2259,7 @@ async function start() {
         if (!text) break;
         finishUserTurn();
         append('agent', 'gloveson', text);
+        noteVoice('agent',{text});
         endToolPhase();
         // If the agent asks for confirmation, move the document to "awaiting confirmation".
         // Confirmation state comes from the server draft, not transcript guessing.
@@ -2216,9 +2288,36 @@ async function start() {
     }
   };
 
-  ws.onclose = () => { if (ws === socket) cleanup(); };
-  ws.onerror = () => { if (ws === socket) { append('sys', '', 'Connection interrupted. Please restart.'); end(); } };
+  ws.onclose = () => { if (ws === connection) void recover(); };
+  ws.onerror = () => { if (ws === connection) connection.close(); };
+  }
+  async function recover() {
+    if (activeScopeToken !== scopeToken) return;
+    stopMic(); stopPlayback(); setStatus('reconnecting conversation…', true);
+    noteVoice('connection_lost',{});
+    if (!recoveryDeadline) recoveryDeadline=Date.now()+25000;
+    clearTimeout(recoveryTimer);
+    recoveryTimer=setTimeout(()=>{
+      if (activeScopeToken===scopeToken && recoveryDeadline)
+        failSession('Connection could not resume. Check recent receipts before starting a new operation.');
+    },Math.max(1,recoveryDeadline-Date.now()));
+    const generation=recoveryGeneration;
+    try {
+      if (!voiceSessionId || !(await voiceBinding) || Date.now()>=recoveryDeadline) throw new Error('No resumable session');
+      const response=await fetch('/api/voice-session/resume-token',{method:'POST',headers:voiceHeaders});
+      if (!response.ok) throw new Error('Recovery unavailable');
+      const data=await response.json();
+      if (activeScopeToken !== scopeToken || generation!==recoveryGeneration) return;
+      if (data.session_id !== voiceSessionId || Date.now()>=recoveryDeadline) throw new Error('Recovery expired');
+      connect(data.token,true);
+    } catch (error) {
+      if (activeScopeToken===scopeToken && generation===recoveryGeneration)
+        failSession('Connection could not resume. Check recent receipts before starting a new operation.');
+    }
+  }
+  connect(token);
 }
+
 
 async function beginMicrophone() {
   const channel = sse;
@@ -2243,6 +2342,7 @@ function end() {
 }
 
 function cleanup() {
+  recoveryGeneration++; clearTimeout(recoveryTimer); recoveryTimer=null; recoveryDeadline=0;
   clearTimeout(sessionSetupTimer); sessionSetupTimer = null;
   if (sse) { sse.close(); sse = null; }
   if (activeScopeToken) {

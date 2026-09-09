@@ -47,3 +47,13 @@ jobs:
 
       - name: Tests
         run: pytest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Browser voice contracts
+        run: |
+          node checks/voice_pause.cjs
+          node checks/voice_policy.cjs
+          node checks/voice_lifecycle.cjs

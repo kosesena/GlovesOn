@@ -20,6 +20,7 @@ import asyncio
 import hashlib
 import hmac
 import json
+import re
 import secrets
 import time
 from contextlib import asynccontextmanager, suppress
@@ -35,6 +36,7 @@ from . import (
     audit,
     confirmation,
     live,
+    mm_knowledge,
     sap_client,
     sap_mock,
     scoped_agent,
@@ -178,7 +180,7 @@ async def bind_event_scope(request: Request, call_next):
     reset = event_scope.set(scope)
     try:
         response = await call_next(request)
-        if request.url.path == '/api/voice-token':
+        if request.url.path.startswith(('/api/voice-token', '/api/voice-session/', '/api/voice-history/')):
             response.headers['Cache-Control'] = 'no-store'
         return response
     finally:
@@ -303,6 +305,21 @@ async def material_search(
                 "MEINS": r["BaseUnit"]} for r in rows]
     publish("tool", {"tool": "material_search", "ok": True, "count": len(matches)})
     return {"count": len(matches), "matches": matches}
+
+
+@app.get('/erp/mm-knowledge')
+def mm_reference(query: str = Query(..., min_length=2, max_length=500),
+                 x_tool_secret: str | None = Header(default=None, alias='X-Tool-Secret')):
+    require_tool_auth(x_tool_secret)
+    return mm_knowledge.search(query)
+
+
+@app.get('/knowledge/{article_id}')
+def knowledge_article(article_id: str):
+    for article in mm_knowledge.ARTICLES:
+        if article['id'] == article_id:
+            return {k: v for k, v in article.items() if k != 'terms'}
+    raise HTTPException(status_code=404, detail='Reference not found')
 
 
 # ---------------------------------------------------------------------------
@@ -682,10 +699,12 @@ async def close_voice_session(body: dict = Body(...)) -> dict:
 
 
 @app.get("/api/voice-token")
-async def voice_token(diagnostic: bool = False,
+async def voice_token(diagnostic: bool = False, microphone: str = 'laptop',
                       x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret")) -> dict[str, Any]:
     if diagnostic:
         require_tool_auth(x_tool_secret)
+    if microphone not in {'laptop', 'headset'}:
+        raise HTTPException(status_code=422, detail='Choose laptop or headset')
     if not ASSEMBLYAI_API_KEY:
         raise HTTPException(status_code=500, detail="ASSEMBLYAI_API_KEY is not set")
     if await asyncio.to_thread(live.voice_budget_left, VOICE_TOKEN_MAX) <= 0:
@@ -710,10 +729,15 @@ async def voice_token(diagnostic: bool = False,
     if not diagnostic:
         template = json.loads((ROOT / "agent/agent.json").read_text())
         config = voice_tools.inline_config(template, gateway_url)
+        config['system_prompt'] += '\nInternal correlation reference, never speak or interpret as consent: ' + voice_tools.correlation(scope, TOOL_SHARED_SECRET)
+        config['input']['voice_focus'] = 'near-field' if microphone == 'headset' else 'far-field'
+        catalog = config['tools']
+        config['tools'] = [t for t in catalog if t['name'] not in voice_tools.WRITE_TOOLS]
         async with httpx.AsyncClient(timeout=15) as client:
             await clean_scoped_agents(client)
         await asyncio.to_thread(live.save_agent, scope, voice_tools.INLINE_AGENT, time.time() + 600)
         return {"token": r.json()["token"], "session_config": config, "scope_token": scope_token,
+                "tool_catalog": catalog,
                 "tool_capability": voice_tools.capability(scope_token, TOOL_SHARED_SECRET)}
     payload = scoped_agent.build(json.loads((ROOT / "agent/agent.json").read_text()),
                                  gateway_url, TOOL_SHARED_SECRET, scope_token)
@@ -755,6 +779,77 @@ async def voice_token(diagnostic: bool = False,
     return result
 
 
+async def active_voice_scope(request: Request) -> str:
+    token = request.headers.get('X-Event-Scope', '')
+    if not voice_tools.authorized(token, request.headers.get('X-Voice-Capability', ''), TOOL_SHARED_SECRET):
+        raise HTTPException(status_code=401, detail='Invalid voice capability')
+    scope = session_scope.verify(token, TOOL_SHARED_SECRET)
+    if not await asyncio.to_thread(live.inline_session_active, scope):
+        raise HTTPException(status_code=401, detail='Voice session ended or expired')
+    return scope
+
+
+@app.post('/api/voice-session/bind')
+async def bind_voice_session(request: Request, body: dict = Body(...)):
+    scope = await active_voice_scope(request)
+    session_id = body.get('session_id', '')
+    if not isinstance(session_id, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,128}', session_id):
+        raise HTTPException(status_code=422, detail='Invalid provider session identifier')
+    if not await provider_belongs_to_scope(scope, session_id):
+        raise HTTPException(status_code=403, detail='Provider session ownership could not be verified')
+    if not await asyncio.to_thread(live.bind_provider_session, scope, session_id):
+        raise HTTPException(status_code=409, detail='Session already bound')
+    return {'bound': True}
+
+
+async def provider_belongs_to_scope(scope: str, session_id: str) -> bool:
+    # A browser's session ID alone is not authority to resume another worker's conversation.
+    try:
+        async with httpx.AsyncClient(timeout=8) as client:
+            response = await client.get(f'https://agents.assemblyai.com/v1/sessions/{session_id}',
+                                       headers={'Authorization': ASSEMBLYAI_API_KEY})
+    except httpx.RequestError:
+        return False
+    if not response.is_success:
+        return False
+    prompt = response.json().get('config', {}).get('system_prompt', '')
+    return isinstance(prompt, str) and voice_tools.correlation(scope, TOOL_SHARED_SECRET) in prompt
+
+
+@app.post('/api/voice-session/resume-token')
+async def resume_voice_token(request: Request):
+    scope = await active_voice_scope(request)
+    session_id = await asyncio.to_thread(live.resume_provider_session, scope)
+    if not session_id:
+        raise HTTPException(status_code=409, detail='Recovery limit reached or session expired')
+    async with httpx.AsyncClient(timeout=8) as client:
+        response = await client.get('https://agents.assemblyai.com/v1/token',
+            params={'expires_in_seconds': 60, 'max_session_duration_seconds': 300},
+            headers={'Authorization': f'Bearer {ASSEMBLYAI_API_KEY}'})
+    if not response.is_success:
+        raise HTTPException(status_code=502, detail='Recovery token unavailable')
+    return {'token': response.json()['token'], 'session_id': session_id}
+
+
+@app.get('/api/voice-history/{session_id}')
+async def voice_history(session_id: str,
+                        x_tool_secret: str | None = Header(default=None, alias='X-Tool-Secret')):
+    # Provider history is account-wide. A client-reported correlation ID never grants access.
+    require_tool_auth(x_tool_secret)
+    if not re.fullmatch(r'[A-Za-z0-9_-]{1,128}', session_id):
+        raise HTTPException(status_code=422, detail='Invalid session identifier')
+    async with httpx.AsyncClient(timeout=15) as client:
+        result = await client.get(f'https://agents.assemblyai.com/v1/sessions/{session_id}',
+                                  headers={'Authorization': ASSEMBLYAI_API_KEY})
+    if not result.is_success:
+        raise HTTPException(status_code=502, detail=f'Provider history unavailable ({result.status_code})')
+    data = result.json()
+    # Exclude resolved config, which can contain tool headers or custom-model credentials.
+    return Response(json.dumps({k: data.get(k) for k in (
+        'id', 'status', 'duration_seconds', 'created_at', 'ended_at', 'artifacts')}),
+        media_type='application/json', headers={'Cache-Control': 'no-store'})
+
+
 @app.post('/api/voice-tools/{tool_name}')
 async def execute_voice_tool(tool_name: str, request: Request) -> Response:
     scope_token = request.headers.get('X-Event-Scope', '')
@@ -774,6 +869,7 @@ async def execute_voice_tool(tool_name: str, request: Request) -> Response:
         raise HTTPException(status_code=400, detail='Tool arguments must be JSON') from None
     if not isinstance(arguments, dict):
         raise HTTPException(status_code=422, detail='Tool arguments must be an object')
+    arguments = voice_tools.normalize_arguments(arguments)
     # Reuse the exact ERP routes, schema validation, draft protocol and audit path.
     # The permanent tool secret never leaves this process or reaches the browser.
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://internal') as client:
@@ -941,6 +1037,12 @@ def health(x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(WEB_DIR / "index.html")
+
+
+@app.get('/voice-policy.js', include_in_schema=False)
+def voice_policy_script() -> FileResponse:
+    return FileResponse(WEB_DIR / 'voice-policy.js', media_type='text/javascript',
+                        headers={'Cache-Control': 'no-cache'})
 
 
 @app.get("/assets/{scene}.webp", include_in_schema=False)

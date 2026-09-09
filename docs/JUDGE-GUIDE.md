@@ -131,13 +131,23 @@ claim is made that this has been proven against a live tenant. The gap between
 behind a reverse proxy, `$batch` for multi-item documents, and error payloads
 considerably less tidy than a mock's.
 
-**Untested with real accents and real noise.** `turn_detection` is pinned at
-`min_silence: 800` / `max_silence: 2000` because adaptive pacing cut a
-non-native speaker off mid-sentence — a first attempt, not a measurement. Noise
+**Untested with real accents and real noise.** The English input now uses
+`transcription_mode: max_accuracy`, specialized keyterms and tool parameter hints.
+A synthetic English stock-query smoke test correctly selected material 4711; it is
+not an accent or noise benchmark. Noise
 robustness is listed as untested in [`nfr.md`](nfr.md) and no claim is made
 about it. Incumbent voice systems beat this on both counts; see
 [`market.md`](market.md) §5 for what they do better.
 
-**One process, one session.** The duplicate guard reads documents back from SAP
-so it does not depend on process memory, but two people speaking at once would
-share a voice-session reference. Demo scale, and stated as such.
+**Demo scale and identity limits.** Browser sessions use separate signed scopes and
+the gateway stores shared state in Postgres. Scope isolation is not authenticated
+worker identity or enterprise authorization. The duplicate guard still reads ERP
+documents; a connection retry never grants permission for another posting.
+
+**New voice features have different evidence levels.** Reviewed MM references,
+progressive tools, numeric normalization, microphone selection and session notes are
+implemented. Offline contracts cover pause grouping and an in-flight write across a
+simulated reconnection. Live inline configuration, provider history and a synthetic
+stock query passed. Native provider resumption returned `session_not_found`; do not
+claim it works because the local transport test passes. See [voice-features.md](voice-features.md)
+for reproduction commands and the local alternative to Bluejay testing.

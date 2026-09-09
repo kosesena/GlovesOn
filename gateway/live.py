@@ -44,6 +44,12 @@ CREATE TABLE IF NOT EXISTS voice_sessions (
     created_at DOUBLE PRECISION NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_voice_created ON voice_sessions (created_at);
+CREATE TABLE IF NOT EXISTS voice_links (
+    scope TEXT PRIMARY KEY,
+    provider_session TEXT NOT NULL,
+    created_at DOUBLE PRECISION NOT NULL,
+    resume_count INTEGER NOT NULL DEFAULT 0
+);
 """
 
 
@@ -141,3 +147,22 @@ def inline_session_active(scope: str) -> bool:
             "SELECT 1 FROM scoped_agents WHERE scope = %s AND agent_id = %s AND expires_at > %s",
             (scope, INLINE_AGENT, time.time())).fetchone()
     return row is not None
+
+
+def bind_provider_session(scope: str, provider_session: str) -> bool:
+    """Client-reported correlation; not proof of provider ownership or spoken identity."""
+    with store.db() as conn:
+        row = conn.execute('''INSERT INTO voice_links(scope, provider_session, created_at)
+            VALUES (%s,%s,%s) ON CONFLICT(scope) DO UPDATE SET scope=EXCLUDED.scope
+            WHERE voice_links.provider_session=EXCLUDED.provider_session RETURNING scope''',
+            (scope, provider_session, time.time())).fetchone()
+        conn.execute('DELETE FROM voice_links WHERE created_at < %s', (time.time()-86400,))
+    return bool(row)
+
+
+def resume_provider_session(scope: str) -> str | None:
+    with store.db() as conn:
+        row = conn.execute('''UPDATE voice_links SET resume_count=resume_count+1
+            WHERE scope=%s AND resume_count<5 AND created_at>%s
+            RETURNING provider_session''', (scope, time.time()-300)).fetchone()
+    return row['provider_session'] if row else None

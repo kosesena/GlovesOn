@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const html = readFileSync('web/index.html', 'utf8');
 const source = html.slice(html.indexOf('async function start() {'), html.indexOf('const scenarios = {'));
 const timers = new Map(); let timerId = 0; const sockets = [];
-const transcript = {open:false}; let status = ''; const messages = [];
+const transcript = {open:false,value:'laptop'}; let status = ''; const messages = [];
 class Socket {
   static OPEN = 1;
   constructor() {this.readyState = 1; this.sent=[]; sockets.push(this);}
@@ -16,6 +16,8 @@ class Events {
   close() {this.closed = true;}
 }
 const context = vm.createContext({
+  GlovesOnVoice:require('../web/voice-policy.js'), voiceNotes:{events:[]}, voiceSessionId:null,voiceBinding:null,
+  recoveryTimer:null,recoveryDeadline:0,recoveryGeneration:0,noteVoice(){},
   WebSocket: Socket, EventSource: Events, WS_URL: 'wss://test',
   ws:null, sse:null, activeScopeToken:null, sessionSetupTimer:null, live:false,
   activeScenario:{title:'Test', action:'stock'}, scenarioSession:null,
@@ -75,7 +77,7 @@ vm.runInContext(source, context);
   assert.equal(inline.sent.filter(x=>x.type==='tool.result').length,0,'result waits for reply boundary');
   await inline.onmessage({data:JSON.stringify({type:'reply.done',status:'completed'})});
   assert.equal(inline.sent.filter(x=>x.type==='tool.result').length,1);
-  assert.equal(JSON.parse(inline.sent.at(-1).result).total,240);
+  assert.equal(JSON.parse(inline.sent.filter(x=>x.type==='tool.result').at(-1).result).total,240);
   await inline.onmessage({data:JSON.stringify({type:'tool.call',call_id:'two',name:'get_stock',arguments:{material:'4711'}})});
   await inline.onmessage({data:JSON.stringify({type:'reply.done',status:'interrupted'})});
   completeTool(); await new Promise(resolve=>setImmediate(resolve));
@@ -86,5 +88,36 @@ vm.runInContext(source, context);
   await inline.onmessage({data:JSON.stringify({type:'reply.audio',data:'PCM16-test-chunk'})});
   assert.equal(played,'PCM16-test-chunk','provider data field reaches audio playback');
   context.end();
-  console.log('Voice lifecycle: 9 checks passed');
+  let toolRequests=0, settleWrite;
+  const template=JSON.parse(readFileSync('agent/agent.json','utf8'));
+  const catalog=template.tools.map(t=>({...t,type:'function'}));
+  context.fetch=async(path,opts)=>{
+    if(path==='/api/voice-session/bind') return {ok:true};
+    if(path==='/api/voice-session/resume-token') return {ok:true,json:async()=>({token:'fresh',session_id:'sess_resume'})};
+    if(path.startsWith('/api/voice-tools/')) {
+      toolRequests++;
+      if(path.endsWith('prepare_goods_receipt')) return {ok:true,json:async()=>({prepared:true,draft_token:'draft'})};
+      return new Promise(resolve=>{settleWrite=()=>resolve({ok:true,json:async()=>({posted:true,document:'4900000001'})});});
+    }
+    return {ok:true,json:async()=>({token:'first',session_config:template,tool_catalog:catalog,scope_token:'scope',tool_capability:'cap'})};
+  };
+  await context.start(); let dropped=context.ws; dropped.onopen();
+  await dropped.onmessage({data:JSON.stringify({type:'session.ready',session_id:'sess_resume'})});
+  await dropped.onmessage({data:JSON.stringify({type:'tool.call',call_id:'prep',name:'prepare_goods_receipt',arguments:{material:'4711',quantity:20}})});
+  await new Promise(resolve=>setImmediate(resolve));
+  await dropped.onmessage({data:JSON.stringify({type:'reply.done',status:'completed'})});
+  context.showDraftRow=()=>{};context.showPending=()=>{};
+  await dropped.onmessage({data:JSON.stringify({type:'tool.call',call_id:'write-once',name:'post_goods_receipt',arguments:{material:'4711',quantity:20}})});
+  await dropped.onmessage({data:JSON.stringify({type:'reply.done',status:'completed'})});
+  dropped.close(); dropped.onclose(); await new Promise(resolve=>setImmediate(resolve));
+  const resumed=context.ws; assert.notEqual(resumed,dropped); resumed.onopen();
+  assert.deepEqual(JSON.parse(JSON.stringify(resumed.sent[0])),{type:'session.resume',session_id:'sess_resume'});
+  settleWrite(); await new Promise(resolve=>setImmediate(resolve));
+  await resumed.onmessage({data:JSON.stringify({type:'session.ready',session_id:'sess_resume'})});
+  await resumed.onmessage({data:JSON.stringify({type:'tool.call',call_id:'write-once',name:'post_goods_receipt',arguments:{material:'4711',quantity:20}})});
+  assert.equal(toolRequests,2,'resumed duplicate call ID reuses the outcome, never executes another write');
+  assert.equal(context.activeScopeToken,'scope','transient drop keeps the same capability scope');
+  context.end();
+  assert.equal(context.activeScopeToken,null,'intentional end revokes the scope');
+  console.log('Voice lifecycle: setup, teardown, interruption, result ordering and in-flight write recovery passed');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -1,12 +1,31 @@
 """Ephemeral voice-tool capabilities, separate from read-only event scopes."""
 import hashlib
 import hmac
+import re
 from copy import deepcopy
 from urllib.parse import urlsplit
 
 from . import session_scope
 
 INLINE_AGENT = 'inline-session'
+WRITE_TOOLS = {'post_goods_receipt', 'reverse_goods_receipt'}
+
+
+def correlation(scope: str, secret: str) -> str:
+    return 'gloveson-session-' + hmac.new(secret.encode(), scope.encode(), hashlib.sha256).hexdigest()
+
+
+def normalize_arguments(arguments: dict) -> dict:
+    """Join spoken numeric IDs without stripping legitimate alphanumeric codes."""
+    result = deepcopy(arguments)
+    for name in ('material', 'plant', 'storage_location', 'purchase_order', 'order', 'document'):
+        value = result.get(name)
+        if isinstance(value, str):
+            value = value.strip()
+            if re.fullmatch(r'[0-9\s]+', value):
+                value = re.sub(r'\s+', '', value)
+            result[name] = value
+    return result
 
 
 def capability(scope_token: str, secret: str) -> str:

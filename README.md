@@ -305,6 +305,16 @@ What is *not* solved is named rather than hidden: the posting is made by a servi
 not by the worker, so SAP cannot say who did it. That gap is written up in
 [docs/clean-core.md](docs/clean-core.md).
 
+## Voice reliability and evaluation
+
+The English agent supports reviewed MM references, identifier hints, laptop/headset
+Voice Focus, dynamic material vocabulary, progressive tool availability and private
+session notes. Run `python checks/run_voice_checks.py` for offline transport and policy
+contracts. Recorded-audio and provider probes are separate, opt-in paid checks.
+See [voice features and verification limits](docs/voice-features.md), including the
+provider's currently failing native session-resumption path. No Bluejay account is
+required for the local test infrastructure.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

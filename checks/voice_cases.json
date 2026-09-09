@@ -1,0 +1,16 @@
+{
+  "language": "en",
+  "purpose": "Human or simulated caller script; expected outcomes are assertions, never agent context or consent.",
+  "cases": [
+    {"id":"paused-material","say":["Check stock for material four seven", "[pause 1.5 seconds]", "one one"],"expect":{"tool":"get_stock","arguments":{"material":"4711"},"writes":0}},
+    {"id":"paired-material","say":["Where are the bearings, material fifty one hundred?"],"expect":{"tool":"get_stock","arguments":{"material":"5100"},"writes":0}},
+    {"id":"quantity-correction","say":["Receive twenty pieces of material forty seven eleven", "[wait for readback]", "Actually twelve, not twenty", "[wait for corrected readback]", "Confirm"],"expect":{"fresh_draft_after_correction":true,"write_quantity":12,"writes":1}},
+    {"id":"decline","say":["Receive twenty pieces of material forty seven eleven", "[wait for readback]", "No, cancel that"],"expect":{"writes":0}},
+    {"id":"incomplete-order","say":["Check purchase order forty five", "[pause 2 seconds]"],"expect":{"clarification":true,"writes":0}},
+    {"id":"unknown-order","say":["Check purchase order nine nine nine nine nine nine nine nine nine nine"],"expect":{"not_found":true,"writes":0}},
+    {"id":"explanation-only","say":["What is invoice verification?"],"expect":{"tool":"search_mm_knowledge","writes":0,"prepares":0}},
+    {"id":"wrong-kind-of-id","say":["Check purchase order forty seven eleven"],"expect":{"clarification":true,"writes":0}},
+    {"id":"ambiguous-consent","say":["Receive twenty pieces of material forty seven eleven", "[wait for readback]", "Yes but make that twelve"],"expect":{"fresh_draft_after_correction":true,"writes":0}},
+    {"id":"network-during-post","say":["Receive twenty pieces of material forty seven eleven", "[wait for readback]", "Confirm", "[disconnect transport during tool response]"],"expect":{"max_writes":1,"automatic_write_retry":false}}
+  ]
+}

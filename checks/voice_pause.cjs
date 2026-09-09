@@ -1,7 +1,7 @@
 // Reproduce transport audio arriving between fragments, using the real event cases.
 const {readFileSync}=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const html=readFileSync('web/index.html','utf8');const nodes=[];
-const c=vm.createContext({logEl:{},setStatus(){},endToolPhase(){},playChunk(){},base64ToFloat32:x=>x,
+const c=vm.createContext({policy:{user(){}},policyDirty:false,noteVoice(){},logEl:{},setStatus(){},endToolPhase(){},playChunk(){},base64ToFloat32:x=>x,
 append(kind,who,text){const n={kind,isConnected:true,lastChild:{textContent:text},classList:{toggle(){},remove(){}}};nodes.push(n);return n;}});
 vm.runInContext(html.slice(html.indexOf('let userTurnEl ='),html.indexOf('let pendingFactCards =')),c);
 const user=html.slice(html.indexOf("      case 'transcript.user.delta':"),html.indexOf("      case 'tool.call':",html.indexOf("      case 'transcript.user.delta':")));

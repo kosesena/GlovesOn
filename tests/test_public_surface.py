@@ -38,6 +38,7 @@ def test_every_erp_route_refuses_an_unauthenticated_caller(client):
     calls = [
         ("GET", "/erp/stock?material=4711", None),
         ("GET", "/erp/material-search?query=bolt", None),
+        ("GET", "/erp/mm-knowledge?query=invoice", None),
         ("GET", "/erp/purchase-order?order=4500001234", None),
         ("GET", "/erp/recent-documents", None),
         ("POST", "/erp/goods-receipt", {"material": "4711", "quantity": 20}),
