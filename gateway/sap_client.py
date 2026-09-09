@@ -1,10 +1,11 @@
 """
-SAP OData istemcisi.
+The SAP OData client.
 
-Gateway ile SAP arasindaki tek nokta. Icerideki her sey OData konusur;
-disariya konusan tek sey bu dosya. Gercek bir S/4HANA'ya gecis, SAP_BASE_URL
-degiskenini degistirmekten ibaret — cunku burada SAP'ye ozgu olan her sey
-(CSRF el sikismasi, {"d": ...} zarfi, hata kodlari, 18 hane MATNR) zaten var.
+The single point of contact between the gateway and SAP. Everything inside
+speaks OData; the only thing that speaks to the outside is this file. Moving
+to a real S/4HANA amounts to changing the SAP_BASE_URL variable — because
+everything SAP-specific (the CSRF handshake, the {"d": ...} envelope, error
+codes, 18-digit MATNR) is already here.
 """
 
 from __future__ import annotations
@@ -18,12 +19,13 @@ import httpx
 
 def env(name: str, default: str = "") -> str:
     """
-    Bos bir degisken, TANIMSIZ bir degisken gibi davranmali.
+    An empty variable must behave like an UNDEFINED one.
 
-    os.getenv'in ikinci argumani yalnizca degisken hic yoksa devreye giriyor;
-    "var ama bos" halinde bos string donuyor. Bir dagitim panosu .env.example'i
-    okuyup butun isimleri bos degerlerle olusturdugunda tam olarak bu oluyor -
-    ve float("") uygulamayi import aninda dusuruyor.
+    os.getenv's second argument only kicks in when the variable is absent;
+    when it "exists but is empty" you get the empty string back. That is
+    exactly what happens when a deployment dashboard reads .env.example and
+    creates every name with an empty value — and float("") then crashes the
+    app at import time.
     """
     return os.getenv(name, "").strip() or default
 
@@ -38,7 +40,7 @@ PURCHASE_ORDER = "/sap/opu/odata/sap/API_PURCHASEORDER_PROCESS_SRV"
 
 
 class SapError(Exception):
-    """SAP'nin dondugu is hatasi. message zaten sesli okunabilir bir cumle."""
+    """A business error returned by SAP. message is already a speakable sentence."""
 
     def __init__(self, code: str, message: str, status: int = 400):
         super().__init__(message)
@@ -49,19 +51,19 @@ class SapError(Exception):
 
 class SapClient:
     """
-    Tek bir HTTP oturumu tutar. CSRF token'i ve oturum cerezini saklar,
-    403 CSRF hatasinda bir kez yeniler ve tekrar dener — gercek SAP
-    entegrasyonlarinda yapilan sey birebir budur.
+    Holds a single HTTP session. It keeps the CSRF token and the session
+    cookie, and on a 403 CSRF failure refreshes once and retries — which is
+    exactly what real SAP integrations do.
     """
 
     def __init__(self, base_url: str | None = None,
                  transport: httpx.AsyncBaseTransport | None = None):
         self.base_url = (base_url or SAP_BASE_URL).rstrip("/")
-        # transport verilirse istek sokete cikmadan mock'un ASGI uygulamasina
-        # gider. Konusulan sey degismiyor - ayni OData yolu, ayni CSRF el
-        # sikismasi, ayni {"d": ...} zarfi - sadece tasiyici degisiyor. Bunu
-        # gerektiren sey ortam: sunucusuz bir fonksiyonda dinleyen bir port
-        # yok, dolayisiyla loopback diye bir sey de yok.
+        # With a transport, the request reaches the mock's ASGI app without
+        # touching a socket. What is spoken does not change — same OData
+        # path, same CSRF handshake, same {"d": ...} envelope — only the
+        # carrier does. The environment forces this: a serverless function
+        # has no listening port, so there is no such thing as loopback.
         self._client = httpx.AsyncClient(timeout=SAP_TIMEOUT, follow_redirects=False,
                                          transport=transport)
         self._csrf: str | None = None
@@ -73,9 +75,10 @@ class SapClient:
 
     async def _fetch_csrf(self) -> str:
         """
-        SAP'ye yazmadan once zorunlu adim: servis kokune 'X-CSRF-Token: Fetch'
-        ile gidilir, donen token sonraki POST'ta gonderilir. Cerez de ayni
-        oturumda tasinmali; ikisi birlikte gecerli olur.
+        The mandatory step before writing to SAP: hit the service root with
+        'X-CSRF-Token: Fetch' and send the returned token on the next POST.
+        The cookie must travel in the same session; only together are they
+        valid.
         """
         r = await self._client.get(
             f"{self.base_url}{MATERIAL_DOC}/", headers={"X-CSRF-Token": "Fetch"}
@@ -86,7 +89,7 @@ class SapClient:
         self._csrf = token
         return token
 
-    # -- Yazma --------------------------------------------------------------
+    # -- Writes -------------------------------------------------------------
 
     async def post_material_document(self, payload: dict[str, Any]) -> dict[str, Any]:
         if not self._csrf:
@@ -101,7 +104,7 @@ class SapClient:
 
         r = await _send()
         if r.status_code == 403:
-            # Token suresi gecmis olabilir: bir kez yenile ve tekrar dene.
+            # The token may have expired: refresh once and retry.
             await self._fetch_csrf()
             r = await _send()
 
@@ -111,7 +114,7 @@ class SapClient:
 
         return r.json().get("d", {})
 
-    # -- Okuma --------------------------------------------------------------
+    # -- Reads --------------------------------------------------------------
 
     async def _get(self, path: str, params: dict[str, Any]) -> list[dict[str, Any]]:
         r = await self._client.get(f"{self.base_url}{path}", params=params)
@@ -140,7 +143,7 @@ class SapClient:
 
 
 def _parse_odata_error(r: httpx.Response) -> tuple[str, str]:
-    """SAP'nin hata zarfindan kod ve okunabilir mesaji cikarir."""
+    """Extracts the code and the readable message from SAP's error envelope."""
     try:
         err = r.json().get("error", {})
         return err.get("code", "SAP_ERROR"), err.get("message", {}).get("value", r.text[:200])
@@ -149,10 +152,10 @@ def _parse_odata_error(r: httpx.Response) -> tuple[str, str]:
 
 
 # ---------------------------------------------------------------------------
-# Govde kurucular — SAP'nin bekledigi sekli tek yerde tut
+# Payload builders — keep the shape SAP expects in one place
 # ---------------------------------------------------------------------------
 
-# GoodsMovementCode: 01 siparise karsi mal girisi, 05 siparissiz mal girisi.
+# GoodsMovementCode: 01 = receipt against an order, 05 = receipt without one.
 def goods_receipt_payload(material: str, quantity: int, plant: str, storage_location: str,
                           unit: str, purchase_order: str | None,
                           session_ref: str | None = None) -> dict[str, Any]:
@@ -168,7 +171,7 @@ def goods_receipt_payload(material: str, quantity: int, plant: str, storage_loca
     if purchase_order:
         item["PurchaseOrder"] = purchase_order
         item["PurchaseOrderItem"] = "00010"
-        item["GoodsMovementRefDocType"] = "B"   # B = satinalma siparisi
+        item["GoodsMovementRefDocType"] = "B"   # B = purchase order
     return _with_voice_origin({
         "PostingDate": datetime.now(UTC).strftime("%Y-%m-%dT00:00:00"),
         "GoodsMovementCode": "01" if purchase_order else "05",
@@ -180,8 +183,9 @@ def reversal_payload(material: str, plant: str, storage_location: str, unit: str
                      original_document: str, original_movement_type: str,
                      quantity: int, session_ref: str | None = None) -> dict[str, Any]:
     """
-    SAP'de yanlis belge silinmez, ters kayit atilir. 101'in tersi 102,
-    501'in tersi 502. Stok geri iner ama iki belge de tarihte kalir.
+    In SAP a wrong document is not deleted; a reversal is posted. A 102
+    against a 101, a 502 against a 501. Stock comes back down, but both
+    documents stay in the history.
     """
     reverse_of = {"101": "102", "501": "502"}.get(original_movement_type)
     if reverse_of is None:
@@ -196,11 +200,11 @@ def reversal_payload(material: str, plant: str, storage_location: str, unit: str
             "StorageLocation": storage_location,
             "GoodsMovementType": reverse_of,
             "EntryUnit": unit,
-            # Asil belgenin miktari. Onceden burada sabit "1" vardi ve mock
-            # sessizce dogrusuyla degistirdigi icin hicbir sey bozulmus
-            # gorunmuyordu; gercek bir S/4HANA 20 adetlik bir girisi 1 adet
-            # ters kayitla kapatir ve stok 19 fazla kalirdi. Mock'un duzeltmesi
-            # bir kolaylikti, ADR-0003'un tam olarak istemedigi sey.
+            # The original document's quantity. This used to be a hardcoded
+            # "1", and because the mock silently substituted the right value
+            # nothing looked broken; a real S/4HANA would close a receipt of
+            # 20 with a reversal of 1 and leave stock 19 too high. The mock's
+            # correction was a convenience — exactly what ADR-0003 forbids.
             "QuantityInEntryUnit": str(quantity),
             "ReferenceDocument": original_document,
         }],
@@ -209,19 +213,20 @@ def reversal_payload(material: str, plant: str, storage_location: str, unit: str
 
 def _with_voice_origin(payload: dict[str, Any], session_ref: str | None) -> dict[str, Any]:
     """
-    Belgeye kokenini yazar - kimligini DEGIL. MaterialDocumentHeaderText (BKTXT,
-    25 karakter) sesle acildigini soyler; basliktaki ReferenceDocument (XBLNR)
-    oturum referansini tasir, gateway'deki denetim izine oradan gidilir.
-    (Basliktaki XBLNR ile ters kayitta KALEM seviyesinde kullanilan
-    ReferenceDocument ayni ad, ayri alanlardir - SAP'de de oyle.)
+    Writes the document's origin — NOT an identity. MaterialDocumentHeaderText
+    (BKTXT, 25 chars) says it was opened by voice; the header-level
+    ReferenceDocument (XBLNR) carries the session reference, which leads to
+    the audit trail in the gateway. (The header XBLNR and the ITEM-level
+    ReferenceDocument used in reversals share a name but are separate
+    fields — as they are in SAP.)
 
-    Bilerek bir isim yazilmiyor. "Ben Sena" demek kimlik degildir; soylenen bir
-    ismi belgeye koymak, dogrulanmis alanlarin yanina dogrulanmamis bir alan
-    koymaktir ve okuyan ikisini ayirt edemez. Belgeyi bir insana baglayacak tek
-    durust yol principal propagation, ve o docs/clean-core.md'de acik bir
-    eksik olarak durur.
+    Deliberately no name is written. Saying "I am Sena" is not identity;
+    putting a spoken name on the document plants an unverified field next to
+    verified ones, and a reader cannot tell the two apart. The only honest
+    way to bind the document to a person is principal propagation, and that
+    stands in docs/clean-core.md as an open gap.
     """
     payload["MaterialDocumentHeaderText"] = "GLOVESON VOICE"
     if session_ref:
-        payload["ReferenceDocument"] = f"VOICE:{session_ref[:10]}"   # XBLNR 16 kr
+        payload["ReferenceDocument"] = f"VOICE:{session_ref[:10]}"   # XBLNR is 16 chars
     return payload

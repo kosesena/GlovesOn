@@ -1,17 +1,18 @@
 """
-Denetim izi: hangi cumle hangi belgeyi dogurdu.
+The audit trail: which sentence gave birth to which document.
 
-SAP belgesi "ne oldu"yu tutar; bu dosya "neden oldu"yu — belge numarasindan
-geriye, isciye okunup onaylanan cumleye ve saniyesine gidilebilsin diye.
-docs/clean-core.md'nin actigi bosluk burada KAPANMIYOR: principal propagation
-olmadan SAP hala kimin konustugunu bilmiyor. Bu iz onun yerine gecmez, onu
-beklerken elimizde olan tek dogru seyi kaydeder: soylenen sozun kendisi.
+The SAP document holds "what happened"; this file holds "why" — so that from
+a document number one can walk back to the sentence read to the worker, and
+to the second it was confirmed. The gap docs/clean-core.md opens is NOT
+closed here: without principal propagation SAP still does not know who was
+speaking. This trail does not replace that; while waiting for it, it records
+the one true thing we do have: the spoken sentence itself.
 
-Bilerek store.py'de degil. store.py mock S/4HANA'nin veritabanidir ve gercek
-bir tenant'a gecildiginde tamamen olur; denetim izi ise tam o gun daha da
-gerekli. Ayni SQLite dosyasini paylasiyorlar - ikinci bir dosya iki yedekleme
-ve iki yol demekti - ama tablo, mock silinip gittiginde tasinacak sekilde
-kendi basina duruyor.
+Deliberately not in store.py. store.py is the mock S/4HANA's database and
+dies entirely on the day a real tenant takes over; the audit trail is more
+necessary on exactly that day. They share the same database — a second one
+would have meant two backups and two paths — but the table stands on its
+own, ready to move out when the mock is deleted.
 """
 
 from __future__ import annotations
@@ -23,11 +24,11 @@ from . import store
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS audit_trail (
-    mblnr      TEXT NOT NULL,          -- SAP belge numarasi
+    mblnr      TEXT NOT NULL,          -- SAP document number
     action     TEXT NOT NULL,          -- goods_receipt | reversal
-    utterance  TEXT NOT NULL,          -- isciye okunup onaylanan cumle
-    session_id TEXT NOT NULL,          -- ses oturumu referansi
-    created_at DOUBLE PRECISION NOT NULL -- UTC epoch, gateway saati
+    utterance  TEXT NOT NULL,          -- the sentence read to and confirmed by the worker
+    session_id TEXT NOT NULL,          -- voice session reference
+    created_at DOUBLE PRECISION NOT NULL -- UTC epoch, gateway clock
 );
 CREATE INDEX IF NOT EXISTS idx_audit_mblnr ON audit_trail (mblnr);
 """
@@ -36,10 +37,11 @@ CREATE INDEX IF NOT EXISTS idx_audit_mblnr ON audit_trail (mblnr);
 def init() -> None:
     with store.schema_lock() as conn:
         conn.execute(SCHEMA)
-        # REAL (float4) epoch saniyelerini 128 saniyelik kovalara yuvarliyor:
-        # 1788723673.14 -> 1788723712.0, 39 saniye sapma. Denetim izinin saati
-        # kanitin kendisi oldugu icin bu sessiz bir yanlislik. CREATE TABLE IF
-        # NOT EXISTS var olan tabloyu duzeltmez, kolonu ayrica cevirmek gerek.
+        # REAL (float4) rounds epoch seconds into 128-second buckets:
+        # 1788723673.14 -> 1788723712.0, a 39-second drift. The audit trail's
+        # clock is itself the evidence, so this is a silent falsehood.
+        # CREATE TABLE IF NOT EXISTS does not fix an existing table; the
+        # column has to be converted separately.
         conn.execute("ALTER TABLE audit_trail ALTER COLUMN created_at TYPE DOUBLE PRECISION")
 
 
@@ -54,13 +56,14 @@ def record(mblnr: str, action: str, utterance: str, session_id: str) -> None:
 
 def provenance(mblnr: str) -> dict[str, Any] | None:
     """
-    Bir belgenin kokeni: SAP'nin sakladigi baslik alanlari ve bizim tuttugumuz
-    iz, tek cevapta. Ikisi ayri sistemlerde durur ve ayri seyler soyler - biri
-    "bu belge sesle acildi", digeri "sesle soylenen cumle suydu".
+    A document's origin: the header fields SAP keeps and the trail we keep,
+    in one answer. They live in separate systems and say separate things —
+    one says "this document was opened by voice", the other "this is the
+    sentence that was spoken".
 
-    Bu ucun var olmasinin sebebi: yazilan ama hicbir yerden okunmayan bir
-    denetim izi, olmayan bir denetim izidir. Kanit ancak gosterilebiliyorsa
-    kanittir.
+    Why this endpoint exists: an audit trail that is written but never read
+    from anywhere is an audit trail that does not exist. Evidence is only
+    evidence if it can be shown.
     """
     with store.db() as conn:
         doc = conn.execute(
@@ -79,9 +82,9 @@ def provenance(mblnr: str) -> dict[str, Any] | None:
         "posted_at": doc["created_at"],
         "BKTXT": doc["bktxt"], "XBLNR": doc["xblnr"],
         "reverses": doc["reversed_of"],
-        # Iz yoksa bu bir eksiklik degil, bir bilgi: belge sesle degil, dogrudan
-        # bir tool cagrisiyla acilmis olabilir. Sessizce bos gostermek yerine
-        # soylemek daha dogru.
+        # A missing trail is not a defect, it is information: the document
+        # may have been opened by a direct tool call rather than by voice.
+        # Saying so beats showing an empty field in silence.
         "voice": {
             "action": trail["action"],
             "utterance": trail["utterance"],

@@ -1,15 +1,16 @@
 """
-Canli olay yolu ve ses oturumu sayaci — ikisi de veritabaninda.
+The live event path and the voice-session counter — both in the database.
 
-Neden bellekte degil: gateway artik istek basina uyanan fonksiyonlar olarak
-calisiyor. Tarayicinin SSE baglantisini tutan ornek ile AssemblyAI'in tool
-cagrisinin dustugu ornek ayni olmak zorunda degil. Olaylar bellekteki bir
-listede dursaydi, belge SAP'ye yazilir ama ekranda hicbir zaman gorunmezdi -
-ve bu, calisan bir demoda ARADA BIR olurdu, ki en kotu hata turu budur.
+Why not in memory: the gateway now runs as functions that wake per request.
+The instance holding the browser's SSE connection and the instance where
+AssemblyAI's tool call lands need not be the same one. Had events sat in an
+in-memory list, the document would be written to SAP and never appear on
+the screen — and in a working demo that would happen ONLY OCCASIONALLY,
+which is the worst kind of failure.
 
-Bedeli: her olay bir INSERT, her ekran yenilemesi bir SELECT. Ekran artik
-aninda degil, yarim saniyelik bir gecikmeyle guncelleniyor. Bir ses oturumunun
-yaninda bu fark edilmiyor; kaybolan bir belge fark edilirdi.
+The cost: every event is an INSERT, every screen refresh a SELECT. The
+screen now updates with half a second of lag instead of instantly. Next to
+a voice session nobody notices that; a lost document would be noticed.
 """
 
 from __future__ import annotations
@@ -20,9 +21,9 @@ from typing import Any
 
 from . import store
 
-# Olaylar demoluk: birkac dakikadan eskisi kimsenin isine yaramaz ve tablo
-# suresiz buyumesin. Ses oturumu kayitlari ise saatlik butceyi hesaplamak icin
-# bir saat yasamak zorunda.
+# Events are demo material: nothing older than a few minutes is of use to
+# anyone, and the table must not grow forever. Voice-session rows, though,
+# have to live an hour so the hourly budget can be computed.
 EVENT_RETENTION_SECONDS = 900
 VOICE_WINDOW_SECONDS = 3600
 
@@ -65,7 +66,7 @@ def publish(event_type: str, payload: dict[str, Any]) -> None:
 
 
 def latest_id() -> int:
-    """Yeni acilan bir ekrana gecmisi tekrar oynatma - sadece bundan sonrasini ver."""
+    """Do not replay history to a freshly opened screen — only what comes next."""
     with store.db() as conn:
         row = conn.execute("SELECT COALESCE(MAX(id), 0) AS id FROM events").fetchone()
     return int(row["id"])
@@ -100,10 +101,11 @@ def mint_session(ref: str) -> None:
 
 def current_session() -> str:
     """
-    En son basilan oturum referansi. Tool cagrilari AssemblyAI'in sunucusundan
-    gelir ve hangi oturumdan dogduklarini soylemez; "su an acik olan oturum"
-    demek dogru ama kesin degil - iki kisi ayni anda konusursa ikisi de ayni
-    referansi alir. docs/nfr.md'deki tek-oturum tavaninin bir sonucu.
+    The most recently minted session reference. Tool calls arrive from
+    AssemblyAI's servers and do not say which session they were born in;
+    "the currently open session" is correct but not precise — if two people
+    speak at once, both get the same reference. A consequence of the
+    single-session ceiling in docs/nfr.md.
     """
     with store.db() as conn:
         row = conn.execute(

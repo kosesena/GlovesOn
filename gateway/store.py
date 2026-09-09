@@ -1,14 +1,14 @@
 """
-Postgres deposu — mock S/4HANA sisteminin arkasindaki veri.
+The Postgres store — the data behind the mock S/4HANA.
 
-Bu dosya SAP'nin *verisini* tutar, sozlesmesini degil. OData yuzeyi
-sap_mock.py'de. Gercek bir S/4HANA'ya gecildiginde bu dosya tamamen olur.
+This file holds SAP's *data*, not its contract. The OData surface lives in
+sap_mock.py. On the day a real S/4HANA takes over, this file dies entirely.
 
-Neden SQLite degil: gateway artik istek basina uyanan bir fonksiyon olarak
-calisiyor (bkz. docs/adr/0005). Orada kalici disk yok ve iki istek ayni surece
-dusmeyebilir - yani yan yana duran bir dosya, bir cumlede yazilip digerinde
-kaybolan bir veritabani demekti. Bedeli: artik cevrimdisi calisilamiyor,
-en basit testte bile bir Postgres baglantisi gerekiyor.
+Why not SQLite: the gateway now runs as functions that wake per request
+(see docs/adr/0005). There is no persistent disk there, and two requests
+may not land in the same process — so a file sitting next to the code meant
+a database written in one sentence and lost in the next. The cost: no more
+offline work; even the simplest test needs a Postgres connection.
 """
 
 from __future__ import annotations
@@ -24,15 +24,15 @@ from .sap_client import env
 
 def database_url() -> str:
     """
-    Calisma aninda okunuyor, import aninda degil: sunucusuz bir ortamda
-    degiskenler surecin omrunden bagimsiz gelir, ve yerelde .env'in ne zaman
-    yuklendigine bagli kalmak istemiyoruz.
+    Read at call time, not at import time: in a serverless environment the
+    variables arrive independently of the process's lifetime, and locally we
+    do not want to depend on when .env happened to be loaded.
     """
     return env("DATABASE_URL") or env("POSTGRES_URL")
 
-# Ayni malzeme + miktar + depo yeri bu sure icinde ikinci kez gelirse yeni belge
-# acilmaz. Zaman asimina ugramis bir yazmadan sonra iscinin cumleyi tekrar
-# etmesi bu pencereye duser.
+# If the same material + quantity + storage location arrives again within
+# this window, no new document is opened. A worker repeating the sentence
+# after a timed-out write falls inside this window.
 DUPLICATE_WINDOW_SECONDS = 120
 
 SEED_MATERIALS = [
@@ -52,9 +52,9 @@ SEED_ORDERS = [
     ("4500001236", "Fuchs Lubricants", "6201", 40, "Delivered", "2026-09-02"),
 ]
 
-# mkpf.seq: SQLite'in rowid'si vardi, Postgres'te yok. Belge sirasi demoda
-# gorunur bir sey - "son belgeler" listesi bununla siralaniyor - o yuzden
-# sirayi sansa birakmayip acikca sayiyoruz.
+# mkpf.seq: SQLite had rowid, Postgres does not. Document order is visible
+# in the demo — the "recent documents" list sorts by it — so we count
+# explicitly rather than leave the order to chance.
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS mard (
     matnr TEXT NOT NULL, maktx TEXT NOT NULL, meins TEXT NOT NULL,
@@ -83,10 +83,10 @@ _pool: ConnectionPool | None = None
 
 def pool() -> ConnectionPool:
     """
-    Havuz bilerek kucuk ve tembel. Bir fonksiyon ornegi birkac istegi birden
-    goruyor, ama yuz tanesini gormuyor; acik tutulan her baglanti Postgres
-    tarafinda bir slot demek ve sunucusuz ortamda ornek sayisi bizim
-    kontrolumuzde degil. Neon'un pooled adresini kullanmak sart.
+    The pool is deliberately small and lazy. A function instance sees a few
+    requests, not a hundred; every connection held open is a slot on the
+    Postgres side, and in a serverless environment the number of instances
+    is not under our control. Using Neon's pooled endpoint is a must.
     """
     global _pool
     if _pool is None:
@@ -111,31 +111,33 @@ def pool() -> ConnectionPool:
 @contextmanager
 def db():
     """
-    Baglanti verir; blok hatasiz biterse commit, hata alirsa rollback eder.
-    Cagiran taraftaki `conn.commit()` cagrilari zararsiz, sadece gereksiz.
+    Hands out a connection; commits when the block ends cleanly, rolls back
+    on error. `conn.commit()` calls on the caller's side are harmless,
+    merely redundant.
     """
     with pool().connection() as conn:
         yield conn
 
 
-# Sema kurulumu icin tek bir kilit. "CREATE TABLE IF NOT EXISTS" Postgres'te
-# eszamanli calistiginda idempotent DEGIL: iki oturum ayni anda denerse biri
-# pg_type uzerinde benzersizlik ihlaliyle patlar. Sunucusuz bir dagitimda ayni
-# anda soguk baslayan iki ornek bunu duzenli olarak yapar - testler ilk kosuda
-# gosterdi, uretimde arada bir 500 olarak gorunurdu.
+# A single lock for schema setup. "CREATE TABLE IF NOT EXISTS" is NOT
+# idempotent under concurrency in Postgres: when two sessions try at once,
+# one blows up with a uniqueness violation on pg_type. In a serverless
+# deployment two instances cold-starting together do this regularly — the
+# tests showed it on their first run; in production it would have shown up
+# as an occasional 500.
 SCHEMA_LOCK_KEY = 0x67_10_5E
 
 
 @contextmanager
 def schema_lock():
-    """Sema degistiren her yol bunun icinden gecer. Kilit commit'te birakilir."""
+    """Every path that changes the schema goes through this. The lock is released at commit."""
     with db() as conn:
         conn.execute("SELECT pg_advisory_xact_lock(%s)", (SCHEMA_LOCK_KEY,))
         yield conn
 
 
 def norm_matnr(raw: str | int) -> str:
-    """SAP MATNR 18 karakter, sifirla soldan dolu. Sesle '4711' denir."""
+    """SAP MATNR is 18 characters, zero-padded on the left. By voice one says '4711'."""
     s = str(raw).strip().upper().replace(" ", "").replace("-", "")
     return s.zfill(18) if s.isdigit() else s
 
@@ -144,10 +146,10 @@ def pretty_matnr(matnr: str) -> str:
     return matnr.lstrip("0") or "0"
 
 
-# Sema degistiginde var olan veritabani kendini guncellemez: CREATE TABLE IF
-# NOT EXISTS mevcut tabloya dokunmaz. Eksik kolonlari tek tek ekliyoruz,
-# boylece eski bir veritabani yeni kodla calisiyor. Kolon eklerken bu listeyi
-# de buyut - semadaki degisikligin tek basina yetecegini varsayma.
+# A schema change does not reach an existing database: CREATE TABLE IF NOT
+# EXISTS leaves the existing table alone. We add the missing columns one by
+# one, so an old database runs with new code. When you add a column, grow
+# this list too — do not assume the change in SCHEMA alone will be enough.
 MIGRATIONS = {
     "mkpf": [
         ("seq", "BIGSERIAL"),
@@ -168,7 +170,7 @@ def _ensure_columns(conn) -> list[str]:
             " WHERE table_schema='public' AND table_name=%s", (table,)).fetchall()
         existing = {r["column_name"] for r in rows}
         if not existing:
-            continue                      # tablo henuz yok, SCHEMA olusturacak
+            continue                      # table does not exist yet; SCHEMA will create it
         for name, decl in columns:
             if name not in existing:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
@@ -178,8 +180,9 @@ def _ensure_columns(conn) -> list[str]:
 
 def init_db(force: bool = False) -> None:
     """
-    force=True demo sifirlamasi: tablolari dusurup tohum veriyi geri yaziyor.
-    Dosya silmek yerine DROP - artik silinecek bir dosya yok.
+    force=True is the demo reset: drop the tables and write the seed data
+    back. DROP instead of deleting a file — there is no file to delete
+    any more.
     """
     with schema_lock() as conn:
         if force:
@@ -187,7 +190,7 @@ def init_db(force: bool = False) -> None:
         conn.execute(SCHEMA)
         added = _ensure_columns(conn)
         if added:
-            print(f"  [store] eksik kolonlar eklendi: {', '.join(added)}")
+            print(f"  [store] added missing columns: {', '.join(added)}")
         if not conn.execute("SELECT COUNT(*) AS c FROM mard").fetchone()["c"]:
             conn.cursor().executemany(
                 "INSERT INTO mard (matnr, maktx, meins, werks, lgort, lgpla, labst)"

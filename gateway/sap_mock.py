@@ -1,19 +1,21 @@
 """
-Mock S/4HANA — gercek released OData API'lerinin sozlesmesini konusur.
+Mock S/4HANA — speaks the contract of the real released OData APIs.
 
-Bunun gateway'in *icinde* degil *karsisinda* durmasi kasitli. Gateway ona
-gercek bir HTTP istemcisi gibi baglaniyor: CSRF token aliyor, OData govdesi
-gonderiyor, {"d": ...} cevabi ayristiriyor. Boylece "gercek SAP'ye gecis tek
-bir base URL degisikligi" cumlesi mecaz degil, harfiyen dogru oluyor.
+That this stands *opposite* the gateway rather than *inside* it is
+deliberate. The gateway connects to it like a real HTTP client: it fetches
+a CSRF token, sends an OData body, parses the {"d": ...} response. That is
+what makes "moving to real SAP is a single base-URL change" literal rather
+than figurative.
 
-Taklit edilen released API'ler:
-  API_MATERIAL_DOCUMENT_SRV      A_MaterialDocumentHeader   (mal hareketi yazma)
-  API_MATERIAL_STOCK_SRV         A_MatlStkInAcctMod         (stok okuma)
-  API_PRODUCT_SRV                A_ProductDescription       (malzeme aciklamasi)
-  API_PURCHASEORDER_PROCESS_SRV  A_PurchaseOrder            (siparis durumu)
+The released APIs imitated:
+  API_MATERIAL_DOCUMENT_SRV      A_MaterialDocumentHeader   (write material movements)
+  API_MATERIAL_STOCK_SRV         A_MatlStkInAcctMod         (read stock)
+  API_PRODUCT_SRV                A_ProductDescription       (material description)
+  API_PURCHASEORDER_PROCESS_SRV  A_PurchaseOrder            (purchase order status)
 
-Gercek SAP'de de oyle: stok bir API'den, aciklama baskasindan gelir. Tek
-cagriyla halledilmez ve bu, gecikme butcesini dogrudan etkiler.
+Real SAP works the same way: stock comes from one API, the description from
+another. There is no single call for it, and that feeds straight into the
+latency budget.
 """
 
 from __future__ import annotations
@@ -31,19 +33,19 @@ from .store import norm_matnr, pretty_matnr
 
 router = APIRouter()
 
-# Gecerli CSRF token'lari. Gercek SAP bunu oturum cerezine bagli tutar.
+# Valid CSRF tokens. Real SAP ties these to the session cookie.
 _tokens: dict[str, float] = {}
 TOKEN_TTL_SECONDS = 1800
 
-# GoodsMovementCode -> hangi islem. SAP'nin kendi kodlari:
-#   01 satinalma siparisine karsi mal girisi   (MIGO / MB01)
-#   05 siparissiz diger mal girisleri          (MB1C)
-#   06 siparise karsi mal cikisi
+# GoodsMovementCode -> which operation. SAP's own codes:
+#   01 goods receipt against a purchase order   (MIGO / MB01)
+#   05 other goods receipts, no purchase order  (MB1C)
+#   06 goods issue against an order
 GMC_FOR_MOVEMENT = {"101": "01", "102": "01", "501": "05", "502": "05"}
 
 
 def _odata_error(code: str, message: str, status: int = 400) -> JSONResponse:
-    """SAP'nin OData v2 hata zarfi."""
+    """SAP's OData v2 error envelope."""
     return JSONResponse(
         status_code=status,
         content={"error": {"code": code, "message": {"lang": "en", "value": message}}},
@@ -53,7 +55,7 @@ def _odata_error(code: str, message: str, status: int = 400) -> JSONResponse:
 def _issue_token() -> str:
     tok = secrets.token_urlsafe(24)
     _tokens[tok] = time.time() + TOKEN_TTL_SECONDS
-    # suresi gecmisleri temizle
+    # sweep the expired ones
     for t, exp in list(_tokens.items()):
         if exp < time.time():
             _tokens.pop(t, None)
@@ -65,7 +67,7 @@ def _token_valid(tok: str | None) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# CSRF el sikismasi
+# The CSRF handshake
 # ---------------------------------------------------------------------------
 
 @router.api_route("/API_MATERIAL_DOCUMENT_SRV/", methods=["GET", "HEAD"])
@@ -74,8 +76,9 @@ async def service_root(
     x_csrf_token: str | None = Header(default=None, alias="X-CSRF-Token"),
 ):
     """
-    SAP'ye yazmadan once buraya 'X-CSRF-Token: Fetch' ile gelinir, token
-    alinir, sonra POST'ta geri gonderilir. Bunu atlayan her yazma 403 alir.
+    Before writing to SAP one comes here with 'X-CSRF-Token: Fetch', takes
+    the token, and sends it back on the POST. Every write that skips this
+    gets a 403.
     """
     if (x_csrf_token or "").lower() == "fetch":
         token = _issue_token()
@@ -85,7 +88,7 @@ async def service_root(
 
 
 # ---------------------------------------------------------------------------
-# Mal hareketi yazma
+# Writing material movements
 # ---------------------------------------------------------------------------
 
 @router.post("/API_MATERIAL_DOCUMENT_SRV/A_MaterialDocumentHeader")
@@ -112,8 +115,8 @@ async def create_material_document(
     bwart = str(item.get("GoodsMovementType") or "")
     ebeln = item.get("PurchaseOrder") or None
     reversed_of = item.get("ReferenceDocument") or None
-    # Baslik alanlari. Gercek S/4HANA taniomadigi alanlari sessizce dusurmez,
-    # bunlari tanir ve saklar; ayni sadakat burada da.
+    # Header fields. A real S/4HANA would not drop these as unrecognized —
+    # it knows them and stores them; the mock keeps the same fidelity.
     bktxt = str(body.get("MaterialDocumentHeaderText") or "")[:25]
     xblnr = str(body.get("ReferenceDocument") or "")[:16]
 
@@ -146,7 +149,7 @@ async def create_material_document(
                 f"storage location {lgort}.",
             )
 
-        # Ters kayit (102): asil belgeyi bul ve stoktan dus
+        # Reversal (102): find the original document and take the stock back out
         if bwart in ("102", "502"):
             orig = conn.execute(
                 "SELECT * FROM mkpf WHERE mblnr=%s", (str(reversed_of or ""),)
@@ -166,9 +169,10 @@ async def create_material_document(
             delta = -orig["menge"]
             menge = orig["menge"]
         else:
-            # Not: gercek S/4HANA ayni mal girisini iki kez seve seve kabul eder.
-            # Tekrar korumasi bilerek burada degil, gateway'de - cunku o koruma
-            # SAP'ye degil bize ait. Bkz. docs/adr/0002.
+            # Note: a real S/4HANA happily accepts the same goods receipt
+            # twice. The duplicate guard is deliberately NOT here but in the
+            # gateway — that protection belongs to us, not to SAP.
+            # See docs/adr/0002.
             delta = menge
 
         mblnr = f"49{random.randint(10_000_000, 99_999_999)}"
@@ -213,7 +217,7 @@ async def create_material_document(
 
 
 # ---------------------------------------------------------------------------
-# Okuma uclari
+# Read endpoints
 # ---------------------------------------------------------------------------
 
 @router.get("/API_MATERIAL_STOCK_SRV/A_MatlStkInAcctMod")

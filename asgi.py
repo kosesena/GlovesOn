@@ -1,10 +1,10 @@
 """
-Dagitim girisi.
+The deployment entry point.
 
-Vercel'in Python calisma ortami kok dizinde `asgi.py` gibi bilinen bir dosya
-ve icinde `app` adli bir degisken ariyor. Uygulamanin kendisi gateway/main.py'de
-duruyor; bu dosya yalnizca onu gosteriyor - platformun sozlesmesi kodun
-duzenini belirlemesin diye.
+Vercel's Python runtime looks for a well-known file like `asgi.py` at the
+root with a variable named `app` inside. The application itself lives in
+gateway/main.py; this file merely points at it — so the platform's contract
+does not get to dictate the code's layout.
 """
 
 from gateway.main import app

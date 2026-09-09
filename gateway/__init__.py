@@ -1,12 +1,12 @@
 """
-GlovesOn gateway paketi.
+The GlovesOn gateway package.
 
-.env dosyasi burada okunuyor - alt modullerin herhangi biri import edilmeden
-once. Onceden main.py load_dotenv()'i import satirlarindan SONRA cagiriyordu,
-yani modul seviyesinde okunan her degisken (store'daki DATABASE_URL,
-sap_client'taki SAP_BASE_URL) bos goruyordu. SAP_BASE_URL'in bos gorunmesi
-sessiz ve pahali bir hataydi: gercek bir tenant'i gosterip mock'a yazmaya
-devam etmek demekti.
+The .env file is read here — before any of the submodules is imported.
+Previously main.py called load_dotenv() AFTER its import lines, so every
+variable read at module scope (DATABASE_URL in store, SAP_BASE_URL in
+sap_client) saw an empty value. SAP_BASE_URL looking empty was a silent and
+expensive failure: it meant pointing at a real tenant and quietly writing
+to the mock anyway.
 """
 
 from dotenv import load_dotenv

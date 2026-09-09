@@ -1,15 +1,16 @@
 """
 GlovesOn Gateway
 ================
-Sesli ajan ile SAP arasindaki koprü.
+The bridge between the voice agent and SAP.
 
-Ajan burayla konusur, burasi SAP ile. Ajan hicbir zaman SAP sekli gormez:
-tool cevaplari sesli okunabilir cumlelerdir, OData zarfi degil. SAP'ye ozgu
-her sey (CSRF, {"d": ...}, 18 hane MATNR, hareket turleri) sap_client.py'de.
+The agent talks to this service, and this service talks to SAP. The agent
+never sees SAP's shape: tool responses are sentences fit to be read aloud,
+not OData envelopes. Everything SAP-specific (CSRF, {"d": ...}, 18-digit
+MATNR, movement types) lives in sap_client.py.
 
-Gercek bir S/4HANA'ya gecis = SAP_BASE_URL degiskeni. Baska hicbir sey.
+Moving to a real S/4HANA = setting SAP_BASE_URL. Nothing else.
 
-Calistirma:
+Run:
     uvicorn gateway.main:app --reload --port 8000
 """
 
@@ -40,20 +41,20 @@ ASSEMBLYAI_API_KEY = env("ASSEMBLYAI_API_KEY")
 TOOL_SHARED_SECRET = env("TOOL_SHARED_SECRET")
 AGENT_ID = env("AGENT_ID")
 
-# Yerelde uvicorn'a verdigimiz port. Mock'a artik bu port uzerinden
-# gidilmiyor (bkz. asagisi), sadece serve.sh ile ayni sayida anlasmak icin.
+# The port we hand uvicorn locally. The mock is no longer reached through
+# this port (see below); it only exists so serve.sh and we agree on a number.
 PORT = int(env("PORT", "8000"))
 
-# Demo ekranindaki "sifirla" dugmesi mock veritabanini bastan kurar ve kimlik
-# sormaz. Varsayilan artik KAPALI: acik bir varsayilan, adresi bilen herkesin
-# demoyu jurinin altindan silebilecegi anlamina geliyordu - canli adreste
-# denendi ve calisti. Provada acmak icin GLOVESON_ENABLE_RESET=1.
+# The "reset" button on the demo screen rebuilds the mock database and asks
+# for no identity. The default is now OFF: an open default meant anyone with
+# the address could wipe the demo out from under the judges — tried on the
+# live address, and it worked. Set GLOVESON_ENABLE_RESET=1 for rehearsals.
 ENABLE_RESET = env("GLOVESON_ENABLE_RESET", "0") in ("1", "true", "yes")
 
-# Paylasilan sir eskiden .env.example'daki metne dusuyordu. Yerelde zararsizdi;
-# public bir adreste, dokumante edilmis bir varsayilan sir demek sirsizlik
-# demek. Eksikse acilista duruyoruz - sessizce korumasiz calismaktansa
-# hic calismamak.
+# The shared secret used to fall back to the text in .env.example. Locally
+# that was harmless; on a public address, a documented default secret is no
+# secret at all. If it is missing we stop at startup — better not to run
+# than to run unprotected in silence.
 if not TOOL_SHARED_SECRET or TOOL_SHARED_SECRET == "degistir-beni-lutfen":
     raise RuntimeError(
         "TOOL_SHARED_SECRET is unset or still the placeholder from .env.example. "
@@ -64,11 +65,11 @@ if not TOOL_SHARED_SECRET or TOOL_SHARED_SECRET == "degistir-beni-lutfen":
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """
-    Acilis ve kapanis. Kapanista _sap'i None'a cekmek bir ayrinti degil:
-    onceden sadece aclose() cagriliyordu, yani singleton kapali bir HTTP
-    istemcisiyle ayakta kaliyordu ve uygulama ayni surecte ikinci kez
-    baslatilamiyordu. Uretimde surec basina tek omur oldugu icin hic
-    gorunmedi; testler ilk kosuda ortaya cikardi.
+    Startup and shutdown. Setting _sap to None on shutdown is not a detail:
+    previously only aclose() was called, so the singleton stayed up holding
+    a closed HTTP client and the app could not be started a second time in
+    the same process. In production, one lifetime per process, it never
+    showed; the tests exposed it on their first run.
     """
     global _sap
     # A fresh start clears the shutdown latch. Without this, the first test
@@ -91,31 +92,34 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="GlovesOn Gateway", version="0.2.0", lifespan=lifespan)
 
-# Mock S/4HANA KENDI uygulamasinda. Bu bir duzen tercihi degil, bir guvenlik
-# duzeltmesi: mock public uygulamaya bagliyken herkes CSRF token'ini alip
-# dogrudan A_MaterialDocumentHeader'a POST edebiliyordu - paylasilan sir yok,
-# sesli onay yok, tekrar korumasi yok, denetim izi yok. Yani "her yazma
-# onaylanir" iddiasi internetten tek komutla curutulebiliyordu.
+# The mock S/4HANA is ITS OWN application. Not a layout preference — a
+# security fix: while the mock was mounted on the public app, anyone could
+# fetch a CSRF token and POST straight to A_MaterialDocumentHeader — no
+# shared secret, no spoken confirmation, no duplicate guard, no audit trail.
+# The claim "every write is confirmed" could be refuted from the internet
+# with a single command.
 #
-# Gateway ona yine HTTP ile, disaridan bir sistemmis gibi baglaniyor; degisen
-# tek sey isteklerin bu ikinci uygulamaya gitmesi ve disaridan hicbir yolun
-# oraya cikmamasi. SAP'ye giden tek kapi /erp/* uclari, onlar da sirli.
+# The gateway still reaches it over HTTP, as if it were an external system;
+# all that changed is that requests go to this second app and no route from
+# the outside leads there. The only door to SAP is the /erp/* endpoints,
+# and they require the secret.
 mock_app = FastAPI(title="Mock S/4HANA", version="0.2.0")
 mock_app.include_router(sap_mock.router, prefix="/sap/opu/odata/sap", tags=["mock-s4hana"])
 
 _sap: SapClient | None = None
 
-# Mock S/4HANA'ya nasil gidilecegi. Uc olasilik, tek kod yolu:
-#   SAP_BASE_URL      -> gercek bir tenant, normal HTTP
-#   MOCK_SAP_BASE_URL -> mock ayri bir surecte, normal HTTP
-#   ikisi de yoksa    -> mock ayni uygulamada, ASGI tasiyicisiyla
+# How the mock S/4HANA is reached. Three possibilities, one code path:
+#   SAP_BASE_URL      -> a real tenant, plain HTTP
+#   MOCK_SAP_BASE_URL -> the mock in a separate process, plain HTTP
+#   neither           -> the mock in the same app, over an ASGI transport
 #
-# Ucuncusu sunucusuz ortamin dayattigi sey: dinleyen bir port olmadigi icin
-# loopback yok, kendi public adresimize gitmek ise istegi veri merkezinden
-# cikarip geri sokar - her ERP cagrisinda bir tur ag gecikmesi ve iki kat
-# fonksiyon cagrisi. ADR-0003'un sarti "mock disaridan bir sistem gibi
-# cagrilsin" idi; OData yolu, CSRF el sikismasi ve hata zarfi aynen duruyor,
-# degisen tek sey baytlarin sokete cikip cikmadigi.
+# The third is what the serverless platform imposes: no listening port, so
+# no loopback — and calling our own public URL would push every ERP call out
+# of the data centre and back in: one round of network latency and twice the
+# function invocations. ADR-0003's requirement was "call the mock like an
+# external system"; the OData path, the CSRF handshake and the error
+# envelope are unchanged — the only difference is whether the bytes reach
+# a socket.
 MOCK_SAP_BASE_URL = env("MOCK_SAP_BASE_URL").rstrip("/")
 
 
@@ -141,7 +145,7 @@ def sap_target() -> str:
 
 
 # ---------------------------------------------------------------------------
-# Canli olay akisi (demo ekrani)
+# Live event stream (the demo screen)
 # ---------------------------------------------------------------------------
 
 _shutting_down = asyncio.Event()
@@ -175,8 +179,9 @@ async def events(request: Request, scope_token: str = Query(...)) -> StreamingRe
     scope = session_scope.verify(scope_token, TOOL_SHARED_SECRET)
     if scope is None:
         raise HTTPException(status_code=401, detail="Event scope expired or invalid")
-    # Akis, olaylari veritabanindan okuyor: ekrani tutan ornek ile yazmayi
-    # yapan ornek ayni olmayabilir. Bkz. live.py.
+    # The stream reads events from the database: the instance holding the
+    # screen and the instance doing the write may not be the same one.
+    # See live.py.
     last_id = await asyncio.to_thread(live.latest_id)
     cursor = request.headers.get("last-event-id", "")
     if cursor.isdigit():
@@ -209,9 +214,9 @@ async def events(request: Request, scope_token: str = Query(...)) -> StreamingRe
 
 
 def require_tool_auth(secret: str | None) -> None:
-    # compare_digest: esitligi karakter karakter kisa devre yapmadan olcer.
-    # compare_digest ASCII disi bir baslikta TypeError firlatir; yakalamazsak
-    # 401 yerine 500 doner - kapali kalir ama hatayi yanlis anlatir.
+    # compare_digest measures equality without short-circuiting character by
+    # character. It raises TypeError on a non-ASCII header; uncaught, that
+    # turns the 401 into a 500 — still closed, but telling the wrong story.
     try:
         ok = bool(secret) and hmac.compare_digest(secret, TOOL_SHARED_SECRET)
     except TypeError:
@@ -221,7 +226,7 @@ def require_tool_auth(secret: str | None) -> None:
 
 
 # ---------------------------------------------------------------------------
-# TOOL 1 — stok sorgula
+# TOOL 1 — stock query
 # ---------------------------------------------------------------------------
 
 @app.get("/erp/stock")
@@ -234,7 +239,7 @@ async def get_stock(
     matnr = norm_matnr(material)
 
     try:
-        # Gercek SAP'de de boyle: stok bir API'den, aciklama baskasindan.
+        # Same as real SAP: stock from one API, the description from another.
         rows = await sap().get_stock(matnr, plant)
         desc = await sap().get_description(matnr)
     except SapError as e:
@@ -265,7 +270,7 @@ async def get_stock(
 
 
 # ---------------------------------------------------------------------------
-# TOOL 2 — malzeme ara
+# TOOL 2 — material search
 # ---------------------------------------------------------------------------
 
 @app.get("/erp/material-search")
@@ -286,7 +291,7 @@ async def material_search(
 
 
 # ---------------------------------------------------------------------------
-# TOOL 3 — mal girisi (YAZMA)
+# TOOL 3 — goods receipt (WRITE)
 # ---------------------------------------------------------------------------
 
 def draft_decision(body, operation, details):
@@ -331,10 +336,11 @@ async def post_goods_receipt(
     material, quantity = body.get("material"), body.get("quantity")
     if material is None or quantity is None:
         raise HTTPException(status_code=400, detail="material and quantity are required")
-    # "Tam sayi" derken tam sayi. int(20.5) -> 20 sessizce kabul ediliyordu:
-    # isci "yirmi buçuk" duyup onaylıyor, belgeye 20 dusuyordu - hem de tam
-    # onayin korumasi gereken yerde, onaydan SONRA. Bir yazmanin okunan
-    # cumleden farkli olmasi bu projenin varlik sebebine aykiri.
+    # "Whole number" means whole number. int(20.5) -> 20 used to be accepted
+    # silently: the worker heard "twenty and a half" and confirmed it, and
+    # the document said 20 — AFTER confirmation, in the very place exact
+    # confirmation is meant to protect. A write that differs from the
+    # sentence read back contradicts this project's reason to exist.
     try:
         if isinstance(quantity, bool):
             raise ValueError
@@ -353,7 +359,8 @@ async def post_goods_receipt(
     lgort = str(body.get("storage_location") or "0001")
     allow_duplicate = body.get("allow_duplicate") is True
     matnr = norm_matnr(material)
-    # Denetim izi icin: isciye okunup onaylanan cumle ve oturum referansi.
+    # For the audit trail: the sentence read back to the worker, and the
+    # session reference.
     # Consent is agent-reported; the gateway binds it to a one-use draft.
     utterance = str(body.get("confirmed_utterance") or "")
     session_id = event_scope.get() or str(body.get("session_id") or "")
@@ -383,10 +390,11 @@ async def post_goods_receipt(
     if decision is not None:
         return decision
 
-    # --- Ayni niyet iki kere kaydedilmesin ---------------------------------
-    # Zaman asimina ugrayan bir yazma belirsizdir: belge dusmus ama cevap
-    # donmemis olabilir. Isci cumleyi tekrar eder, stok iki kat artar.
-    # Bu kontrol bilerek burada: gercek SAP ikinci girisi reddetmez, biz ederiz.
+    # --- The same intent must not be recorded twice ------------------------
+    # A timed-out write is ambiguous: the document may have landed while the
+    # response was lost. The worker repeats the sentence, stock doubles.
+    # This check is here deliberately: real SAP does not refuse the second
+    # posting, so we do.
     if not allow_duplicate:
         dup = await _recent_identical(matnr, quantity, plant, lgort, body.get("purchase_order"))
         if dup is not None:
@@ -435,14 +443,14 @@ DUPLICATE_WINDOW_SECONDS = 120
 async def _recent_identical(matnr: str, quantity: int, plant: str, lgort: str,
                             ebeln: str | None) -> dict[str, Any] | None:
     """
-    Son belgeleri SAP'den okuyup ayni niyetin kisa sure once kaydedilip
-    kaydedilmedigine bakar. Gateway durumsuz kalir: hafizada bir sey tutmaz,
-    dogruyu her zaman kayit sisteminden sorar.
+    Reads the recent documents from SAP and checks whether the same intent
+    was recorded moments ago. The gateway stays stateless: it keeps nothing
+    in memory and always asks the system of record for the truth.
     """
     try:
         docs = await sap().list_documents(10)
     except SapError:
-        return None   # okuyamiyorsak yazmayi engellemeyiz; asil koruma sesli onay
+        return None   # if we cannot read we do not block the write; the real guard is spoken confirmation
     cutoff = time.time() - DUPLICATE_WINDOW_SECONDS
     for d in docs:
         if (d.get("GoodsMovementType") in ("101", "501")
@@ -457,7 +465,7 @@ async def _recent_identical(matnr: str, quantity: int, plant: str, lgort: str,
 
 
 # ---------------------------------------------------------------------------
-# TOOL 4 — son belgeler
+# TOOL 4 — recent documents
 # ---------------------------------------------------------------------------
 
 @app.get("/erp/recent-documents")
@@ -490,12 +498,13 @@ async def recent_documents(
 
 
 # ---------------------------------------------------------------------------
-# TOOL 5 — mal girisini iptal et (YAZMA)
+# TOOL 5 — reverse a goods receipt (WRITE)
 #
-# SAP'de yanlis bir belge SILINMEZ. Ters kayit atilir: 101'in tersi 102,
-# 501'in tersi 502. Stok geri iner ama iki belge de tarihte durur ve
-# denetlenebilir kalir. Bu yuzden "iptal" de tam anlamiyla bir yazma islemi
-# ve mal girisiyle ayni korumalarin arkasinda.
+# In SAP a wrong document is never DELETED. A reversal is posted instead:
+# a 102 against a 101, a 502 against a 501. Stock comes back down, but both
+# documents stay in the history and remain auditable. "Cancelling" is
+# therefore a write in the fullest sense, and it sits behind the same
+# protections as the goods receipt itself.
 # ---------------------------------------------------------------------------
 
 @app.post("/erp/reverse-goods-receipt")
@@ -588,7 +597,7 @@ async def reverse_goods_receipt(
 
 
 # ---------------------------------------------------------------------------
-# TOOL 6 — satinalma siparisi durumu
+# TOOL 6 — purchase order status
 # ---------------------------------------------------------------------------
 
 @app.get("/erp/purchase-order")
@@ -614,15 +623,16 @@ async def purchase_order(
 
 
 # ---------------------------------------------------------------------------
-# Demo ekrani destek uclari
+# Support endpoints for the demo screen
 # ---------------------------------------------------------------------------
 
-# Bir ses oturumu saniye basina faturalanir ve bu uc, anahtari sunucuda
-# tutabilmek icin bilerek kimliksiz: tarayici anahtari hic gormesin diye
-# token'i biz basiyoruz. Tunel adresi her seferinde degisirken bunu bulan
-# olmazdi. Sabit bir adreste bulunur, ve bulan kisi bizim faturamiza oturum
-# acar. Bedeli: mesru bir demo da ust sinira carpabilir, o yuzden pencere
-# genis tutuldu ve sinir asildiginda 429 ile acikca soyluyoruz.
+# A voice session is billed per second, and this endpoint is deliberately
+# unauthenticated so the API key can stay on the server: we mint the token
+# so the browser never sees the key. While the tunnel address changed on
+# every start, nobody would find it. On a fixed address it will be found,
+# and whoever finds it opens sessions on our bill. The cost: a legitimate
+# demo can hit the ceiling too, so the window is kept generous and crossing
+# it answers with an explicit 429.
 VOICE_TOKEN_MAX = int(env("VOICE_TOKEN_MAX_PER_HOUR", "40"))
 
 
@@ -666,9 +676,9 @@ async def voice_token() -> dict[str, Any]:
     await asyncio.to_thread(live.mint_session, secrets.token_hex(4))
     async with httpx.AsyncClient(timeout=15) as client:
         r = await client.get("https://agents.assemblyai.com/v1/token",
-                             # Kisa omur, calinan ya da kotuye kullanilan bir
-                             # token'in ise yaradigi pencereyi daraltir. Bir
-                             # demo oturumu bes dakikayi gecmiyor.
+                             # A short lifetime narrows the window in which a
+                             # stolen or abused token is useful. A demo
+                             # session stays under five minutes.
                              params={"expires_in_seconds": 120, "max_session_duration_seconds": 300},
                              headers={"Authorization": f"Bearer {ASSEMBLYAI_API_KEY}"})
     if r.status_code != 200:
@@ -714,11 +724,13 @@ def inventory() -> dict[str, Any]:
 @app.get("/api/provenance/{mblnr}")
 def provenance(mblnr: str) -> dict[str, Any]:
     """
-    "Bu belge neden var?" — ekranin sordugu ve cevabini gosterdigi soru.
+    "Why does this document exist?" — the question the screen asks and
+    answers.
 
-    Sirsiz, cunku tarayici sirri hicbir zaman gormemeli ve burasi yalniz
-    okuyor. Gosterdigi sey mock verisi; gercek bir dagitimda bu ucun onunde
-    kimlik dogrulama olurdu, tipki ekranin kendisinde olacagi gibi.
+    No secret required, because the browser must never see the secret and
+    this endpoint only reads. What it shows is mock data; in a real
+    deployment authentication would sit in front of it, exactly as it
+    would in front of the screen itself.
     """
     row = audit.provenance(mblnr.strip())
     if row is None:
@@ -728,11 +740,11 @@ def provenance(mblnr: str) -> dict[str, Any]:
 
 @app.post("/api/reset")
 def reset(x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret")) -> dict[str, str]:
-    # Bayrak yetki degildir. Onceden burasi kimlik sormuyordu ve varsayilan
-    # aciklti: adresi bilen herkes demoyu silebiliyordu - canli adreste
-    # denendi, 200 dondu. Ustelik ozel baslik tasimayan bir POST oldugu icin
-    # tarayici bunu on-kontrolsuz gonderir; bakimciyi kotu bir sayfaya
-    # dusurmek yetiyordu. Simdi hem bayrak hem sir gerekiyor.
+    # A flag is not authorization. This endpoint used to ask for no identity
+    # and the default was open: anyone with the address could wipe the demo —
+    # tried on the live address, it returned 200. Worse, a POST carrying no
+    # custom header goes out without a preflight, so luring a maintainer onto
+    # a hostile page was enough. Now both the flag and the secret are required.
     if not ENABLE_RESET:
         raise HTTPException(status_code=403, detail="Reset is disabled on this deployment.")
     require_tool_auth(x_tool_secret)
@@ -746,9 +758,9 @@ def reset(x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret"
 
 @app.get("/health")
 def health() -> dict[str, Any]:
-    # agent_id burada durmuyor artik: ses oturumu acmak icin gereken ikinci
-    # parca oydu ve bu ucu herkes cagirabiliyor. Tarayici zaten onu
-    # /api/voice-token cevabindan aliyor.
+    # agent_id no longer lives here: it was the second piece needed to open
+    # a voice session, and anyone can call this endpoint. The browser gets
+    # it from the /api/voice-token response instead.
     return {"ok": True, "agent_configured": bool(AGENT_ID),
             "sap_base_url": sap_target()}
 
