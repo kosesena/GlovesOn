@@ -1,9 +1,9 @@
 import * as THREE from './vendor/three.module.js';
 import { GLTFLoader } from './vendor/GLTFLoader.js';
 
-// Karakter lobide yasiyor - acilis sayfasinda degil, cunku orada 8 MB'lik bir
-// GLB 68 KB'lik bir gorselin yerini alamaz. Lobiye gelen kisi zaten "vardiyaya
-// basla" demis biri; bekleyecek kadar ilgileniyor.
+// The character lives in the lobby - not on the landing page, where an 8 MB
+// GLB cannot take the place of a 68 KB image. Whoever reaches the lobby has
+// already said "start the shift"; they are interested enough to wait.
 const hero = document.querySelector('#avatarStage');
 const photo = null;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -22,8 +22,8 @@ async function start() {
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.domElement.className = 'avatar-motion';
-    // Ilk kare hazir olana kadar seffaf: model gec de gelse patlayarak
-    // degil, belirerek giriyor.
+    // Transparent until the first frame is ready: however late the model
+    // arrives, it fades in rather than popping in.
     renderer.domElement.style.opacity = '0';
     renderer.domElement.style.transition = 'opacity .45s ease';
     renderer.domElement.setAttribute('aria-hidden', 'true');
@@ -34,7 +34,7 @@ async function start() {
     ]);
     if (reduced.matches) { renderer.dispose(); loaded = false; return; }
     const scene = new THREE.Scene();
-    // Dikey kadraj 2.37 -> 2.05 birim: figur ayni sahnede daha buyuk duruyor.
+    // Vertical framing 2.37 -> 2.05 units: the figure stands larger in the same scene.
     const camera = new THREE.OrthographicCamera(-2, 2, 1.90, -.15, .1, 20);
     camera.position.set(0, 0, 6);
     scene.add(new THREE.HemisphereLight(0xffffff, 0x9b927f, 2.5));
@@ -42,13 +42,13 @@ async function start() {
     light.position.set(3, 5, 4); scene.add(light);
     const actor = new THREE.Group(); actor.add(gltf.scene); scene.add(actor);
     const mixer = new THREE.AnimationMixer(gltf.scene);
-    // Bekleme pozu: idle klibi ayaklari da hareket ettiriyordu (yerinde
-    // yuruyus). Onun yerine kollari govde onunde kenetli sabit bir poz tutuyor,
-    // ustune nefes ve arada kulakliga uzanan el biniyor. Bind rotasyonlari
-    // saklanip ustune delta ekleniyor.
+    // The rest pose: the idle clip also moved the feet (walking in place).
+    // Instead we hold a fixed pose, arms clasped in front of the body, with
+    // breathing layered on and, occasionally, a hand reaching to the
+    // headset. Bind rotations are saved and deltas are added on top.
     const bones = {}; gltf.scene.traverse(o => { if (o.isBone) bones[o.name] = o; });
     const bind = {}; for (const [n, b] of Object.entries(bones)) bind[n] = b.rotation.clone();
-    // key: [dx, dy, dz] bind pozuna eklenir. Deneyerek ayarlandi.
+    // key: [dx, dy, dz] added to the bind pose. Tuned by trial.
     const restPose = {
       RightArm:     [ .18,  0,   -.30],
       LeftArm:      [ .18,  0,    .30],
@@ -58,28 +58,29 @@ async function start() {
       LeftHand:     [ .10,  0,    0  ],
       Spine02:      [ .04,  0,    0  ],
     };
-    // Kulaklik dokunma jesti. Poz TAHMIN DEGIL, olcum: iki kemikli analitik IK
-    // parmak ucunu kulaklik kupasindan 13.6 mm oteye koyuyor, avuc kafaya
-    // donuk, yuze giren tek bir tepe noktasi yok. Sayilar MUTLAK YEREL
-    // kuaterniyon - kemigin donusunun yerine gecerler. Onceki iki deneme bind
-    // pozuna Euler farki ekledigi icin bozuldu: restPose'un bukumu jestin
-    // bukumuyle ust uste biniyordu.
+    // The headset-touch gesture. The pose is MEASURED, not guessed:
+    // two-bone analytic IK puts the fingertip 13.6 mm off the headset cup,
+    // palm facing the head, not a single vertex entering the face. The
+    // numbers are ABSOLUTE LOCAL quaternions - they replace the bone's
+    // rotation. The two earlier attempts broke because they added Euler
+    // deltas to the bind pose: restPose's bend stacked on the gesture's.
     const touchEnd = {
       RightArm:     new THREE.Quaternion( .182833,  .457002, -.112686, .863147),
       RightForeArm: new THREE.Quaternion(-.805635, -.007894, -.408775, .428711),
       RightHand:    new THREE.Quaternion( .256318,  .666348, -.411145, .566781),
     };
-    // Ara nokta: kol once yana aciliyor. Dogrudan slerp elin 306 tepe noktasini
-    // yuzun icinden geciriyor ve kafa payi yarim milimetreye dusuyor; bu yol
-    // %12 daha uzun ama yuze hic girmiyor ve kafayla arasi 89 mm kaliyor.
+    // The waypoint: the arm opens sideways first. A direct slerp drags 306
+    // of the hand's vertices through the face and the head clearance drops
+    // to half a millimetre; this path is 12% longer but never enters the
+    // face and keeps 89 mm from the head.
     const touchVia = {
       RightArm:     new THREE.Quaternion( .215778, -.372928, -.159126, .888281),
       RightForeArm: new THREE.Quaternion( .225803,  .083197, -.031354, .970107),
       RightHand:    new THREE.Quaternion( .093683,  .009770, -.001906, .995552),
     };
-    // Her kemik kendi yay uzunlugunca bolunuyor. Ortak tek bir orta nokta
-    // kullanmak bilegi tam ortada bir karede 7 kat hizlandiriyor, goze kamci
-    // gibi carpiyordu - yollar 3.6 kat farkli uzunlukta.
+    // Each bone splits at its own arc length. A single shared midpoint made
+    // the wrist accelerate 7x in one frame right at the middle, and it read
+    // as a whip - the paths differ 3.6x in length.
     const touchSplit = { RightArm: .366, RightForeArm: .177, RightHand: .086 };
     const TOUCH = { period: 10, rise: .62, hold: .30, fall: .68 };
     const touchSpan = TOUCH.rise + TOUCH.hold + TOUCH.fall;
@@ -125,7 +126,7 @@ async function start() {
         const b = bones[n]; if (!b) continue;
         b.rotation.x += d[0]; b.rotation.y += d[1]; b.rotation.z += d[2];
       }
-      // Nefes: gogus ve basta cok hafif salinim.
+      // Breathing: a very slight sway in the chest and head.
       if (bones.Spine01) bones.Spine01.rotation.x += Math.sin(t) * .022;
       if (bones.Head)    bones.Head.rotation.x    += Math.sin(t * .9 + 1) * .015;
     }
@@ -149,8 +150,9 @@ async function start() {
     }
     function wave() {
       if (phase === 'walk' || phase === 'wave' || reduced.matches) return;
-      // Kol kulakliga uzanmisken selam klibine gecmek bilegi tek karede yarim
-      // metre isinliyordu. Selam kozmetik: jest bitene kadar yok sayiyoruz.
+      // Switching to the greeting while the arm reaches for the headset
+      // teleported the wrist half a metre in one frame. The greeting is
+      // cosmetic: ignore it until the gesture finishes.
       if (touchNow > 0) return;
       mixer.stopAllAction(); current = null;
       greetingIsWave = greetingCount++ % 2 === 0;
@@ -173,8 +175,9 @@ async function start() {
       }
     });
     autoIntro = false;
-    // Disariya acilan tek kanca: bir alan secildiginde karakter o kartin onune
-    // yuruyor ve soz veriyor. Ekran, soz cozulunce degisiyor.
+    // The one hook exposed outward: when an area is chosen the character
+    // walks to that card and returns a promise. The screen changes when the
+    // promise resolves.
     window.gloveson = window.gloveson || {};
     window.gloveson.avatarWalkTo = (key) => {
       const card = document.querySelector(`[data-enter="${key}"]`);
@@ -182,7 +185,7 @@ async function start() {
       if (arrival) { const cancel = arrival; arrival = null; cancel(); }
       bubble?.classList.add('is-away');
       const stage = hero.getBoundingClientRect(), target = card.getBoundingClientRect();
-      // Kartin merkezini sahne koordinatina cevir: -half .. +half
+      // Convert the card's centre into scene coordinates: -half .. +half
       const ratio = ((target.left + target.width / 2) - stage.left) / stage.width;
       const half = camera.right;
       document.getElementById('warehouseRoom')?.classList.add('avatar-travelling');
@@ -192,8 +195,8 @@ async function start() {
         if (Math.abs(travelFrom - travelTo) < .05) { resolve(); return; }
         phase = 'walk'; phaseStart = elapsed; play('walk');
         arrival = resolve;
-        // Sigorta yuruyus suresinden turuyor: sabit 2600 ms, uzun bir yuruyuste
-        // ekrani karakterden once degistiriyordu.
+        // The fuse derives from the walk duration: a fixed 2600 ms changed
+        // the screen before the character on a long walk.
         const expect = Math.max(.9, Math.abs(travelTo - travelFrom) / 1.5) * 1000 + 600;
         setTimeout(() => { if (arrival === resolve) { arrival = null; resolve(); } }, expect);
       }).finally(() => document.getElementById('warehouseRoom')?.classList.remove('avatar-travelling'));
@@ -214,13 +217,15 @@ async function start() {
       const half = width / height * 2.05 / 2;
       camera.left = -half; camera.right = half; camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
-      // Sahnenin ortasi degil sol kenari: ortada durunca secenegin onune
-      // geciyor, secmeni bekleyen biri gibi degil secimin kendisi gibi
-      // duruyordu. Kenarda bekliyor, alan secilince oraya yuruyor.
-      // .88 -> .78: kulakliga uzanan kol govdeden 0.59 m disari cikiyor,
-      // .88'de ise sol kenara sadece 0.36 m kaliyordu ve kol panel sinirinda
-      // kesiliyordu. Bedeli figurun ~50 piksel saga kaymasi; sol bosluk 278
-      // piksel oldugu icin hala kendi seridinde ve ilk kartin uzaginda.
+      // The scene's left edge, not its centre: standing in the middle put
+      // the guide in front of the options, reading as the choice itself
+      // rather than someone waiting for yours. It waits at the edge and
+      // walks over once an area is chosen.
+      // .88 -> .78: the arm reaching for the headset extends 0.59 m out of
+      // the body, and at .88 only 0.36 m remained to the left edge, so the
+      // arm was clipped at the panel boundary. The cost is the figure
+      // shifting ~50 px right; the left gap is 278 px, so it still keeps
+      // its own lane, well clear of the first card.
       home = Math.max(-camera.right * .78, camera.left + .62); near = home;
       if (phase === 'idle' && !arrival) actor.position.x = home;
     }
@@ -231,8 +236,8 @@ async function start() {
       if (!visible || document.hidden || reduced.matches) return;
       elapsed += dt;
       if (phase === 'idle') {
-        // Klip yok: sabit bekleme pozu + nefes, her karede. Ayaklar bind
-        // pozunda sabit kaldigi icin "yerinde yurume" bitiyor.
+        // No clip: the fixed rest pose + breathing, every frame. The feet
+        // stay in the bind pose, which ends the "walking in place".
         applyRest(elapsed * 1.6);
         touchClock += dt;
         if (touchClock >= TOUCH.period) { touchClock -= TOUCH.period; idleVariant = (idleVariant + 1) % 3; }

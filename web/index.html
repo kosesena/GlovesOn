@@ -94,9 +94,10 @@
     color: var(--warn); background: #241d0d; border: 1px solid #4a3a14; max-width: 100%;
   }
   .msg.sys { align-self: center; font-family: var(--mono); font-size: 11px; color: var(--muted); }
-  /* Bos ekran. Bir isci mikrofona, ne diyebilecegini bilmeden basmaz - ve
-     bunu ogrenecegi yer, elleri doluyken okuyacagi bir README degil. Ilk
-     mesaj gelir gelmez kayboluyor: yonerge, konusmanin ustune yigilmamali. */
+  /* The empty screen. A worker does not press a microphone without knowing
+     what they can say - and the place to learn it is not a README read with
+     both hands full. It disappears at the first message: guidance must not
+     pile on top of the conversation. */
   .primer { padding: 18px 18px 6px; display: flex; flex-direction: column; gap: 14px; }
   /* Mono is for ERP data — numbers, bins, documents. Instructional prose in
      mono read as console output; these two lines are guidance, so they take
@@ -139,7 +140,7 @@
          border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); }
   .empty { padding: 16px 12px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
 
-  /* Bekleyen yazma - mimarinin gorunur hali */
+  /* The pending write - the architecture made visible */
   .pending {
     display: flex; align-items: center; gap: 10px;
     padding: 11px 14px; margin: 0;
@@ -159,7 +160,7 @@
     animation: pulse 1.1s ease-in-out infinite;
   }
 
-  /* Yazma ani */
+  /* The moment of writing */
   td.count { color: var(--accent); font-weight: 600; }
   tr.bump td { animation: bump 1.6s ease-out; }
   .mblnr-new { animation: reveal 1.2s ease-out; }
@@ -168,12 +169,12 @@
     100% { background: transparent; }
   }
 
-  /* Ses seviyesi */
+  /* Audio level */
   #meter { width: 54px; height: 18px; display: block; }
 
-  /* ---- Belge merkezli sag panel ------------------------------------------
-     Kahraman malzeme belgesi. Koyu terminalin uzerinde beyaz kagit duruyor:
-     kontrast, hangi seyin onemli oldugunu soylemeden soyluyor. */
+  /* ---- The document-centred right panel -----------------------------------
+     The hero is the material document. White paper sits on a dark terminal:
+     the contrast says what matters without saying it. */
   .right { background: #0e131a; }
   .deskspace { flex: 1; overflow-y: auto; padding: 20px 22px 26px; }
 
@@ -189,9 +190,10 @@
   .frow { display: grid; grid-template-columns: 150px 1fr; gap: 10px;
           padding: 6px 0; border-bottom: 1px dotted #dcdfe3; font-size: 12px; }
   .frow:last-of-type { border-bottom: none; }
-  /* Bir elemani gizlemek icin `hidden` yeterli olmali. Yazdigimiz her
-     `display:` kurali onu eziyor - stok seridi bu yuzden bosken de
-     gorunuyordu, iki tire halinde. Tek kural, sinif sinif yama yerine. */
+  /* Hiding an element should take no more than `hidden`. Every `display:`
+     rule we write overrides it - which is why the stock strip kept showing
+     while empty, as a pair of dashes. One rule, instead of class-by-class
+     patches. */
   [hidden] { display: none !important; }
   .frow span { color: #8a9099; font-size: 9.5px; letter-spacing: .07em;
                padding-top: 3px; text-transform: uppercase; }
@@ -203,7 +205,7 @@
   .dfoot { margin-top: 14px; padding-top: 10px; border-top: 1px solid #dcdfe3;
            font-size: 10.5px; color: #8a9099; line-height: 1.5; }
 
-  /* Damga: belgenin durumu tek bakista */
+  /* The stamp: the document's state at a glance */
   .stamp {
     position: absolute; right: 18px; top: 46px; transform: rotate(-11deg);
     border: 3px solid #b9bec5; color: #b9bec5; padding: 5px 12px; border-radius: 4px;
@@ -221,7 +223,7 @@
     100% { transform: rotate(-11deg) scale(1); opacity: .9; }
   }
 
-  /* Stok, belgenin yaninda kalsin */
+  /* Keep the stock next to the document */
   .stockstrip {
     display: flex; align-items: center; justify-content: space-between; gap: 14px;
     margin-top: 16px; padding: 12px 15px;
@@ -244,8 +246,9 @@
   table.mini tr.clickable:hover td { background: var(--panel-2); }
   table.mini tr.open td { background: var(--panel-2); }
 
-  /* Kanit zinciri. Bir denetim izi ancak gosterilebiliyorsa denetim izidir -
-     yazilip hicbir yerden okunmayan bir tablo, olmayan bir tablodur. */
+  /* The evidence chain. An audit trail is only an audit trail if it can be
+     shown - a table written and read from nowhere is a table that does not
+     exist. */
   .prov { padding: 12px 14px; background: var(--panel-2); border-left: 2px solid var(--accent-dim); }
   .prov .pline { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 6px; }
   .prov q { display: block; font-size: 14px; color: var(--text); margin: 8px 0; }
@@ -269,8 +272,8 @@
   .brand-mark { display:grid; place-items:center; width:34px; height:34px; background:#e96935; color:white; border-radius:9px 9px 3px 9px; font-size:22px; transform:rotate(-6deg); }
   .nav-links { display:flex; align-items:center; gap:32px; font-size:13px; color:#61675f; }
   .nav-cta { background:#222820; color:#fff; padding:12px 21px; border-radius:28px; }
-  /* Metin ve figur ORTALANMIS bir cift: onceden metin sola, figur saga
-     mihliydi ve genis ekranda aralarinda bos bir ova aciliyordu. */
+  /* Text and figure are a CENTRED pair: they used to be nailed to the left
+     and right edges, and a wide screen opened an empty plain between them. */
   .hero { position:relative; max-width:1440px; min-height:650px; margin:0 auto; overflow:hidden; border-radius:24px; display:flex; align-items:center; justify-content:center; gap:0; padding:0 4%; }
   .hero-image { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:65% center; }
   .hero-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:65% center; opacity:0; pointer-events:none; }
@@ -431,12 +434,12 @@
   .warehouse-toolbar.is-stuck button { border:1px solid #ffffff24; }
   .warehouse-toolbar button,.warehouse-choice button { background:#26332a; color:#fff; border-radius:24px; padding:12px 20px; }
   .warehouse-toolbar span { font:11px var(--mono); color:#697565; }
-  /* Lobi tek ekrana sigmali: asagi kaydirmadan gorulemeyen bir secim ekrani,
-     secenegi olmayan bir secim ekranidir. Ama gorseli sabit bir sayiyla
-     kucultmek yanlis olurdu - kisa ekranda hala tasar, uzun ekranda bosuna
-     kucuk kalir. Odanin genisligi bu yuzden ekran YUKSEKLIGINE bagli
-     (max-width:155vh): sprite genislikle olceklendigi icin bu, gorseli
-     "sigan en buyuk boyut" yapiyor. */
+  /* The lobby must fit one screen: a choice screen that needs scrolling is
+     a choice screen without choices. But shrinking the art by a fixed
+     number would be wrong - it would still overflow a short screen and stay
+     needlessly small on a tall one. The room's width therefore follows the
+     screen HEIGHT (max-width:155vh): the sprite scales with width, so this
+     makes the art "the largest size that fits". */
   .warehouse-title { text-align:center; margin:10px 0 14px; }
   .warehouse-title h1 { font-size:clamp(26px,3.4vw,44px); letter-spacing:-.05em; margin:0 0 6px; }
   .warehouse-title p { color:#6a7568; }
@@ -449,7 +452,7 @@
   .warehouse-entry b { display:block; font-size:18px; margin:14px 0 6px; }
   .warehouse-entry small { font-size:12px; color:#636d5d; }
   .warehouse-entry em { display:block; margin-top:9px; color:#a64b27; font:11px var(--mono); font-style:normal; }
-  /* Kisa ekranlarda (dizustu, tarayici cubuklariyla ~700px) daha da sik. */
+  /* Tighter still on short screens (a laptop with browser chrome, ~700px). */
   @media(max-height:820px) {
     .warehouse-title { margin:14px 0 12px; }
     .warehouse-title h1 { font-size:30px; }
@@ -464,8 +467,9 @@
   .warehouse-choice p { font-size:14px; line-height:1.7; color:#6b7566; }
   .warehouse-choice small { font:11px var(--mono); color:#ad5833; }
   body.in-warehouse > .hero,body.in-warehouse > .trust-line,body.in-warehouse > .demo-intro,body.in-warehouse > .how,body.in-warehouse > footer { display:none; }
-  /* Site menusu de gizleniyor: icerideyken "Enter warehouse" anlamsiz ve
-     "Back to site" zaten arac cubugunda. Kazanilan 94 piksel gorselin. */
+  /* The site menu hides too: once inside, "Enter warehouse" is meaningless
+     and "Back to site" already sits in the toolbar. The 94 pixels gained go
+     to the art. */
   body.in-warehouse > .site-nav { display:none; }
   .warehouse-shell .console-wrap { margin-top:24px; }
   @media(max-width:600px) { .warehouse-shell { padding:14px; } .warehouse-room { gap:12px; padding:30px 12px 50px; } .warehouse-entry b { font-size:13px; } .warehouse-entry small { font-size:10px; } .warehouse-choice { grid-template-columns:1fr; } .warehouse-toolbar span { display:none; } }
@@ -481,23 +485,27 @@
   .warehouse-room { isolation:isolate; }
   .warehouse-entry, .warehouse-entry:hover, .warehouse-entry:active, .warehouse-entry:focus { background:transparent; box-shadow:none; transform:none; opacity:1; mix-blend-mode:multiply; -webkit-tap-highlight-color:transparent; }
 
-  /* Konsol ve girisi ACILIS SAYFASINDA kaliyor. Onceden ikisi de burada
-     gizliydi: ilk ekranda SAP, ERP, mal girisi ya da AssemblyAI gecmiyordu ve
-     calisan urun iki tik geridedeydi. On dakikasi olan bir juri icin bu, urunu
-     hic gormeden ayrilmak demek. Depo akisi bir SECENEK; kanit ise ilk
-     ekranda, kaydirma mesafesinde durmali. */
+  /* The console and its entry stay ON THE LANDING PAGE. Both used to be
+     hidden here: the first screen mentioned neither SAP, ERP, goods receipt
+     nor AssemblyAI, and the working product sat two clicks away. For a
+     judge with ten minutes, that means leaving without seeing the product.
+     The warehouse flow is an OPTION; the proof must stand on the first
+     screen, within scrolling distance. */
   body > .shift, body > .scenario-bar { display:none; }
-  /* footer ve .trust-line listeden cikti: AssemblyAI atfi ve hackathon
-     satiri HTML'de vardi ama hicbir durumda ekrana gelmiyordu. */
+  /* footer and .trust-line left the hidden list: the AssemblyAI attribution
+     and the hackathon line existed in the HTML but never reached the screen
+     in any state. */
   body > .how { display:none; } body > .how:target { display:grid; }
   .hero { min-height:560px; height:calc(100svh - 110px); max-height:820px; background:#f7f3ea; }
-  /* Gorselin zemini artik yok: kaynak PNG'nin bej fonu kesildi (radyal vinyet
-     iki boyutlu bir yuzeyle modellenip kenarlardan bagli bilesen alinarak),
-     ayaklarin altindaki golge korundu. Onceden karakter sayfaya konmus bir
-     dikdortgenin icinde duruyordu; multiply o beji koyulastirmaktan baska bir
-     sey yapmiyordu. Yan fayda: 1.6 MB PNG -> 68 KB WebP. */
-  /* Yukseklik panele bagli, genislik ondan turuyor: aksi halde genis
-   ekranda figur panelden uzun geliyor ve kafasi kesiliyordu. */
+  /* The art no longer has a backdrop: the source PNG's beige ground was cut
+     away (the radial vignette modelled as a 2D surface, then the component
+     connected to the edges taken), and the shadow under the feet was kept.
+     The character used to stand inside a rectangle placed on the page;
+     multiply did nothing but darken that beige. Side benefit: 1.6 MB PNG
+     -> 68 KB WebP. */
+  /* Height follows the panel and width derives from it: otherwise on a
+     wide screen the figure came out taller than the panel and lost its
+     head. */
 .hero-image { position:static; inset:auto; flex:0 0 auto; order:2; height:min(97%, 660px); max-width:44%; width:auto; align-self:flex-end; object-fit:contain; object-position:bottom; }
   .hero:after { display:none; }
   .hero-copy { width:52%; padding:36px 5%; }
@@ -1172,7 +1180,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
     </div>
 
     <div class="deskspace">
-      <!-- Kahraman: belgenin kendisi. Koyu terminalin uzerinde beyaz kagit. -->
+      <!-- The hero: the document itself. White paper on a dark terminal. -->
       <article class="doc" id="doc" hidden>
         <div class="stamp" id="stamp">NO DOCUMENT</div>
         <h3>MATERIAL DOCUMENT</h3>
@@ -1192,7 +1200,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
       </article>
 
       <aside id="reversalLink" class="reversal-link" hidden aria-live="polite"><p>Both records are preserved</p><div><span>Original receipt</span><b id="originalReceipt">—</b></div><div><span>Reversal document</span><b id="reversalReceipt">—</b></div><small>The reversal adjusts stock; the original receipt stays in the history.</small></aside>
-      <!-- Stok, belgenin yanindan kaybolmasin -->
+      <!-- The stock must not vanish from the document's side -->
       <div class="stockstrip" id="stockStrip" hidden>
         <div class="ss-mat"><b id="ss-matnr">—</b><span id="ss-maktx"></span></div>
         <div class="ss-num"><b id="ss-labst">—</b><span id="ss-bin"></span></div>
@@ -1204,9 +1212,9 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
         <tbody id="docBody"><tr><td colspan="5" class="empty">No documents yet.</td></tr></tbody>
       </table>
 
-      <!-- Depoda ne var. Bos ekrani doldurmaktan cok, konusana soyleyecek
-           malzeme numarasi vermek icin: LABST bir yazmadan sonra degisiyor,
-           yani ayni tablo hem davet hem de kanit. -->
+      <!-- What the warehouse holds. Less to fill an empty screen than to
+           hand the speaker a material number to say: LABST changes after a
+           write, so the same table is both invitation and proof. -->
       <div class="sub">Stock in this plant</div>
       <table class="mini">
         <thead><tr><th>Material</th><th>Description</th><th>Bin</th><th class="num">On hand</th></tr></thead>
@@ -1249,11 +1257,11 @@ const stripEl    = document.getElementById('stockStrip');
 const F = id => document.getElementById(id);
 
 // ---------------------------------------------------------------------------
-// Belge. Sen konustukca doluyor, damgasi durumunu soyluyor.
-// Ekranin anlattigi sey su: onaydan once bu belge YOK.
+// The document. It fills as you speak; its stamp says its state.
+// What the screen is telling you: before confirmation this document does NOT exist.
 // ---------------------------------------------------------------------------
 const EMPTY = '—';
-let lastStock = null;          // { labst, meins } sayarak degistirmek icin
+let lastStock = null;          // { labst, meins } for animating the count
 
 function setField(id, value, fresh = true) {
   const el = F(id);
@@ -1294,8 +1302,8 @@ function clearDoc() {
   dfootEl.textContent = 'Nothing has been requested yet.';
 }
 
-// get_stock sonucu geldiginde belgenin bilinen alanlari dolar.
-// Miktar hala bos: onu yalnizca isci soyleyebilir.
+// When the get_stock result arrives, the document's known fields fill in.
+// Quantity stays empty: only the worker can say that.
 function fillFromStock(r) {
   document.getElementById('lookupMaterial').textContent = r.MAKTX || r.MATNR;
   document.getElementById('lookupLocation').textContent = (r.locations || []).map(l => l.LGPLA || l.LGORT).filter(Boolean).join(' · ') || 'Location unavailable';
@@ -1334,28 +1342,28 @@ function countStock(to, unit) {
 }
 
 // ---------------------------------------------------------------------------
-// Bekleyen yazma seridi
+// The pending-write strip
 // ---------------------------------------------------------------------------
 let postReveal = 0;   // generation guard for the staged POSTED reveal
 function showPending(text) { pendingTxt.textContent = text; pendingEl.hidden = false; }
 function clearPending() { pendingEl.hidden = true; }
 
 function awaitingConfirmation() {
-  // Damga kisa kalmali: belgenin kenarindan tasmasin, ve "NOT POSTED"
-  // zaten soylenmesi gereken en net sey.
+  // The stamp must stay short: it must not overflow the document's edge,
+  // and "NOT POSTED" is the clearest thing to say anyway.
   setStamp('NOT POSTED', 'waiting');
   dfootEl.textContent = 'The worker has not confirmed. No document exists yet.';
   showPending('Awaiting your confirmation — nothing has been written yet');
 }
 
-function showDraftRow(args) {          // yazma ucus halinde
+function showDraftRow(args) {          // the write is in flight
   setField('f-menge', args.quantity ? `${args.quantity}` : EMPTY);
   setStamp('POSTING…', 'posting');
   dfootEl.textContent = 'Checking the confirmed draft. Waiting for the system result.';
 }
 
 // ---------------------------------------------------------------------------
-// Son belgeler
+// Recent documents
 // ---------------------------------------------------------------------------
 async function refreshInventory() {
   const data = await fetch('/api/inventory').then(r => r.json());
@@ -1373,15 +1381,15 @@ async function refreshInventory() {
         <td class="num">${s.LABST} ${s.MEINS}</td></tr>`).join('');
 }
 
-// Saat, tarayicinin yerel saatiyle: belgeye bakan kisiyle ayni duvar saati.
+// The clock is the browser's local time: the same wall clock as the person looking at the document.
 function clock(epoch) {
   return new Date((epoch || Date.now()/1000) * 1000)
     .toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-// Belgeye tiklayinca kokeni acilir: hangi cumle, hangi oturum, hangi saniye.
-// Jurinin "bu belge neden var" sorusunu tiklayarak cevaplayabilmesi icin -
-// ve cevabin sinirini da ayni yerde soylemek icin.
+// Clicking a document opens its origin: which sentence, which session,
+// which second. So a judge can answer "why does this document exist" with
+// a click - and so the answer's limit is stated in the same place.
 docBody.addEventListener('click', async (e) => {
   const row = e.target.closest('tr[data-mblnr]');
   if (!row) return;
@@ -1480,8 +1488,9 @@ function receiveScopedEvent(e) {
     setField('f-menge', `${d.MENGE} ${d.MEINS}`);
     setField('f-maktx', d.MAKTX);
     setField('f-bin', d.LGPLA);
-    // Belge dogrudan geldiginde (get_stock atlanmis olabilir) bu ikisi bos
-    // kaliyordu; belge karti eksik alanla "posted" damgasi tasimamali.
+    // When the document arrives directly (get_stock may have been skipped)
+    // these two stayed empty; a document card must not carry a "posted"
+    // stamp with missing fields.
     if (d.MATNR) setField('f-matnr', String(d.MATNR).padStart(18, '0'));
     if (d.LGORT) setField('f-werks', `${d.WERKS ?? '1000'} / ${d.LGORT}`);
     const when = clock(d.posted_at);
@@ -1519,15 +1528,15 @@ clearDoc();
 refreshInventory();
 
 document.getElementById('resetBtn').onclick = async () => {
-  // Sifirlama artik varsayilan olarak kapali: kimlik istemeyen bir POST,
-  // adresi bilen herkesin demoyu silmesi demekti. Cevabi okumadan ekrani
-  // temizlersek, silinmemis veriyi silinmis gibi gosteririz.
+  // Reset is now off by default: a POST that asks for no identity meant
+  // anyone with the address could wipe the demo. And clearing the screen
+  // without reading the response would show unwiped data as wiped.
   const r = await fetch('/api/reset', { method: 'POST' });
   if (!r.ok) {
-    // 403 ile 401 ayri seyler soyler: biri kapali oldugunu, digeri
-    // tarayicinin sirri tasimadigini. Eskiden ikisine de "GLOVESON_ENABLE_RESET=1
-    // yap" deniyordu - 401 halinde ise yaramayan bir tavsiye, cunku sir
-    // tarayiciya bilerek hic gelmiyor.
+    // 403 and 401 say different things: one that reset is switched off, the
+    // other that the browser does not carry the secret. Both used to get
+    // "set GLOVESON_ENABLE_RESET=1" - useless advice in the 401 case,
+    // because the secret deliberately never reaches the browser.
     append('sys', '', r.status === 403
       ? 'Reset is switched off on this deployment (GLOVESON_ENABLE_RESET).'
       : 'Reset cannot be run from the browser: it needs the shared tool secret, '
@@ -1537,14 +1546,14 @@ document.getElementById('resetBtn').onclick = async () => {
   document.getElementById('log').innerHTML =
     '<div class="msg sys">Demo reset. Stock levels restored.</div>';
   clearDoc();
-  refreshInventory();          // stok tablosu tohum degerlere donsun
-  primerEl.hidden = false;     // ekran yeniden bos: yonergeler geri gelsin
+  refreshInventory();          // return the stock table to its seed values
+  primerEl.hidden = false;     // the screen is empty again: bring the guidance back
 };
 
 // ---------------------------------------------------------------------------
 // Voice Agent WebSocket
 // ---------------------------------------------------------------------------
-const SAMPLE_RATE = 24000;           // API sozlesmesi: PCM16 mono 24 kHz
+const SAMPLE_RATE = 24000;           // the API contract: PCM16 mono 24 kHz
 const WS_URL = 'wss://agents.assemblyai.com/v1/ws';
 
 const logEl    = document.getElementById('log');
@@ -1558,9 +1567,9 @@ let playCtx = null, playCursor = 0, playSources = [];
 let partialEl = null, live = false;
 
 // ---------------------------------------------------------------------------
-// Durum satiri: ne olduğunu ve ne kadar surdugunu birlikte gosterir.
-// Sus degil - tool cagrilarinin gercek suresini olcuyor. NFR'deki gecikme
-// butcesinin "olculen" sutunu buradan doluyor.
+// The status line: shows what is happening and how long it is taking,
+// together. Not decoration - it measures the real duration of tool calls.
+// The "measured" column of the latency budget in the NFR fills from here.
 // ---------------------------------------------------------------------------
 const meterEl = document.getElementById('meter');
 const mctx = meterEl.getContext('2d');
@@ -1586,7 +1595,7 @@ function setStatus(text, on = false, timed = false) {
   dotEl.classList.toggle('on', on);
 }
 
-// Bir tool cagrisi bittiginde suresini kisa sure ekranda tutar.
+// Holds a finished tool call's duration on screen for a moment.
 let holdUntil = 0;
 function setStatusHeld(text) {
   statusLabel = text;
@@ -1594,8 +1603,8 @@ function setStatusHeld(text) {
   holdUntil = performance.now() + 1800;
 }
 
-// Tool cagrisi bitti: gercek suresini kisa sure ekranda tut.
-// Bu sayi, NFR'deki gecikme butcesinin olculen degeri.
+// The tool call ended: keep its real duration on screen briefly.
+// This number is the measured value of the NFR's latency budget.
 function endToolPhase() {
   if (!pendingTool) return;
   const ms = performance.now() - statusSince;
@@ -1626,7 +1635,7 @@ function drawFrame(now) {
   }
   agentLevel *= 0.88;
 
-  // cizim: ajan konusurken onun seviyesi, yoksa mikrofonunki
+  // drawing: the agent's level while it speaks, otherwise the microphone's
   const speaking = agentLevel > 0.02;
   const level = speaking ? agentLevel : micLevel;
   const color = speaking ? '#35d0a5' : (live ? '#4ea3f5' : '#3a4a5c');
@@ -1636,7 +1645,7 @@ function drawFrame(now) {
   mctx.clearRect(0, 0, W, H);
   mctx.fillStyle = color;
   for (let i = 0; i < bars; i++) {
-    // ortadan disa dogru azalan bir profil, ses seviyesiyle olceklenir
+    // a profile tapering from the centre outward, scaled by the audio level
     const shape = 1 - Math.abs(i - (bars - 1) / 2) / ((bars - 1) / 2) * 0.55;
     const h = Math.max(2, level * shape * H * (0.55 + 0.45 * Math.sin(i * 1.7 + now / 90)));
     mctx.fillRect(i * (bw + gap), (H - h) / 2, bw, h);
@@ -1679,11 +1688,11 @@ function base64ToFloat32(b64) {
   return out;
 }
 
-// --- ajanin sesini calma ----------------------------------------------------
-// Tarayicilar AudioContext'i yalnizca bir kullanici hareketi sirasinda
-// calistiriyor. Bu yuzden baglami "Start talking" tiklamasinda kuruyoruz;
-// ilk ses paketi geldiginde kurmak gec kaliyor ve baglam askida basliyor -
-// hicbir sey duyulmuyor.
+// --- playing the agent's voice ----------------------------------------------
+// Browsers only start an AudioContext during a user gesture. So the context
+// is built on the "Start talking" click; building it when the first audio
+// packet arrives is too late - the context starts suspended and nothing is
+// heard.
 async function ensurePlayback() {
   if (!playCtx) playCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
   if (playCtx.state === 'suspended') { try { await playCtx.resume(); } catch {} }
@@ -1713,14 +1722,14 @@ function playChunk(float32) {
 }
 
 function stopPlayback() {
-  // Barge-in: sirada bekleyen sesi sustur. Baglami KAPATMIYORUZ - kapatirsak
-  // bir sonraki cevap icin yeniden kurmak gerekir ve o da askida baslar.
+  // Barge-in: silence the queued audio. We do NOT close the context - closing
+  // it would mean rebuilding it for the next reply, which starts suspended too.
   for (const s of playSources) { try { s.stop(); } catch {} }
   playSources = [];
   playCursor = 0;
 }
 
-// --- mikrofon ---------------------------------------------------------------
+// --- the microphone ---------------------------------------------------------
 const WORKLET = `
 class Cap extends AudioWorkletProcessor {
   process(inputs) {
@@ -1750,7 +1759,7 @@ async function startMic() {
   micAnalyser.fftSize = 512;
   src.connect(micAnalyser);
   src.connect(micNode);
-  micNode.connect(micCtx.destination); // sessiz uc - grafi canli tutar
+  micNode.connect(micCtx.destination); // silent sink - keeps the graph alive
 }
 
 function stopMic() {
@@ -1760,11 +1769,11 @@ function stopMic() {
   if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
 }
 
-// --- oturum -----------------------------------------------------------------
+// --- the session ------------------------------------------------------------
 async function start() {
   setStatus('connecting…');
   talkBtn.disabled = true;
-  await ensurePlayback();   // tiklama hareketi hala gecerliyken sesi ac
+  await ensurePlayback();   // open audio while the click gesture still counts
 
   let token, agentId, scopeToken;
   let scenarioUpdatePending = false;
@@ -1841,8 +1850,8 @@ async function start() {
         await beginMicrophone();
         break;
       case 'input.speech.started':
-        stopPlayback();               // barge-in: ajanin sesini kes
-        // Onay bekleyen bir yazma yoksa eski seridi birakma
+        stopPlayback();               // barge-in: cut the agent's voice
+        // Unless a write is awaiting confirmation, do not leave the old strip up
         if (!pendingTool) clearPending();
         setStatus('listening to you', true);
         break;
@@ -1864,7 +1873,7 @@ async function start() {
         append('tool', '', `\u2192 ${m.name}(${JSON.stringify(args)})`);
         pendingTool = m.name;
         setStatus(TOOL_LABEL[m.name] ?? m.name, true, true);
-        // Yazma isleminde niyeti ekranda goster: henuz hicbir sey yazilmadi.
+        // On a write, show the intent on screen: nothing has been written yet.
         if (m.name === 'post_goods_receipt') {
           showDraftRow(args);
           showPending('Writing to the ERP \u2014 not committed until the system confirms');
@@ -1888,7 +1897,7 @@ async function start() {
         const text = m.text ?? '';
         append('agent', 'gloveson', text);
         endToolPhase();
-        // Ajan onay istiyorsa belgeyi "onay bekliyor" durumuna al.
+        // If the agent asks for confirmation, move the document to "awaiting confirmation".
         // Confirmation state comes from the server draft, not transcript guessing.
         break;
       }
@@ -1960,9 +1969,10 @@ const scenarios = {
 };
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 // Load the interactive character independently from the voice application.
-// 3D karakter SADECE bir goreve girildiginde yukleniyor. Acilis sayfasinda
-// duruyordu: 8 MB GLB + 700 KB hareket + three.js, yani ilk ekran 68 KB'lik
-// bir gorsel yerine 10 MB odüyordu. Buraya gelen zaten ilgilenmis biri.
+// The 3D character loads ONLY once a task is entered. It used to sit on the
+// landing page: 8 MB of GLB + 700 KB of motion + three.js, so the first
+// screen paid 10 MB instead of a 68 KB image. Whoever gets this far is
+// already interested.
 let avatarLoaded = false;
 function loadAvatar() {
   if (avatarLoaded) return;
@@ -1970,14 +1980,15 @@ function loadAvatar() {
   import('/assets/avatar/character.js?v=36').catch(() => {});
 }
 
-// Indirmeyi tiklamaya baglamak karakteri lobiye gec getiriyordu: 4 MB'lik
-// indirme ancak "vardiyaya basla" dendiginde basliyor, kisi de bos bir odaya
-// bakiyordu. Simdi acilis sayfasi cizildikten SONRA, tarayici bostayken
-// onbellege aliniyor - ilk ekran hala 68 KB odüyor, lobi ise hazir aciliyor.
+// Tying the download to the click brought the character into the lobby
+// late: the 4 MB download only started at "start the shift", and the person
+// looked at an empty room. Now it is cached AFTER the landing page has
+// painted, while the browser is idle - the first screen still pays 68 KB,
+// and the lobby opens ready.
 function warmAvatar() {
-  // Modul grafiginin TAMAMI sayilmali: character.js'e modulepreload vermek
-  // bagimliliklarini getirmiyor, ve asil agirlik onlarda - three.core.js tek
-  // basina tiklamadan sonra 3.3 saniye indiriyordu.
+  // The WHOLE module graph counts: a modulepreload on character.js does not
+  // fetch its dependencies, and the real weight is in those - three.core.js
+  // alone took 3.3 seconds to download after the click.
   const assets = [
     ['prefetch', '/assets/avatar/worker.glb?v=2'],
     ['prefetch', '/assets/avatar/motions.json?v=4'],
@@ -2174,9 +2185,9 @@ function applyWarehouseRoute() {
   }
 }
 function enterWarehouseArea(key) {
-  // Karakter secilen alana yuruyor; ekran o yurumeyi bitirdikten sonra
-  // degisiyor. Once ekrani degistirip arkasindan yurutmek, hareketi
-  // gorunmez kilardi - is zaten bitmis olurdu.
+  // The character walks to the chosen area; the screen changes after that
+  // walk finishes. Changing the screen first and walking afterwards would
+  // make the motion invisible - the work would already be done.
   const transition = ++areaTransition;
   const walk = window.gloveson?.avatarWalkTo?.(key);
   if (walk) {

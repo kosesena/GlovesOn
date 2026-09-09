@@ -1,8 +1,9 @@
 """
-Zemin duz degil, radyal bir vinyet. Kenar serisinden 2. derece bir yuzey
-uydurup her pikselde beklenen zemin rengini kestiriyoruz; figur o yuzeyden
-uzaklastigi icin ayrisiyor. Sonra kenarlardan bagli bilesen aliniyor ki
-figurun uzerindeki bej tonlar (karton kutu) silinmesin.
+The backdrop is not flat, it is a radial vignette. We fit a 2nd-degree
+surface to the border ring and estimate the expected backdrop colour at
+every pixel; the figure separates because it departs from that surface.
+Then the connected component reached from the edges is taken, so the beige
+tones on the figure itself (the cardboard box) do not get erased.
 """
 import os
 import sys
@@ -59,5 +60,5 @@ out = Image.fromarray(np.dstack([a[:, :, :3], alpha]))
 out.putalpha(out.split()[3].filter(ImageFilter.GaussianBlur(1.0)))
 out.save(out_path, optimize=True)
 ys, xs = np.where(alpha > 12)
-print(f"seffaf {100 * visited.mean():.1f}% · figur {xs.max()-xs.min()}x{ys.max()-ys.min()}"
+print(f"transparent {100 * visited.mean():.1f}% · figure {xs.max()-xs.min()}x{ys.max()-ys.min()}"
       f" · {os.path.getsize(out_path) // 1024} KB")
