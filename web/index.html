@@ -170,7 +170,8 @@
   }
 
   /* Audio level */
-  #meter { width: 54px; height: 18px; display: block; }
+  #meter { font-size:48px; width:.72em; height:.75em; color:var(--green, #244c38); }
+  #meter i { animation:none; transition:transform 90ms ease-out; }
 
   /* ---- The document-centred right panel -----------------------------------
      The hero is the material document. White paper sits on a dark terminal:
@@ -1025,7 +1026,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 #warehouseWork .console-wrap header {padding:14px 22px;gap:10px 12px;}
 #warehouseWork #talkBtn {min-height:44px;padding:10px 20px;font-size:15px;border-radius:24px;}
 #warehouseWork #meter {display:none;}
-#warehouseWork header:has(#talkBtn.live) #meter {display:block;}
+#warehouseWork header:has(#talkBtn.live) #meter {display:inline-flex;}
 #warehouseWork #dot {width:7px;height:7px;background:#42925b;box-shadow:0 0 0 3px #42925b18,0 0 8px #42925b55;}
 #warehouseWork #dot.on {background:#2d9b50;box-shadow:0 0 0 4px #2d9b5020,0 0 12px #2d9b5070;}
 #warehouseWork #dot[data-state="error"] {background:#b54b35;box-shadow:none;}
@@ -1062,6 +1063,23 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
  #receivingIntro .screen { width:calc(100dvh - 170px); align-self:center; }
  #receivingIntro footer p { font-size:14px; }
 }
+
+/* Neutral work surfaces keep actions, records and conversation distinct. */
+#warehouseWork .console-wrap {--text:#292b28;--muted:#666760;--line:#dedbd3;--panel:#f1eee7;--panel-2:#f6f4ef;background:#fcfaf6;color:var(--text);border-color:var(--line);}
+#warehouseWork .console-wrap header {background:#f0ece3;border-bottom:1px solid #dedbd3;}
+#warehouseWork .right {background:#fff;}
+#warehouseWork #warehouseBrief {background:#faf7f0;border:1px solid #e1dcd1;}
+#warehouseWork #warehouseBriefText,#warehouseWork .result-hint,#warehouseWork .status,#warehouseWork .pr-lead,#warehouseWork .hint {color:#62635d;}
+#warehouseWork .tables .sub {background:#fff;color:#70695b;border:0;padding-top:24px;padding-bottom:12px;}
+#warehouseWork table {color:#30332e;background:#fff;}
+#warehouseWork table th {background:#edeae3;color:#5b5b53;border-color:#d9d5cb;}
+#warehouseWork table td {border-color:#e6e2da;}
+#warehouseWork table tbody tr:nth-child(even) {background:#f8f6f1;}
+#warehouseWork table.mini tr.clickable:hover td,#warehouseWork table.mini tr.open td {background:#eee7db;}
+#warehouseWork .console-wrap main>section:first-child {border-color:#dedbd3;}
+#warehouseWork .msg.user {background:#eeeae2;border-color:#dcd7cd;color:#30332e;}
+#warehouseWork .stockstrip {background:#f0eee8;color:#30332e;border-color:#dedbd3;}
+
 </style>
 </head>
 <body>
@@ -1146,7 +1164,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
   <!-- Stamped from the shared #aai-light symbol defined at the top of body. -->
   <div class="voice-credit">VOICE BY <svg class="aai-mark" role="img" aria-label="AssemblyAI"><use href="#aai-light"/></svg></div>
   <div class="spacer"></div>
-  <canvas id="meter" width="108" height="36" aria-hidden="true"></canvas>
+  <span id="meter" class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
   <div class="dot" id="dot"></div>
   <div class="status" id="status">idle</div>
 
@@ -1572,7 +1590,8 @@ let partialEl = null, live = false;
 // The "measured" column of the latency budget in the NFR fills from here.
 // ---------------------------------------------------------------------------
 const meterEl = document.getElementById('meter');
-const mctx = meterEl.getContext('2d');
+const meterBars = [...meterEl.querySelectorAll('i')];
+const reducedVoiceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 let statusLabel = 'Ready to listen', statusOn = false, statusSince = 0, statusTimed = false;
 let micLevel = 0, agentLevel = 0;
@@ -1635,21 +1654,13 @@ function drawFrame(now) {
   }
   agentLevel *= 0.88;
 
-  // drawing: the agent's level while it speaks, otherwise the microphone's
-  const speaking = agentLevel > 0.02;
-  const level = speaking ? agentLevel : micLevel;
-  const color = speaking ? '#35d0a5' : (live ? '#4ea3f5' : '#3a4a5c');
-
-  const W = meterEl.width, H = meterEl.height, bars = 9, gap = 3;
-  const bw = (W - gap * (bars - 1)) / bars;
-  mctx.clearRect(0, 0, W, H);
-  mctx.fillStyle = color;
-  for (let i = 0; i < bars; i++) {
-    // a profile tapering from the centre outward, scaled by the audio level
-    const shape = 1 - Math.abs(i - (bars - 1) / 2) / ((bars - 1) / 2) * 0.55;
-    const h = Math.max(2, level * shape * H * (0.55 + 0.45 * Math.sin(i * 1.7 + now / 90)));
-    mctx.fillRect(i * (bw + gap), (H - h) / 2, bw, h);
-  }
+  // Match the landing's five rounded bars, responding to the active speaker.
+  const level = Math.max(agentLevel, micLevel);
+  meterBars.forEach((bar, i) => {
+    const pulse = .65 + .35 * Math.sin(now / 210 + [0, .4, .8, .2, .6][i] * Math.PI);
+    const scale = reducedVoiceMotion.matches ? .7 : Math.min(1, .35 + level * 1.8 * pulse);
+    bar.style.transform = `scaleY(${scale})`;
+  });
   requestAnimationFrame(drawFrame);
 }
 requestAnimationFrame(drawFrame);
