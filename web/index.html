@@ -1843,7 +1843,10 @@ function drawFrame(now) {
 requestAnimationFrame(drawFrame);
 
 let userTurnEl = null, userTurnText = '';
-function finishUserTurn() { userTurnEl = null; userTurnText = ''; }
+function finishUserTurn() {
+  userTurnEl?.classList.remove('partial');
+  userTurnEl = null; userTurnText = '';
+}
 function updateUserTranscript(text, final) {
   const fragment = String(text || '').trim();
   if (!fragment) return;
@@ -2175,15 +2178,15 @@ async function start() {
       }
 
       case 'reply.audio':
-        finishUserTurn();
         if (m.data ?? m.audio) playChunk(base64ToFloat32(m.data ?? m.audio));
         endToolPhase();
         setStatus('agent speaking', true);
         break;
 
       case 'transcript.agent': {
+        const text = (m.text ?? '').trim();
+        if (!text) break;
         finishUserTurn();
-        const text = m.text ?? '';
         append('agent', 'gloveson', text);
         endToolPhase();
         // If the agent asks for confirmation, move the document to "awaiting confirmation".
