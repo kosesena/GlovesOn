@@ -179,40 +179,46 @@
   #meter i { animation:none; transition:transform 90ms ease-out; }
   @media(prefers-reduced-motion:reduce) { #meter, #meter.agent-speaking { font-size:58px; transition:none; } }
 
-  /* The orb. The five bars stay the brand mark on the landing — this is the
-     working screen, where the only question is "is it my turn or its turn?",
-     and a shape that breathes answers it faster than a label. Everything is
-     em-based like the wave, so size is one property. --lvl is written by the
-     draw loop; the two drifting gradient layers are what keep it from
-     reading as a plain pulsing circle. */
+  /* A cloud-like voice surface: a fixed footprint with flowing colour inside. */
   .voice-orb {
-    --lvl:0; --hue:#2f8f5e; --core:#7fd6a2;
-    position:relative; flex:none; display:none; font-size:62px;
-    width:1em; height:1em; border-radius:50%; isolation:isolate;
-    background:radial-gradient(circle at 36% 28%, var(--core), var(--hue) 52%, color-mix(in srgb, var(--hue) 72%, #0d3324) 92%);
-    box-shadow:0 0 calc(.08em + var(--lvl) * .34em) rgba(45,155,80,calc(.22 + var(--lvl) * .5)),
-               inset 0 0 .2em rgba(255,255,255,.32);
-    transform:scale(calc(1 + var(--lvl) * .17));
-    transition:transform 90ms ease-out, font-size .3s cubic-bezier(.2,.9,.3,1),
-               background .3s ease, box-shadow .12s ease-out;
+    --lvl:0; position:relative; flex:none; display:none;
+    width:112px; height:112px; border-radius:50%; isolation:isolate; overflow:hidden;
+    background:#f8fcff;
+    box-shadow:0 0 24px #8cc9ef26;
+    transform:scale(calc(.88 + var(--lvl) * .12));
+    transition:transform 160ms ease-out,opacity .4s;
+    -webkit-mask-image:radial-gradient(circle,#000 63%,#000b 68%,transparent 72%);
+    mask-image:radial-gradient(circle,#000 63%,#000b 68%,transparent 72%);
   }
-  .voice-orb:before, .voice-orb:after {
-    content:''; position:absolute; inset:0; border-radius:inherit;
-    background:radial-gradient(circle at 68% 70%, rgba(226,255,238,.85), transparent 48%);
-    filter:blur(.085em); animation:orb-drift 7s linear infinite;
+  .voice-orb:before,.voice-orb:after {
+    content:''; position:absolute; inset:-28%; border-radius:44%;
+    background:radial-gradient(ellipse at 25% 68%,#258bd9 0%,#67c8f1 21%,transparent 49%),
+      radial-gradient(ellipse at 76% 64%,#7ba9ed 0%,#c1e8fa 28%,transparent 53%),
+      radial-gradient(ellipse at 50% 18%,#fff 0%,#fff 24%,transparent 57%);
+    filter:blur(8px); animation:orb-cloud 9s ease-in-out infinite alternate;
+    opacity:calc(.65 + var(--lvl) * .3);
   }
   .voice-orb:after {
-    background:radial-gradient(circle at 24% 72%, rgba(140,236,190,.7), transparent 52%);
-    filter:blur(.11em); animation-duration:11.5s; animation-direction:reverse;
+    inset:-15%; mix-blend-mode:multiply;
+    background:radial-gradient(ellipse at 30% 70%,#63a7ef 0%,transparent 46%),
+      radial-gradient(ellipse at 78% 38%,#a8e4f5 0%,transparent 50%);
+    animation:orb-cloud-back 12s ease-in-out infinite alternate;
   }
-  .voice-orb.agent-speaking { font-size:118px; }
-  /* The worker's turn is a colder orb — the same shape, unmistakably not the
-     machine's voice. */
-  .voice-orb.listening { --hue:#2f6f9f; --core:#8fc9ef; }
-  @keyframes orb-drift { to { transform:rotate(360deg); } }
+  .voice-orb.agent-speaking:before {animation-duration:3.8s;}
+  .voice-orb.agent-speaking:after {animation-duration:5.5s;}
+  .voice-orb.listening {opacity:.82;}
+  @keyframes orb-cloud {
+    0% {transform:translate(-5%,8%) rotate(-25deg) scale(.95);}
+    50% {transform:translate(8%,-4%) rotate(45deg) scale(1.1);}
+    100% {transform:translate(-3%,-8%) rotate(120deg) scale(1.02);}
+  }
+  @keyframes orb-cloud-back {
+    0% {transform:translate(7%,-6%) rotate(20deg) scale(1.1);}
+    100% {transform:translate(-9%,8%) rotate(-140deg) scale(.92);}
+  }
   @media(prefers-reduced-motion:reduce) {
-    .voice-orb, .voice-orb.agent-speaking { font-size:62px; transform:none; transition:none; }
-    .voice-orb:before, .voice-orb:after { animation:none; }
+    .voice-orb {transform:none;transition:none;}
+    .voice-orb:before,.voice-orb:after {animation:none;}
   }
 
   /* ---- The document-centred right panel -----------------------------------
