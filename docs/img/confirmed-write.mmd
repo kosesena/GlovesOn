@@ -6,13 +6,12 @@
 %% carries no such overlay. The cost is that the picture no longer regenerates
 %% itself when this file changes — re-render both themes after editing:
 %%
-%%   npx -y @mermaid-js/mermaid-cli -i docs/img/confirmed-write.mmd \
-%%     -o docs/img/confirmed-write-light.svg -t default -b transparent
-%%   (and the same with -t dark for the dark one)
+%%   python3 docs/img/render_sequence.py
 %%
-%% The committed files were rendered in a browser and carry explicit pixel
-%% width and height, which an <img> needs to size itself; mermaid-cli emits
-%% width="100%%", so set the dimensions by hand if you regenerate that way.
+%% That script owns the palette, the two colour schemes and the pixel dimensions
+%% an <img> needs. Do not call mermaid-cli directly: its defaults are a generic
+%% blue-and-lilac that belongs to no product, and the width it emits is "100%%",
+%% which an <img> cannot size itself from.
 
 sequenceDiagram
     autonumber

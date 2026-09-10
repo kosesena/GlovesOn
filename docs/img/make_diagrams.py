@@ -16,26 +16,34 @@ from pathlib import Path
 W, H = 1120, 430
 VIEW = "0 34 1120 388"
 
+# The product's own palette, not a diagramming default. Tokens are the ones in
+# docs/design-system.html; if they move there, they move here. The gateway is the
+# dark green of the primary action and of its node on /how-it-works, so a reader
+# who has seen either recognises the box without reading it. Orange is reserved
+# for the thing in motion — the packets, and the voice wave.
 LIGHT = dict(
     name="light",
-    node_text="#0f172a", sub="#475569", wire="#94a3b8", label="#475569",
-    ext_fill="#f5f3ff", ext_stroke="#7c3aed", ext_text="#2e1065",
-    gw_fill="#dbeafe", gw_stroke="#2563eb", gw_text="#0b1b33",
-    erp_fill="#dcfce7", erp_stroke="#16a34a", erp_text="#052e16",
-    ui_fill="#f1f5f9", ui_stroke="#64748b", ui_text="#0f172a",
-    packet="#2563eb", glow="#2563eb",
+    node_text="#20241f", sub="#5c6552", wire="#bcae92", label="#5c6552",
+    ext_fill="#fffdf7", ext_stroke="#d8cdb6", ext_text="#20241f",
+    hub_stroke="#ce5428",
+    gw_fill="#244b35", gw_stroke="#1a3728", gw_text="#f7f1e4", gw_sub="#a9c4b3",
+    erp_fill="#eef1e6", erp_stroke="#7f8c72", erp_text="#20241f",
+    ui_fill="#f4ead6", ui_stroke="#d8cdb6", ui_text="#20241f",
+    packet="#ce5428", glow="#ce5428", wave="#ce5428",
 )
 DARK = dict(
     name="dark",
-    node_text="#e2e8f0", sub="#94a3b8", wire="#475569", label="#94a3b8",
-    ext_fill="#221049", ext_stroke="#a78bfa", ext_text="#ede9fe",
-    gw_fill="#0b2545", gw_stroke="#60a5fa", gw_text="#dbeafe",
-    erp_fill="#052e16", erp_stroke="#4ade80", erp_text="#dcfce7",
-    ui_fill="#1e293b", ui_stroke="#94a3b8", ui_text="#e2e8f0",
-    packet="#60a5fa", glow="#60a5fa",
+    node_text="#edf1e8", sub="#a1ada3", wire="#445046", label="#a1ada3",
+    ext_fill="#19201c", ext_stroke="#344039", ext_text="#edf1e8",
+    hub_stroke="#e96935",
+    gw_fill="#1e3a2b", gw_stroke="#b9edc9", gw_text="#edf1e8", gw_sub="#a9c4b3",
+    erp_fill="#222c25", erp_stroke="#648e71", erp_text="#edf1e8",
+    ui_fill="#19201c", ui_stroke="#344039", ui_text="#edf1e8",
+    packet="#b9edc9", glow="#b9edc9", wave="#edba72",
 )
 
 FONT = "system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif"
+MONO = "ui-monospace,'SF Mono',Menlo,Consolas,monospace"
 
 
 def box(x, y, w, h, fill, stroke, sw=2, rx=14):
@@ -43,9 +51,39 @@ def box(x, y, w, h, fill, stroke, sw=2, rx=14):
             f'fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>')
 
 
-def text(x, y, s, fill, size=16, weight="600", anchor="middle"):
-    return (f'<text x="{x}" y="{y}" font-family="{FONT}" font-size="{size}" '
-            f'font-weight="{weight}" fill="{fill}" text-anchor="{anchor}">{s}</text>')
+def text(x, y, s, fill, size=16, weight="600", anchor="middle", family=FONT, extra=""):
+    return (f'<text x="{x}" y="{y}" font-family="{family}" font-size="{size}" '
+            f'font-weight="{weight}" fill="{fill}" text-anchor="{anchor}"{extra}>{s}</text>')
+
+
+def voice_wave(cx, cy, height, colour, bar=2.2, gap=1.5):
+    """The five-bar mark from the hero, in SVG, moving the way the CSS moves it.
+
+    `.voice-wave i` scales each bar on Y about its own centre. SMIL has no
+    transform-origin, so the same motion is written as a paired y/height
+    animation instead. The ratios, the 1.3s period, the ease-in-out and the
+    negative delays are the stylesheet's — negative so the bars are already out
+    of step in the first frame, rather than starting together and drifting apart.
+    """
+    ratios = (0.35, 0.65, 0.95, 0.65, 0.35)
+    delays = ("0s", "-0.4s", "-0.8s", "-0.2s", "-0.6s")
+    ease = "0.42 0 0.58 1;0.42 0 0.58 1"
+    span = 5 * bar + 4 * gap
+    out = []
+    for i, (ratio, delay) in enumerate(zip(ratios, delays, strict=True)):
+        x = cx - span / 2 + i * (bar + gap)
+        hi = height * ratio / 2          # half-height at full scale
+        lo = hi * 0.35
+        keys = (f'dur="1.3s" begin="{delay}" repeatCount="indefinite" calcMode="spline" '
+                f'keyTimes="0;0.5;1" keySplines="{ease}"')
+        out.append(
+            f'<rect x="{x:.2f}" y="{cy - lo:.2f}" width="{bar}" height="{lo * 2:.2f}" '
+            f'rx="{bar / 2}" fill="{colour}">'
+            f'<animate attributeName="y" {keys} '
+            f'values="{cy - lo:.2f};{cy - hi:.2f};{cy - lo:.2f}"/>'
+            f'<animate attributeName="height" {keys} '
+            f'values="{lo * 2:.2f};{hi * 2:.2f};{lo * 2:.2f}"/></rect>')
+    return "\n  ".join(out)
 
 
 def wire(path, c, label=None, lx=0, ly=0, dur="2.6s", delay="0s"):
@@ -69,7 +107,10 @@ def wire(path, c, label=None, lx=0, ly=0, dur="2.6s", delay="0s"):
         f'dur="{dur}" begin="{delay}" repeatCount="indefinite"/></circle>',
     ]
     if label:
-        out.append(text(lx, ly, label, c["label"], size=13, weight="500"))
+        # Mono for the wire captions, as on the site, where the small
+        # letter-spaced monospace is what marks a machine-to-machine detail.
+        out.append(text(lx, ly, label, c["label"], size=11, weight="500",
+                        family=MONO, extra=' letter-spacing="0.04em"'))
     return "\n  ".join(out)
 
 
@@ -107,20 +148,23 @@ def build(c):
               "M 500,296 L 608,296", "M 872,246 L 922,152", "M 872,318 L 922,323"):
         p.append(f'<path d="{d}" fill="none" stroke="{c["wire"]}" stroke-width="2" marker-end="url(#a)"/>')
 
-    # the worker
+    # the worker — carrying the hero's own mark, because this is the one box
+    # where something is actually being said
     p.append(box(24, 258, 160, 76, c["ui_fill"], c["ui_stroke"]))
-    p.append(text(104, 290, "Worker", c["ui_text"], 16))
+    p.append(text(97, 290, "Worker", c["ui_text"], 16))
+    p.append(voice_wave(139, 285, 17, c["wave"]))
     p.append(text(104, 312, "gloves on, hands full", c["sub"], 12, "500"))
 
-    # AssemblyAI
+    # AssemblyAI — deliberately the plainest box on the page. It holds nothing.
     p.append(box(240, 50, 260, 110, c["ext_fill"], c["ext_stroke"]))
     p.append(text(370, 84, "AssemblyAI", c["ext_text"], 17))
     p.append(text(370, 106, "Voice Agent API", c["ext_text"], 17))
     p.append(text(370, 132, "STT · turns · LLM · TTS", c["sub"], 13, "500"))
     p.append(text(370, 150, "no URL of ours, no secret", c["sub"], 12, "500"))
 
-    # the browser — the hub, because the tool call lands here
-    p.append(box(240, 240, 260, 112, c["ext_fill"], c["ext_stroke"]))
+    # the browser — the hub, because the tool call lands here. Orange edge: it is
+    # the part of this picture that changed.
+    p.append(box(240, 240, 260, 112, c["ext_fill"], c["hub_stroke"], sw=2.5))
     p.append(text(370, 274, "Browser", c["ext_text"], 17))
     p.append(text(370, 300, "mic · PCM16 24 kHz", c["sub"], 13, "500"))
     p.append(text(370, 320, "relays the tool call", c["sub"], 13, "500"))
@@ -134,18 +178,20 @@ def build(c):
              f'<animate attributeName="opacity" values="0;0.55;0" dur="3.4s" repeatCount="indefinite"/>'
              f'<animate attributeName="stroke-width" values="3;9;3" dur="3.4s" repeatCount="indefinite"/></rect>')
     p.append(text(743, 232, "GlovesOn Gateway", c["gw_text"], 17))
-    p.append(text(743, 253, "FastAPI", c["sub"], 13, "500"))
+    p.append(text(743, 253, "FastAPI", c["gw_sub"], 13, "500"))
     p.append(text(743, 284, "/api/voice-tools/* · allow-list", c["gw_text"], 13, "500"))
     p.append(text(743, 306, "/erp/* · the shared secret", c["gw_text"], 13, "500"))
     p.append(text(743, 328, "draft protocol · duplicate guard", c["gw_text"], 13, "500"))
     p.append(text(743, 350, "spoken read-back · audit", c["gw_text"], 13, "500"))
 
-    # S/4HANA cylinder
+    # S/4HANA cylinder. Dashed on purpose, the same way /how-it-works dashes it:
+    # everything else in this picture is real code, and this one is a stand-in.
     cx, cy, cw, ch = 922, 66, 154, 116
     p.append(f'<path d="M{cx},{cy+16} a{cw/2},16 0 0,1 {cw},0 v{ch-32} a{cw/2},16 0 0,1 -{cw},0 z" '
-             f'fill="{c["erp_fill"]}" stroke="{c["erp_stroke"]}" stroke-width="2"/>')
+             f'fill="{c["erp_fill"]}" stroke="{c["erp_stroke"]}" stroke-width="2" '
+             f'stroke-dasharray="7 5"/>')
     p.append(f'<path d="M{cx},{cy+16} a{cw/2},16 0 0,0 {cw},0" fill="none" '
-             f'stroke="{c["erp_stroke"]}" stroke-width="2"/>')
+             f'stroke="{c["erp_stroke"]}" stroke-width="2" stroke-dasharray="7 5"/>')
     p.append(text(cx + cw / 2, cy + 62, "S/4HANA", c["erp_text"], 17))
     p.append(text(cx + cw / 2, cy + 84, "OData + CSRF", c["sub"], 13, "500"))
     p.append(text(cx + cw / 2, cy + 102, "mock today", c["sub"], 12, "500"))
