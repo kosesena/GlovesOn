@@ -1145,6 +1145,34 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 #warehouseWork #log .who {font-size:10px;letter-spacing:.09em;color:#7c8078;margin-bottom:3px;}
 #warehouseWork #log .msg.tool {display:none;}
 #warehouseWork #log .msg.sys {font-size:13px;color:#8a542e;}
+/* Soft moving light stays behind the conversation and never intercepts input. */
+#warehouseWork #log {
+  border-radius:24px;
+  background-size:160% 180%,180% 160%;
+  background-position:0% 50%,100% 50%;
+  background-repeat:no-repeat;
+  background-color:transparent;
+  background-blend-mode:normal;
+  background-image:none;
+  transition:box-shadow .5s ease;
+}
+@media (hover:hover) and (pointer:fine) {
+  #warehouseWork #log:hover {
+    background-image:radial-gradient(ellipse at 25% 50%,#c9eaff80,transparent 62%),
+      radial-gradient(ellipse at 75% 50%,#ded4ff70,transparent 62%);
+    box-shadow:0 0 28px #c9eaff35;
+    animation:conversation-light-wave 5s ease-in-out infinite alternate;
+  }
+  #warehouseWork #log:hover .conversation-empty {color:#42658b;transition:color .4s ease;}
+}
+@keyframes conversation-light-wave {
+  from {background-position:0% 25%,100% 75%;}
+  to {background-position:100% 75%,0% 25%;}
+}
+@media (prefers-reduced-motion:reduce) {
+  #warehouseWork #log:hover {animation:none;}
+  #warehouseWork #log,#warehouseWork #log:hover .conversation-empty {transition:none;}
+}
 #warehouseWork .conversation-empty {color:#777970;font-size:16px;text-align:center;margin:auto;}
 #warehouseWork #resetBtn {margin:12px 24px 20px;}
 @media(max-width:650px) {#warehouseWork .console-wrap #conversationDetails {padding:4px 12px 12px;}#warehouseWork #log .msg {font-size:16px;}}
