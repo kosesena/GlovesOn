@@ -168,7 +168,7 @@ async function start() {
     }
     bubble = document.createElement('p');
     bubble.className = 'avatar-line';
-    bubble.textContent = 'Pick an area — I’ll meet you there.';
+    bubble.textContent = 'Pick a spot.\nI’ll meet you there.';
     hero.append(bubble);
     greet = document.createElement('button'); greet.className = 'avatar-greet';
     greet.setAttribute('aria-label', 'Say hello to your warehouse guide');
@@ -256,7 +256,7 @@ async function start() {
         if (idleVariant === 1 && bones.Head) bones.Head.rotation.y += gesture * .18;
         if (idleVariant === 2 && bones.Head) bones.Head.rotation.x += gesture * .08;
         const answering = idleVariant === 0 && gesture > .8;
-        bubble.textContent = answering ? (greetingIsWave ? 'Hi there!' : 'Okay!') : 'Pick an area — I’ll meet you there.';
+        bubble.textContent = answering ? (greetingIsWave ? 'Hi there!' : 'Okay!') : 'Pick a spot.\nI’ll meet you there.';
         bubble.classList.toggle('is-speaking', answering);
         if (answering && !greetingIsWave && bones.Head) bones.Head.rotation.x += Math.sin(elapsed * 10) * .018;
         actor.position.y = Math.sin(elapsed * 1.6) * .006;
@@ -278,7 +278,7 @@ async function start() {
           applyTouch(envelope);
         }
         const answering = t > .75 && t < 2;
-        bubble.textContent = answering ? (greetingIsWave ? 'Hi there!' : 'Okay!') : 'Pick an area — I’ll meet you there.';
+        bubble.textContent = answering ? (greetingIsWave ? 'Hi there!' : 'Okay!') : 'Pick a spot.\nI’ll meet you there.';
         bubble.classList.toggle('is-speaking', answering);
         if (answering && !greetingIsWave && bones.Head) bones.Head.rotation.x += Math.sin(t * 10) * .018;
         if (bones.Head) bones.Head.rotation.x += Math.sin(Math.min(1, t / greetingDuration) * Math.PI) * .06;
