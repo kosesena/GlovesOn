@@ -47,6 +47,15 @@ def test_every_erp_route_refuses_an_unauthenticated_caller(client):
         # drafts is a stranger halfway to a posting, so they answer 401 too.
         ("POST", "/erp/prepare-goods-receipt", {"material": "4711", "quantity": 20}),
         ("POST", "/erp/prepare-reversal", {"document": "4900000000"}),
+        ("GET", "/erp/colleagues?query=Alex", None),
+        ("GET", "/erp/communications", None),
+        ("POST", "/erp/follow-up-options", {"reason": "Eight pieces are missing."}),
+        ("POST", "/erp/prepare-email", {"colleague_id": "alex", "subject": "Delivery", "body": "Twelve arrived."}),
+        ("POST", "/erp/send-email", {"colleague_id": "alex", "subject": "Delivery", "body": "Twelve arrived."}),
+        ("POST", "/erp/prepare-call", {"colleague_id": "alex", "purpose": "Delivery"}),
+        ("POST", "/erp/send-call", {"colleague_id": "alex", "purpose": "Delivery"}),
+        ("POST", "/erp/prepare-note", {"title": "Delivery", "body": "Twelve arrived."}),
+        ("POST", "/erp/send-note", {"title": "Delivery", "body": "Twelve arrived."}),
     ]
     routed = {r.path for r in client.app.routes if getattr(r, "path", "").startswith("/erp/")}
     assert routed == {p.split("?")[0] for _, p, _ in calls}, (
