@@ -29,7 +29,7 @@ async function start() {
     renderer.domElement.setAttribute('aria-hidden', 'true');
     renderer.domElement.addEventListener('webglcontextlost', fallback);
     const [gltf, data] = await Promise.all([
-      new GLTFLoader().loadAsync('/assets/avatar/worker.glb?v=2'),
+      new GLTFLoader().loadAsync('/assets/avatar/worker-fingers.glb?v=1'),
       fetch('/assets/avatar/motions.json?v=4').then(r => { if (!r.ok) throw Error('Motion unavailable'); return r.json(); })
     ]);
     if (reduced.matches) { renderer.dispose(); loaded = false; return; }
@@ -274,11 +274,22 @@ async function start() {
           const lift = progress ** 3 * (progress * (progress * 6 - 15) + 10);
           // Raise the hand along the fitted headset path, then greet beside the ear.
           applyTouch(lift);
+          if (bones.RightHand) bones.RightHand.rotateY(-.65 * lift);
+          // Open the glove gently; each finger now has three skinning joints.
+          const spread = {Thumb: -.22, Index: -.12, Middle: -.025, Ring: .065, Pinky: .16};
+          for (const [finger, angle] of Object.entries(spread)) {
+            const root = bones[`Right${finger}1`];
+            if (root) root.rotateZ(angle * lift);
+            for (let joint = 2; joint <= 3; joint++) {
+              const bone = bones[`Right${finger}${joint}`];
+              if (bone) bone.rotateX(-.09 * lift);
+            }
+          }
           const hold = (t - WAVE.rise) / WAVE.hold;
           if (hold > 0 && hold < 1 && bones.RightHand) {
             // Two small wrist sweeps with a zero-velocity entrance and exit.
             const soften = Math.sin(Math.PI * hold) ** 2;
-            bones.RightHand.rotateZ(Math.sin(hold * Math.PI * 4) * .10 * soften);
+            bones.RightHand.rotateZ(Math.sin(hold * Math.PI * 4) * .18 * soften);
           }
         } else {
           // Keep the fitted headset path separate from the waving arm clip.

@@ -961,6 +961,14 @@ body > #how:target { max-width:1240px; gap:20px; padding-top:24px; padding-botto
 @media(prefers-reduced-motion:reduce) { .how-story *, .how-story-details:not([hidden]) { animation:none!important; transition:none!important; } }
 @media(max-width:900px) { body > #how:target { grid-template-columns:1fr; max-width:560px; } .how-story-stage { height:390px; } }
 
+.delivery-canvas { position:absolute; inset:0; pointer-events:none; }
+.delivery-canvas canvas { width:100%; height:100%; display:block; }
+.delivery-story .how-story-play { transform:none!important; }
+.delivery-story.is-arriving .how-story-play > .warehouse-art,.delivery-story.is-close .how-story-play > .warehouse-art { opacity:0; }
+.delivery-story .how-story-cue { position:absolute; bottom:16px; left:0; right:0; pointer-events:none; }
+.delivery-story.is-arriving .how-story-cue,.delivery-story.is-close .how-story-cue { opacity:0; }
+.delivery-story .how-story-details { transform:none; opacity:0; transition:opacity .5s ease; }
+.delivery-story.is-flipped .how-story-details { opacity:1; }
 /* Depth poster: the headline's first two lines pass behind the figure and
    "Just speak" passes in front, magazine-cover style. It works through
    z-order alone — the copy must NOT form a stacking context (no position,
@@ -1447,9 +1455,9 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <!-- The dialogs quote the demo's real seed data — material 4711, hex bolt
      M8x40, bin A-03-02, 240 on hand — and the guide's line is the read-back
      format agent.json itself prescribes. If the seed changes, change these. -->
-<article class="how-story">
+<article class="how-story delivery-story">
  <div class="how-story-stage">
-  <button class="how-story-play" aria-label="Show details: Check in a delivery" aria-expanded="false"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><span class="how-story-cue">Explore the details ↗</span></button>
+  <button class="how-story-play" aria-label="Show details: Check in a delivery" aria-expanded="false"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><span class="delivery-canvas" aria-hidden="true"></span><span class="how-story-cue">Explore the details ↗</span></button>
   <div class="how-story-details" aria-hidden="true" inert><div class="card-head"><small>01 / RECEIVE</small><h3>Check in a delivery.</h3><p>Say what arrived and how many. The bin, the unit and the description are looked up for you.</p></div>
 <div class="how-dialog"><p><b>YOU</b>“Forty M8 bolts arrived.”</p><p class="g"><b>YOUR GUIDE</b>“Forty pieces of hex bolt M8x40 into bin A-03-02 — confirm?”</p><p><b>YOU</b>“Yes.”</p></div>
 <p class="how-outcome">Receipt posted · stock 240 → 280</p></div>
@@ -2445,7 +2453,7 @@ let avatarLoaded = false;
 function loadAvatar() {
   if (avatarLoaded) return;
   avatarLoaded = true;
-  import('/assets/avatar/character.js?v=43').catch(() => {});
+  import('/assets/avatar/character.js?v=44').catch(() => {});
 }
 
 // Tying the download to the click brought the character into the lobby
@@ -2460,7 +2468,7 @@ function warmAvatar() {
   const assets = [
     ['prefetch', '/assets/avatar/worker.glb?v=2'],
     ['prefetch', '/assets/avatar/motions.json?v=4'],
-    ['modulepreload', '/assets/avatar/character.js?v=43'],
+    ['modulepreload', '/assets/avatar/character.js?v=44'],
     ['modulepreload', '/assets/avatar/vendor/three.module.js'],
     ['modulepreload', '/assets/avatar/vendor/three.core.js'],
     ['modulepreload', '/assets/avatar/vendor/GLTFLoader.js'],
