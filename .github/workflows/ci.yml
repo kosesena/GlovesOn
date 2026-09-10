@@ -57,3 +57,4 @@ jobs:
           node checks/voice_pause.cjs
           node checks/voice_policy.cjs
           node checks/voice_lifecycle.cjs
+          node checks/agent_desktop.cjs

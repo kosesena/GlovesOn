@@ -13,6 +13,20 @@ is warm.
 
 ---
 
+## Workspace update — 10 September 2026
+
+New communication tools use a fictional directory and persist only demo outbox,
+call-log and note records. Nobody is contacted. The split workspace shows actual
+tool outcomes; incident notes do not move stock. See
+[workspace evidence](agent-workspace.md) for offline tests and the remaining live
+voice checks. The [submission checklist](hackathon-readiness.md) records current
+readiness. The repo remains private for now at the user's request.
+
+Server drafts bind exact action details and a confirmation value reported by the
+agent. They are not independent proof of speech or authenticated worker identity.
+A real S/4HANA connection is still unverified; changing configuration alone does
+not establish tenant compatibility.
+
 ## In sixty seconds, without speaking
 
 The whole system is reachable over HTTP. `$S` is the shared tool secret — ask
@@ -57,7 +71,7 @@ voice and look again.)
 | Claim | Where it lives | How to check it |
 |---|---|---|
 | The agent never sees SAP; a gateway owns the write | [`gateway/main.py`](../gateway/main.py) tool endpoints · [`gateway/sap_client.py`](../gateway/sap_client.py) is the only file that speaks OData | [ADR-0001](adr/0001-gateway-between-agent-and-erp.md) |
-| Every write is confirmed by a spoken read-back naming the material **description** | [`agent/agent.json`](../agent/agent.json) system prompt · the reply carries `MAKTX` ([`main.py`](../gateway/main.py) `post_goods_receipt`) | `test_the_reply_names_the_description_not_only_the_number` |
+| The agent is instructed to read back the material **description** before each ERP write; the server checks the draft and agent-reported confirmation | [`agent/agent.json`](../agent/agent.json) system prompt · the reply carries `MAKTX` ([`main.py`](../gateway/main.py) `post_goods_receipt`) | `test_the_reply_names_the_description_not_only_the_number` |
 | A repeated receipt is refused, not posted twice | [`gateway/main.py`](../gateway/main.py) `_recent_identical`, `DUPLICATE_WINDOW_SECONDS = 120` | `test_an_identical_repeat_is_refused_and_writes_nothing` |
 | The guard is ours, not the mock's | [`gateway/sap_mock.py`](../gateway/sap_mock.py) deliberately accepts repeats | `test_the_mock_accepts_the_same_receipt_twice` |
 | Nothing is deleted; a wrong document is reversed | [`gateway/sap_client.py`](../gateway/sap_client.py) `reversal_payload` — 102 against 101, 502 against 501 | `test_a_reversal_posts_a_second_document_and_returns_the_stock` |
@@ -65,21 +79,21 @@ voice and look again.)
 | It speaks SAP's real API, with the CSRF handshake | [`gateway/sap_client.py`](../gateway/sap_client.py) `_fetch_csrf` · [`sap_mock.py`](../gateway/sap_mock.py) refuses a write without a token | `test_a_write_without_a_csrf_token_is_refused` |
 | Material numbers are 18-character MATNR | [`gateway/store.py`](../gateway/store.py) `norm_matnr` | `test_a_spoken_material_number_becomes_an_18_character_matnr` |
 | Every document traces back to the sentence that caused it | [`gateway/audit.py`](../gateway/audit.py) · `/api/provenance/{mblnr}` · click any row in **Recent documents** | `test_a_document_can_be_traced_back_to_the_sentence_that_caused_it` |
-| Swapping the mock for a real tenant is configuration, not code | `SAP_BASE_URL` and `SAP_API_KEY` in [`gateway/sap_client.py`](../gateway/sap_client.py) — two variables, and no second code path | [ADR-0003](adr/0003-mock-erp-behind-a-faithful-contract.md) · `test_a_configured_key_becomes_the_header_saps_gateway_asks_for` |
+| A real-tenant connection can be configured, but has not been verified | `SAP_BASE_URL` and `SAP_API_KEY` in [`gateway/sap_client.py`](../gateway/sap_client.py) — two variables, and no second code path | [ADR-0003](adr/0003-mock-erp-behind-a-faithful-contract.md) · `test_a_configured_key_becomes_the_header_saps_gateway_asks_for` |
 
 Run the suite yourself:
 
 ```bash
 pip install -r requirements.txt pytest
-pytest checks/                               # 43 tests: no database, no keys, no setup
+pytest checks/                               # offline checks, isolated fixtures
 export TEST_DATABASE_URL=postgresql://…      # any empty Postgres; see below
-pytest                                       # all 84
+pytest                                       # includes Postgres integration tests
 ```
 
-84 tests, in two suites. `checks/` (43) needs nothing at all: it exercises
+There are two Python suites. `checks/` uses isolated fixtures: it exercises
 the draft protocol itself — confirmation, one-use tokens, session scoping,
 provider cleanup — against an in-memory app, so it is the part you can run
-thirty seconds after cloning. `tests/` (41) needs a Postgres because the
+thirty seconds after cloning. `tests/` needs a Postgres because the
 mock's data lives in one
 ([ADR-0005](adr/0005-serverless-deployment-and-shared-state.md)) and because a
 stubbed database would test none of what matters — the CSRF handshake, the

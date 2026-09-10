@@ -1282,6 +1282,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 .voice-settings small {color:#6c746d;font:12px/1.5 system-ui;}
 .voice-reference {display:block;font:12px/1.6 system-ui;margin-top:8px;}
 </style>
+<link rel="stylesheet" href="/agent-desktop.css">
 </head>
 <body>
 
@@ -1315,23 +1316,28 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <div class="demo-intro" id="demo"><div><div class="eyebrow">Step onto the receiving floor</div><h2>Your voice. A recorded result.</h2></div><p>Choose a scenario, then start talking. Follow your conversation through to the material document.</p></div>
 <section class="warehouse-shell" id="warehouseShell" hidden aria-label="Interactive warehouse">
 <div class="warehouse-toolbar"><button id="warehouseBack">← Back to site</button><span id="warehouseCrumb">PLANT 1000 / WAREHOUSE</span><button id="replayAreaIntro" hidden>Watch a walkthrough ↗</button><button id="warehouseCreate">+ Create a task</button></div>
-<div id="warehouseLobby"><div class="warehouse-title"><div class="eyebrow">YOUR SHIFT / PLANT 1000</div><h1>Where are you working today?</h1><p>Step into an area to pick up your next task.</p></div><div class="warehouse-room" id="warehouseRoom"><div id="avatarStage" class="avatar-stage"></div><button class="warehouse-entry" data-enter="receiving"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><b>Receiving bay</b><small>Deliveries & quantity checks</small><em>2 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="storage"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><b>Storage aisles</b><small>Locate materials & stock</small><em>1 guided task ↗</em></button><button class="warehouse-entry" data-enter="review"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><b>Review desk</b><small>Check receipts & reverse entries</small><em>1 guided task ↗</em></button></div></div>
+<div id="warehouseLobby"><div class="warehouse-title"><div class="eyebrow">YOUR SHIFT / PLANT 1000</div><h1>Where are you working today?</h1><p>Step into an area to pick up your next task.</p></div><div class="warehouse-room" id="warehouseRoom"><div id="avatarStage" class="avatar-stage"></div><button class="warehouse-entry" data-enter="receiving"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><b>Receiving bay</b><small>Deliveries & quantity checks</small><em>3 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="storage"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><b>Storage aisles</b><small>Materials, stock & incidents</small><em>2 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="review"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><b>Review desk</b><small>Check receipts & reverse entries</small><em>1 guided task ↗</em></button></div></div>
 <div id="warehouseArea" hidden><div class="warehouse-title"><h1 id="warehouseAreaTitle"></h1><p>Take the next guided task, or open the task folder.</p></div><div class="warehouse-choice"><article><small>01 / TAKE A TASK</small><h2>Next on your shift</h2><p id="nextTaskDescription"></p><button id="takeNextTask">Take this task ↗</button></article><article><small>02 / TASK FOLDER</small><h2>Choose your task</h2><p>Browse the guided scenarios and the tasks you have created for this area.</p><button id="browseTasks">Open task folder ↗</button></article></div></div>
 <div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><div id="warehouseBrief"><span id="warehouseBriefImage" class="warehouse-art" aria-hidden="true" ></span><div class="brief-copy"><small class="brief-eyebrow">YOUR NEXT TASK</small><h2 id="warehouseBriefTitle"></h2><p id="warehouseBriefText"></p><blockquote id="warehouseGuideQuote" hidden><small>YOUR WAREHOUSE GUIDE</small><p>“A delivery just arrived. Let’s check it in.”</p></blockquote></div></div></div>
 </section>
 <section class="shift" aria-label="Warehouse shift">
-  <div class="shift-heading"><div><h3>Your shift starts here.</h3><p>Choose an area. Pick a task. Work by voice.</p></div><button id="newScenario">+ Create a task</button></div>
+  <div class="shift-heading"><div><h3>Your shift starts here.</h3><p>Choose an area. Pick a task. Work by voice.</p></div></div>
   <div class="floor" role="group" aria-label="Warehouse areas">
     <button class="zone" data-zone="receiving" aria-pressed="false"><span>01 / LOADING BAY</span><b>Receiving</b><small>Deliveries & quantity checks</small></button>
     <button class="zone" data-zone="storage" aria-pressed="false"><span>02 / STORAGE AISLES</span><b>Shelves</b><small>Materials & stock locations</small></button>
     <button class="zone" data-zone="review" aria-pressed="false"><span>03 / HOLDING AREA</span><b>Review desk</b><small>Receipts & reversals</small></button>
   </div>
-  <p class="shift-hint" id="floorHint" aria-live="polite">All areas · Select an area to explore its tasks. Select it again to show all.</p>
-  <div class="custom-tasks" id="customTasks" aria-label="Your scenarios"></div>
+  <details class="practice-section" id="practiceSection">
+    <summary>Practice</summary>
+    <p>Try your own situation with demo materials. You can start speaking without creating a scenario.</p>
+    <button id="newScenario" type="button">Create a practice scenario</button>
+    <div class="custom-tasks" id="customTasks" aria-label="Your practice scenarios"></div>
+    <p class="shift-hint" id="floorHint" aria-live="polite"></p>
+  </details>
 </section>
 <dialog class="scenario-dialog" id="scenarioDialog" aria-labelledby="scenarioDialogTitle">
 <form id="scenarioForm">
-<h2 id="scenarioDialogTitle">Create your scenario</h2><p>Build a voice task with the demo materials. Saved in this browser. Inventory changes only through the voice agent after confirmation.</p>
+<h2 id="scenarioDialogTitle">Create a practice scenario</h2><p>Set up a situation to rehearse with Lena. Saved in this browser. This creates a brief; records change only through confirmed voice actions.</p>
 <label>Task title<input name="title" required maxlength="70" placeholder="A short delivery at the loading bay"></label>
 <label>Worker role<select name="role"><option>Warehouse operator</option><option>Maintenance technician</option><option>Receiving supervisor</option></select></label>
 <label>Situation<textarea name="situation" required maxlength="400" rows="2" placeholder="A delivery has arrived. Check and record the quantity."></textarea></label>
@@ -1339,7 +1345,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <label>Material<select name="material"><option value="4711">4711 · Hex bolts</option><option value="4712">4712 · Hex nuts</option><option value="4713">4713 · Hydraulic hose</option><option value="5100">5100 · Ball bearings</option><option value="5101">5101 · Timing belt</option></select></label>
 <label id="quantityField">Quantity<input name="quantity" type="number" min="1" max="10000" step="1" value="20" required></label>
 <label id="correctedField" hidden>Corrected quantity<input name="corrected" type="number" min="1" max="10000" step="1" value="12"></label>
-<div class="dialog-actions"><button type="button" id="cancelScenario">Cancel</button><button type="submit">Create task</button></div>
+<div class="dialog-actions"><button type="button" id="cancelScenario">Cancel</button><button type="submit">Save scenario</button></div>
 </form></dialog>
 <div class="scenario-bar" role="group" aria-label="Choose a guided voice scenario">
 <button class="scenario" data-scenario="receive" aria-pressed="true"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><span class="scenario-copy"><small>01 / RECEIVE</small><b>Receive a delivery<span aria-hidden="true">↗</span></b><span class="scenario-desc">From arrival to recorded stock.</span></span></button>
@@ -1352,8 +1358,11 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <button class="scenario" data-scenario="correct" aria-pressed="false"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><span class="scenario-copy"><small>02 / CORRECT</small><b>Get the quantity right<span aria-hidden="true">↗</span></b><span class="scenario-desc">Correct the count before confirming.</span></span></button>
 <button class="scenario" data-scenario="stock" aria-pressed="false"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><span class="scenario-copy"><small>03 / FIND</small><b>Find it on the shelf<span aria-hidden="true">↗</span></b><span class="scenario-desc">Ask where your material belongs.</span></span></button>
 <button class="scenario" data-scenario="reverse" aria-pressed="false"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><span class="scenario-copy"><small>04 / REVERSE</small><b>Reverse a receipt<span aria-hidden="true">↗</span></b><span class="scenario-desc">Reverse the entry. Keep the record.</span></span></button>
+<button class="scenario" data-scenario="damaged" aria-pressed="false"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><span class="scenario-copy"><small>05 / DAMAGED DELIVERY</small><b>Something arrived damaged<span aria-hidden="true">↗</span></b><span class="scenario-desc">Record the damage and choose who to notify.</span></span></button>
+<button class="scenario" data-scenario="dropped" aria-pressed="false"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><span class="scenario-copy"><small>06 / FLOOR INCIDENT</small><b>I dropped an item<span aria-hidden="true">↗</span></b><span class="scenario-desc">Capture what happened and ask for help.</span></span></button>
 </div>
 <div class="console-wrap">
+<div class="voice-column">
 <div class="workspace-utilities"><button type="button" popovertarget="workspaceExtras">Records &amp; help <span aria-hidden="true">↗</span></button></div>
 <div id="workspaceExtras" popover="auto" aria-label="Records and help">
   <div class="extras-heading"><h2>Records &amp; help</h2><button type="button" popovertarget="workspaceExtras" popovertargetaction="hide" aria-label="Close records and help">×</button></div>
@@ -1382,11 +1391,12 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 
   <button id="talkBtn" class="primary">Start talking</button>
 </header>
-<div id="voiceSuggestions" aria-label="Things you can ask"><span>Try saying</span><q>Check stock for material 4711</q><q>Receive twenty pieces of 4711</q><q>Show my recent receipts</q><small>Speak. Review. Confirm.</small></div>
+<div id="voiceSuggestions" aria-label="Things you can ask"><span>Try saying</span><q>Check stock for material 4711</q><q>Receive twenty pieces of 4711</q><q>Call the warehouse supervisor</q><q>Email Alex about the delivery</q><small>Speak. Review. Confirm.</small></div>
 <section id="conversationDetails" class="live-conversation" aria-label="Live conversation">
   <div id="log" role="log" aria-live="polite" aria-relevant="additions text"><p class="conversation-empty">Your conversation will appear here as you speak<span class="conversation-vibration" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></p></div>
 </section>
 
+</div>
 <main>
   <section>
     <h2>Conversation</h2>
@@ -1405,7 +1415,9 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
     </div>
   </section>
 
-  <section class="right">
+  <section class="right" aria-label="Lena’s workspace">
+    <div id="agentDesktop"></div>
+    <div class="legacy-erp" hidden>
     <div class="lookup-result" aria-live="polite"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><p id="lookupHint">Ask your guide to locate a material.</p><dl><div><dt>Material</dt><dd id="lookupMaterial">—</dd></div><div><dt>Location</dt><dd id="lookupLocation">—</dd></div><div><dt>Available stock</dt><dd id="lookupQuantity">—</dd></div></dl></div>
     <h2>Your result</h2><p class="result-hint">Your result appears here after you speak. Check the details before confirming.</p>
     <div id="pending" class="pending" hidden>
@@ -1454,6 +1466,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
         <tbody id="stockBody"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
       </table></details>
     </div>
+    </div>
   </section>
 </main>
 </div>
@@ -1494,6 +1507,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <footer><span>GlovesOn · Built for the receiving floor.</span><span><svg class="aai-mark" role="img" aria-label="AssemblyAI"><use href="#aai-dark"/></svg> Voice Agent Hackathon / 2026</span></footer>
 
 <script src="/voice-policy.js"></script>
+<script src="/agent-desktop.js"></script>
 <script src="/how-stories.js" defer></script>
 <script>
 // ---------------------------------------------------------------------------
@@ -1508,6 +1522,9 @@ const dfootEl    = document.getElementById('dfoot');
 const stripEl    = document.getElementById('stockStrip');
 
 const F = id => document.getElementById(id);
+globalThis.agentDesktop = GlovesOnDesktop.mount(F('agentDesktop'), key => {
+  if (!globalThis.requestWorkspaceAction?.(key)) append('sys', '', 'Start a conversation, or let Lena finish speaking, then choose a next step.');
+});
 
 // ---------------------------------------------------------------------------
 // The document. It fills as you speak; its stamp says its state.
@@ -1862,6 +1879,9 @@ const TOOL_LABEL = {
   get_purchase_order: 'checking purchase order',
   post_goods_receipt: 'posting to ERP',
   reverse_goods_receipt: 'reversing document',
+  find_colleague: 'finding your colleague', prepare_email: 'drafting your email', send_email: 'saving demo email',
+  prepare_call: 'preparing work call', place_call: 'logging demo call', prepare_note: 'preparing note', save_note: 'saving note',
+  suggest_follow_up: 'preparing next steps', get_communication_history: 'checking activity',
 };
 
 function setStatus(text, on = false, timed = false) {
@@ -2158,6 +2178,7 @@ async function start() {
 
   if (!scopeToken) { append('sys', '', 'Private session setup unavailable.'); cleanup(); return; }
   activeScopeToken = scopeToken;
+  globalThis.agentDesktop?.reset();
   try {
     await new Promise((resolve, reject) => {
       const channel = new EventSource('/events?scope_token=' + encodeURIComponent(scopeToken));
@@ -2185,6 +2206,18 @@ async function start() {
     while (toolResults.length) socket.send(JSON.stringify(toolResults.shift()));
     if (policyDirty) { socket.send(JSON.stringify({type:'session.update',session:policy.update()})); policyDirty=false; }
   }
+  globalThis.requestWorkspaceAction = key => {
+    const requests = {call_supervisor:'Call the warehouse supervisor about the issue we just discussed.', draft_email:'Draft an email to the warehouse supervisor about the issue we just discussed.', save_note:'Save a follow-up note about the issue we just discussed.'};
+    if (!requests[key] || activeScopeToken !== scopeToken || !socket || socket.readyState !== WebSocket.OPEN || lastToolEvent !== 'reply.done' || [...handledCalls.values()].some(value => value === null) || toolResults.length) return false;
+    policy.user('new action selected'); policyDirty = false;
+    globalThis.agentDesktop?.invalidateDraft(); globalThis.agentDesktop?.dismissSuggestions();
+    append('user', 'operator · selected', requests[key]); noteVoice('selection', {action:key});
+    socket.send(JSON.stringify({type:'session.update',session:policy.update()}));
+    socket.send(JSON.stringify({type:'conversation.message',role:'user',content:requests[key]}));
+    socket.send(JSON.stringify({type:'reply.create',instructions:'The worker selected this next step: ' + requests[key] + ' This is a request to prepare, never a confirmation. Follow all directory lookup, read-back and fresh spoken confirmation rules. Use only established facts. No real phone or email delivery is available.'}));
+    lastToolEvent = 'reply.started';
+    return true;
+  };
   async function runVoiceTool(message) {
     if (!message.call_id) return;
     if (handledCalls.has(message.call_id)) {
@@ -2193,6 +2226,7 @@ async function start() {
       return;
     }
     handledCalls.set(message.call_id, null);
+    globalThis.agentDesktop?.begin(message.name, message.call_id);
     const epoch = toolEpoch;
     let result, failed = false;
     const allowed = policy.allows(message.name);
@@ -2217,6 +2251,7 @@ async function start() {
     const reply = {type:'tool.result',call_id:message.call_id,result:JSON.stringify(result),is_error:failed};
     handledCalls.set(message.call_id, reply);
     if (activeScopeToken !== scopeToken) return;
+    globalThis.agentDesktop?.finish(message.name, result, failed, message.call_id);
     noteVoice('tool', {call_id:message.call_id,name:message.name,arguments:message.arguments,result,failed});
     policy.result(message.name,result,failed); policyDirty=true;
     clearTimeout(expiryTimer);
@@ -2301,6 +2336,7 @@ async function start() {
       case 'transcript.user':
         updateUserTranscript(m.text ?? '', true);
         policy.user(m.text ?? ''); policyDirty=true;
+        if (!policy.draft) globalThis.agentDesktop?.invalidateDraft();
         noteVoice('user',{text:m.text ?? ''});
         setStatus('thinking', true, true);
         break;
@@ -2420,6 +2456,7 @@ function end() {
 }
 
 function cleanup() {
+  globalThis.agentDesktop?.end();
   recoveryGeneration++; clearTimeout(recoveryTimer); recoveryTimer=null; recoveryDeadline=0;
   clearTimeout(sessionSetupTimer); sessionSetupTimer = null;
   if (sse) { sse.close(); sse = null; }
@@ -2444,6 +2481,8 @@ function cleanup() {
 }
 
 const scenarios = {
+  damaged: ['Three hydraulic hoses arrived damaged.', 'Tell Lena what is damaged and how many. Choose a demo call, an email draft or an incident note; review the details before confirming.', 'Damage on arrival. Record only the facts you report. This demo cannot quarantine or scrap stock, and damaged items must not be posted as usable stock.'],
+  dropped: ['I dropped two ball bearings and they broke.', 'Explain what happened. Lena can help record an incident or contact the supervisor in the demo after your confirmation.', 'Damage during handling. A saved incident note does not reduce stock or create a scrap movement. The responsible team must decide the inventory adjustment.'],
   stock: ['Where are the ball bearings stored?', 'Ask by material name or number. Your guide returns its location and available stock.', 'Find a material by description. This is a stock lookup; it does not create a receipt or change inventory.'],
   receive: ['Post a goods receipt, twenty pieces of four seven one one.', 'Listen to the material, quantity and destination. Say confirm when the details are right.', 'A new delivery of hex bolts. Follow the receipt from your spoken request to a document and an updated stock level.'],
   correct: ['Post a goods receipt, twenty pieces of four seven one one.', 'During the read-back, say: “Actually, twelve pieces.” Wait for the corrected details, then confirm.', 'Try correcting a quantity before posting. The final document should contain twelve pieces.'],
@@ -2503,12 +2542,13 @@ document.querySelectorAll('[data-scenario]').forEach(button => {
   };
 });
 
-const areaFor = {receive:'receiving', correct:'receiving', stock:'storage', reverse:'review'};
+const areaFor = {receive:'receiving', correct:'receiving', stock:'storage', reverse:'review', damaged:'receiving', dropped:'storage'};
+const customActions = ['receive','correct','stock','reverse'];
 let selectedArea = null;
 let savedTasks = [];
 let activeScenario = null;
 let scenarioSession = null;
-try { const stored = JSON.parse(localStorage.getItem('gloveson-scenarios-v1') || '[]'); if (Array.isArray(stored)) savedTasks = stored.filter(t => t && typeof t.title === 'string' && typeof t.situation === 'string' && typeof t.role === 'string' && Object.hasOwn(areaFor,t.action) && ['4711','4712','4713','5100','5101'].includes(t.material) && Number.isInteger(t.quantity) && t.quantity>0 && Number.isInteger(t.corrected) && t.corrected>0).slice(0,30); } catch {}
+try { const stored = JSON.parse(localStorage.getItem('gloveson-scenarios-v1') || '[]'); if (Array.isArray(stored)) savedTasks = stored.filter(t => t && typeof t.title === 'string' && typeof t.situation === 'string' && typeof t.role === 'string' && customActions.includes(t.action) && ['4711','4712','4713','5100','5101'].includes(t.material) && Number.isInteger(t.quantity) && t.quantity>0 && Number.isInteger(t.corrected) && t.corrected>0).slice(0,30); } catch {}
 function selectTask(prompt, instruction, note) {
   document.querySelector('#scenarioPrompt q').textContent = prompt;
   document.querySelector('#scenarioPrompt span').textContent = instruction;
@@ -2565,7 +2605,7 @@ scenarioForm.onsubmit = event => {
   event.preventDefault();
   const data = Object.fromEntries(new FormData(scenarioForm));
   data.title = data.title.trim(); data.situation = data.situation.trim();
-  if (!data.title || !data.situation) return;
+  if (!data.title || !data.situation || !customActions.includes(data.action)) return;
   data.quantity = Number(data.quantity); data.corrected = Number(data.corrected);
   savedTasks.push(data); savedTasks = savedTasks.slice(-30);
   let persisted = true;
@@ -2573,8 +2613,8 @@ scenarioForm.onsubmit = event => {
   selectedArea = areaFor[data.action];
   document.querySelectorAll('[data-zone]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.zone === selectedArea)));
   document.querySelectorAll('[data-scenario]').forEach(b => b.hidden = areaFor[b.dataset.scenario] !== selectedArea);
-  renderTasks(); scenarioDialog.close(); scenarioForm.reset(); scenarioForm.elements.action.onchange();
-  document.getElementById('floorHint').textContent = persisted ? 'Task created · Choose it above to begin. Saved in this browser.' : 'Task created for this visit. Browser storage is unavailable.';
+  renderTasks(); document.getElementById('practiceSection').open = true; scenarioDialog.close(); scenarioForm.reset(); scenarioForm.elements.action.onchange();
+  document.getElementById('floorHint').textContent = persisted ? 'Scenario saved · Choose it above to practice. Saved in this browser.' : 'Scenario ready for this visit. Browser storage is unavailable.';
 };
 renderTasks();
 
@@ -2610,6 +2650,7 @@ window.addEventListener('scroll',
 
 const shiftSection = document.querySelector('.shift');
 const scenarioBar = document.querySelector('.scenario-bar');
+const practiceSection = document.getElementById('practiceSection');
 const consoleSection = document.querySelector('.console-wrap');
 const shiftAnchor = document.createComment('shift'); shiftSection.before(shiftAnchor);
 const cardsAnchor = document.createComment('cards'); scenarioBar.before(cardsAnchor);
@@ -2624,7 +2665,7 @@ function warehouseTaskCount(key) {
 }
 function showWarehouseStage(stage) {
   if (stage === 'area') stage = 'tasks';
-  const lookup = stage === 'work' && warehouseAreaKey === 'storage';
+  const lookup = stage === 'work' && (activeScenario?.action === 'stock' || document.querySelector('[data-scenario="stock"]')?.getAttribute('aria-pressed') === 'true');
   warehouseShell.classList.toggle('is-lookup', lookup);
   document.getElementById('conversationDetails').open = false;
   if (lookup && !document.querySelector('[data-scenario][aria-pressed="true"]')) { /* Custom task keeps its own brief. */ }
@@ -2657,13 +2698,13 @@ function applyWarehouseRoute() {
   const active = location.hash === '#warehouse';
   document.body.classList.toggle('in-warehouse',active); warehouseShell.hidden = !active;
   if (active) {
-    document.getElementById('warehouseTasks').append(shiftSection,scenarioBar);
+    document.getElementById('warehouseTasks').append(shiftSection,scenarioBar,practiceSection);
     document.getElementById('warehouseWork').append(consoleSection);
     shiftSection.querySelector('.floor').hidden = true;
     showWarehouseStage('lobby');
     loadAvatar();
   } else {
-    shiftAnchor.after(shiftSection); cardsAnchor.after(scenarioBar); consoleAnchor.after(consoleSection);
+    shiftAnchor.after(shiftSection); shiftSection.append(practiceSection); cardsAnchor.after(scenarioBar); consoleAnchor.after(consoleSection);
     shiftSection.querySelector('.floor').hidden = false;
   }
 }

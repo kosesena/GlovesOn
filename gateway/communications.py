@@ -1,0 +1,111 @@
+"""A persistent, session-scoped demo outbox and call log. No external delivery."""
+import json
+import secrets
+import time
+
+from . import confirmation, store
+
+COLLEAGUES = (
+    {"id": "alex", "name": "Alex Morgan", "role": "Warehouse supervisor", "area": "Receiving bay",
+     "email": "alex.morgan@gloveson.example", "extension": "201"},
+    {"id": "jamie", "name": "Jamie Chen", "role": "Receiving operator", "area": "Receiving bay",
+     "email": "jamie.chen@gloveson.example", "extension": "202"},
+    {"id": "sam", "name": "Sam Patel", "role": "Maintenance technician", "area": "Storage aisles",
+     "email": "sam.patel@gloveson.example", "extension": "203"},
+)
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS demo_communications (
+    id TEXT PRIMARY KEY,
+    scope TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    readback TEXT NOT NULL,
+    user_confirmation TEXT NOT NULL,
+    created_at DOUBLE PRECISION NOT NULL
+);
+CREATE INDEX IF NOT EXISTS demo_communications_scope ON demo_communications (scope, created_at);
+"""
+
+
+def init():
+    with store.schema_lock() as conn:
+        conn.execute(SCHEMA)
+
+
+def find_colleague(query):
+    terms = query.lower().split()
+    matches = [dict(person) for person in COLLEAGUES if all(
+        term in ' '.join(person.values()).lower() for term in terms)]
+    return {"simulated": True, "matches": matches,
+            "message": "Fictional demo directory. Choose the intended colleague; never guess when ambiguous."}
+
+
+def text_field(body, key, maximum, required=True):
+    value = body.get(key, '')
+    if not isinstance(value, str) or len(value) > maximum or (required and not value.strip()):
+        raise ValueError(f"{key} must be text between {1 if required else 0} and {maximum} characters.")
+    return value.strip()
+
+
+def details_for(kind, body):
+    if kind == 'note':
+        return {"kind": kind, "simulated": True, "title": text_field(body, 'title', 160),
+                "body": text_field(body, 'body', 3000)}
+    person = next((person for person in COLLEAGUES if person['id'] == body.get('colleague_id')), None)
+    if person is None:
+        raise ValueError('Find and select a colleague from the demo directory first.')
+    details = {"kind": kind, "recipient": dict(person), "simulated": True}
+    if kind == 'email':
+        details.update(subject=text_field(body, 'subject', 160), body=text_field(body, 'body', 3000))
+    else:
+        details['purpose'] = text_field(body, 'purpose', 500, required=False)
+    return details
+
+
+def prepare(scope, kind, body):
+    if not scope:
+        return {"prepared": False, "simulated": True, "message": "Start a private voice session first."}
+    # Invalid replacement drafts must not leave a previous action executable.
+    confirmation.invalidate(scope)
+    try:
+        details = details_for(kind, body)
+    except ValueError as error:
+        return {"prepared": False, "simulated": True, "message": str(error)}
+    token = confirmation.prepare(scope, 'demo_' + kind, details)
+    return {"prepared": True, "simulated": True, "draft_token": token,
+            "details": details, "expires_in": 120,
+            "message": "Read back the note, or recipient and email content/call purpose. Explain this is the demo. Wait for a fresh spoken confirm. Nothing saved, sent or called yet."}
+
+
+def commit(scope, kind, body):
+    try:
+        details = details_for(kind, body)
+        readback = text_field(body, 'confirmed_utterance', 5000)
+        response = text_field(body, 'user_confirmation', 80)
+    except ValueError as error:
+        confirmation.invalidate(scope)
+        return {"completed": False, "simulated": True, "message": str(error)}
+    error = confirmation.consume(scope, body.get('draft_token'), 'demo_' + kind, details, response)
+    if error:
+        return {"completed": False, "simulated": True, "message": error}
+    record = {"id": {'email': 'MAIL-', 'call': 'CALL-', 'note': 'NOTE-'}[kind] + secrets.token_hex(5).upper(),
+              "kind": kind, "details": details, "created_at": time.time(),
+              "status": {'email': 'saved_to_demo_outbox', 'call': 'simulated_call_logged', 'note': 'saved_to_demo_notes'}[kind]}
+    # The token is consumed first. A failed/uncertain insert must be reconciled
+    # with history, never retried blindly. A fresh process reads the same rows.
+    with store.db() as conn:
+        conn.execute('INSERT INTO demo_communications (id,scope,kind,payload,readback,user_confirmation,created_at) VALUES (%s,%s,%s,%s,%s,%s,%s)',
+                     (record['id'], scope, kind, json.dumps(record), readback, response, record['created_at']))
+    return {"completed": True, "simulated": True, "record": record,
+            "message": 'Saved to the demo outbox. No email was delivered.' if kind == 'email'
+            else 'Saved to demo notes.' if kind == 'note'
+            else 'Simulated call saved to the call log. No phone was dialled and nobody answered.'}
+
+
+def history(scope):
+    if not scope:
+        return {"simulated": True, "records": [], "message": "Start a private voice session first."}
+    with store.db() as conn:
+        rows = conn.execute('SELECT payload FROM demo_communications WHERE scope=%s ORDER BY created_at DESC LIMIT 20', (scope,)).fetchall()
+    return {"simulated": True, "records": [json.loads(row['payload']) for row in rows]}

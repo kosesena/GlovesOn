@@ -1,0 +1,34 @@
+const assert=require('node:assert/strict');
+const {DesktopState,outcome}=require('../web/agent-desktop.js');
+const {VoicePolicy}=require('../web/voice-policy.js');
+assert.equal(outcome('post_goods_receipt',{posted:false,MBLNR:'existing'},false),'rejected');
+assert.equal(outcome('post_goods_receipt',{posted:true},false),'rejected');
+assert.equal(outcome('send_email',{completed:false},false),'rejected');
+assert.equal(outcome('send_email',{completed:true,simulated:true,record:{id:'MAIL-1'}},false),'saved');
+assert.equal(outcome('place_call',{completed:true,record:{id:'CALL-1'}},false),'rejected');
+assert.equal(outcome('post_goods_receipt',{},true),'uncertain');
+const state=new DesktopState();
+state.begin('get_stock','old-read');state.begin('prepare_email','new-draft');
+state.finish('get_stock',{found:true,MATNR:'4711'},false,'old-read');
+assert.equal(state.current.id,'new-draft','late lookup cannot replace the email screen');
+state.finish('prepare_email',{prepared:true,draft_token:'token',details:{}},false,'new-draft');
+assert.equal(state.current.state,'draft');
+state.invalidateDraft();assert.equal(state.current.state,'superseded');
+state.begin('prepare_call','call-draft');
+state.finish('prepare_call',{prepared:true,draft_token:'call-token'},false,'call-draft');
+state.begin('place_call','call');
+assert.equal(state.entries.find(e=>e.id==='call-draft').state,'submitted','used drafts no longer request confirmation');state.end();assert.equal(state.current.state,'uncertain');
+state.reset();state.finish('place_call',{completed:true,simulated:true,record:{id:'CALL-1'}},false,'call');
+assert.equal(state.current,null,'old session result cannot appear in a new session');
+for(const [prepare,write] of [['prepare_email','send_email'],['prepare_call','place_call'],['prepare_note','save_note']]) {
+ const policy=new VoicePolicy({},[]);
+ assert.equal(policy.allows(write),false);
+ policy.result(prepare,{prepared:true,draft_token:'one'},false);
+ assert.equal(policy.allows(write),true);
+ assert.equal(policy.allows('post_goods_receipt'),false,'communication consent cannot post a receipt');
+ policy.user('yes but change the recipient');assert.equal(policy.allows(write),false);
+ policy.result(prepare,{prepared:true,draft_token:'two'},false);policy.begin(write);
+ assert.equal(policy.allows(write),false);
+ policy.result(write,{error:'timeout'},true);assert.equal(policy.allows(prepare),false);
+}
+console.log('Desktop result truthfulness, stale sessions and communication confirmation gates passed.');

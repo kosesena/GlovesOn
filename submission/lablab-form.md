@@ -1,82 +1,74 @@
-# lablab submission — form fields
+# lablab submission — draft form fields
 
-Copy-paste into the lablab submission form. Every claim traces to a repo file;
-nothing here says more than docs/market.md and docs/business-case.md support.
-
----
+Updated 10 September 2026. This is draft copy, not a submitted entry. Complete
+the live voice demonstration and verify the deployed revision before submission.
+The repository stays private for now at the user's request.
 
 ## Project title
-GlovesOn — a voice agent that writes to SAP
 
-## Short description  (one line)
-A hands-free warehouse voice agent that posts real goods receipts into SAP —
-spoken, read back for confirmation, and reversible, never deleted.
+GlovesOn — hands-free warehouse work with AssemblyAI
+
+## Short description
+
+A warehouse voice agent that turns spoken requests into confirmed mock SAP
+records, with visible results and simulated colleague follow-up.
 
 ## Long description
 
-**The moment.** A pallet lands on Lena's receiving dock. Both hands are under
-the box, gloves on. That delivery has to become a material document in
-SAP — until it does, the company does not know it owns the goods. Today that
-means gloves off and a walk to a shared terminal, for every delivery.
+**The problem.** A warehouse operator has gloves on and a delivery to handle.
+Looking up materials, recording a receipt and reporting an exception can each
+interrupt the physical job. GlovesOn explores how much of that work can be
+completed through a conversation.
 
-**What GlovesOn does.** Lena says one sentence — *"Forty M8 bolts
-arrived."* The agent looks the material up itself (bin, unit, description),
-reads the whole posting back aloud — *"Forty pieces of hex bolt M8x40 into bin
-A-03-02, confirm?"* — and only on an unmistakable yes **posts a material
-document**: a numbered goods receipt through SAP's released OData API, against
-a mock S/4HANA that speaks that contract exactly. Stock moves on screen in the
-moment. Click the document afterwards and it tells you the sentence that caused
-it, and the second it was confirmed. A wrong receipt is corrected by voice too —
-with a reversal document, never a deletion, so both records stay.
+**The workflow.** Ask for a material by name or number. The agent retrieves its
+description, unit and bin, prepares a goods receipt and reads the details back.
+Correct the quantity if needed, then explicitly confirm. A successful tool call
+creates a numbered document and updates stock in the mock ERP. A wrong receipt
+can be reversed; the original and reversal both remain in the record.
 
-**Why it is different.** Voice in warehouses is decades old, but every incumbent
-voice-*guides planned work*: the WMS issues a task, the worker answers fixed
-prompts. The unplanned pallet has no voice path. SAP's own assistant (Joule)
-does this by chat and has voice on its roadmap for its top cloud tiers — proof
-the problem is real.
+**Visible work.** Conversation stays on the left. On the right, tool requests and
+results appear as an ERP page, Lena's work phone or her email/notes screen. When
+the worker reports a shortage or damage, the agent can suggest a supervisor
+call, an email or an incident note. These are explicitly simulated: calls save
+logs, emails save to a demo outbox, and nobody is contacted. Each save requires
+a separate read-back and fresh confirmation.
 
-Plenty of voice agents now stop and ask before they act. What is rarer is
-finishing the job inside an ERP's own rules and leaving something behind that
-survives the demo: an 18-character material number, movement type 101 or 501,
-a duplicate guard that lives in our gateway *because real S/4HANA will accept
-the same receipt twice without complaint*, and a correction that is a 102
-against the 101 rather than a delete. Both documents stay, because that is what
-a ledger is. Every one of those claims maps to a file, a test and a command in
-the repo's judge guide.
+**Built on AssemblyAI.** Its Voice Agent API provides the streaming speech,
+language-model conversation and voice output loop. Domain keyterms and
+transcription instructions help convey warehouse vocabulary. Function calls
+return to the browser and travel through a scoped capability to the gateway.
+Write tools become available after preparation; the server binds a one-use,
+expiring draft to the exact action and payload. Corrections require a new draft.
+The workspace only marks an operation saved after its tool reports success.
 
-**Built on AssemblyAI.** The Voice Agent API runs the whole loop — streaming
-speech-to-text, LLM routing, voice output, turn-taking — with JSON-Schema HTTP
-tool calling into a gateway that owns every SAP guardrail. A `transcription_prompt`
-and 56 keyterms tune recognition to SAP material numbers and warehouse
-vocabulary; both write tools run in `execution_mode: hold` so the agent waits
-for the ERP instead of narrating an optimistic success.
+**The focus.** GlovesOn connects unplanned warehouse requests, spoken corrections,
+reversible records and exception follow-up in one workflow. Voice warehousing,
+ERP assistants and confirmation are established ideas; our contribution is this
+specific interaction and its inspectable execution boundary.
 
-**Staged on purpose.** The demo wraps the console in a small warehouse — a
-lobby, a guide, guided tasks — because you cannot ship a receiving floor to a
-judge. The scenery is the only fiction: underneath sit SAP's released OData
-contract, numbered documents, reversals and one-use write drafts, and pointing
-the base URL and a credential at a real tenant takes the costume off.
+**Limits.** SAP is a mock reached through an S/4HANA-style OData contract; real
+S/4HANA integration is unverified. Phone and email delivery are simulations.
+Damage reports do not quarantine, scrap or adjust stock. Session scoping is not
+employee authentication, and server checks do not independently prove spoken
+consent. New communication flows need final live microphone validation; noise
+robustness, productivity savings and production suitability are not established.
 
-**Honest about limits.** The ERP behind this is a **mock** — faithful to the
-released OData contract, CSRF handshake and all, and a base URL plus a
-credential away from a real tenant, but not proven against one. The posting is made by a
-service user, not the worker, so SAP cannot yet say who did it. Noise
-robustness is set up but unmeasured. The demo serves one session at a time.
-Nobody is authenticated. These are written up in the repo, not hidden — the
-judge guide ends with them.
-
-**Check it in ninety seconds.** `/how-it-works` on the live site is a map of the
-system where every box names the file it lives in, the rule it cannot break and
-the command that proves it — and every figure on it is computed at request time,
-so the diagram cannot claim more than exists. The same evidence is in the repo's
-judge guide, and 43 of the 84 tests run with no database and no keys at all.
+The repository includes gateway checks, browser lifecycle and result-state
+checks, architecture decisions and a judge guide. Exact evidence and outstanding
+delivery work are listed in `docs/agent-workspace.md` and
+`docs/hackathon-readiness.md`.
 
 ## Technology & category tags
-AssemblyAI Voice Agent API · Speech-to-Text · Voice Agents · SAP · S/4HANA ·
-OData · ERP · FastAPI · Python · Postgres · Enterprise · Logistics · Warehousing
 
-## Links
-- Application URL: https://gloveson.vercel.app
-- How it works (claim → file → rule → test): https://gloveson.vercel.app/how-it-works
-- GitHub repository: https://github.com/kosesena/GlovesOn  (make public before submitting)
-- Demo platform: Vercel (serverless) + Neon Postgres
+AssemblyAI Voice Agent API · Speech-to-Text · Voice Agents · SAP · S/4HANA ·
+OData · Mock ERP · FastAPI · Python · Postgres · Logistics · Warehousing
+
+## Links to verify before submission
+
+- Application: https://gloveson.vercel.app
+- Architecture: https://gloveson.vercel.app/how-it-works
+- Repository: https://github.com/kosesena/GlovesOn — private for now
+- Demo platform: Vercel + Neon Postgres
+- PDF deck: `submission/GlovesOn-deck.pdf` — refresh and review
+- Cover: `submission/cover-16x9.jpg` — review against final scope
+- Pitch video: pending

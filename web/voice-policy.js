@@ -1,8 +1,8 @@
 /* Conversation policy is separate from rendering so transport regressions can run offline. */
 (function(root) {
   'use strict';
-  const writes = new Set(['post_goods_receipt', 'reverse_goods_receipt']);
-  const prepareToWrite = {prepare_goods_receipt:'post_goods_receipt', prepare_reversal:'reverse_goods_receipt'};
+  const writes = new Set(['post_goods_receipt', 'reverse_goods_receipt', 'send_email', 'place_call', 'save_note']);
+  const prepareToWrite = {prepare_goods_receipt:'post_goods_receipt', prepare_reversal:'reverse_goods_receipt', prepare_email:'send_email', prepare_call:'place_call', prepare_note:'save_note'};
   class VoicePolicy {
     constructor(config, catalog, now = () => Date.now()) {
       this.config = config;
@@ -26,7 +26,7 @@
       }
       // Only known result fields supply vocabulary; no arbitrary tool text becomes instructions.
       const items = data.matches || (data.MAKTX ? [data] : []);
-      this.context = items.slice(0,12).flatMap(item => [item.MATNR, item.MAKTX])
+      this.context = items.slice(0,12).flatMap(item => [item.MATNR, item.MAKTX, ...(name === 'find_colleague' ? [item.name] : [])])
         .filter(value => typeof value === 'string' && value.length <= 80);
     }
     allows(name) {

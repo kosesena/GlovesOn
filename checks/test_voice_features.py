@@ -93,5 +93,7 @@ class VoiceFeatureTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result['session_config']['input']['voice_focus'], 'near-field')
             self.assertEqual(result['session_config']['input']['language_codes'], ['en'])
             self.assertFalse(voice_tools.WRITE_TOOLS & {t['name'] for t in result['session_config']['tools']})
-            self.assertEqual(len(result['tool_catalog']), 9)
+            catalog = {tool['name'] for tool in result['tool_catalog']}
+            self.assertTrue({'prepare_email', 'send_email', 'prepare_call', 'place_call',
+                             'prepare_note', 'save_note', 'find_colleague', 'suggest_follow_up'} <= catalog)
             self.assertNotIn('private-key', json.dumps(result))

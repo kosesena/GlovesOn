@@ -34,6 +34,7 @@ from fastapi.responses import FileResponse, Response, StreamingResponse
 
 from . import (
     audit,
+    communications,
     confirmation,
     live,
     mm_knowledge,
@@ -94,6 +95,7 @@ async def lifespan(_: FastAPI):
     store.init_db()
     audit.init()
     confirmation.init()
+    communications.init()
     live.init()
     try:
         yield
@@ -320,6 +322,46 @@ def knowledge_article(article_id: str):
         if article['id'] == article_id:
             return {k: v for k, v in article.items() if k != 'terms'}
     raise HTTPException(status_code=404, detail='Reference not found')
+
+
+@app.get('/erp/colleagues')
+def find_colleague(query: str = Query(..., min_length=1, max_length=100),
+                   x_tool_secret: str | None = Header(default=None, alias='X-Tool-Secret')):
+    require_tool_auth(x_tool_secret)
+    return communications.find_colleague(query)
+
+
+@app.get('/erp/communications')
+def communication_history(x_tool_secret: str | None = Header(default=None, alias='X-Tool-Secret')):
+    require_tool_auth(x_tool_secret)
+    return communications.history(event_scope.get())
+
+
+def communication_route(kind, preparing):
+    def endpoint(body: dict = Body(...), x_tool_secret: str | None = Header(default=None, alias='X-Tool-Secret')):
+        require_tool_auth(x_tool_secret)
+        operation = communications.prepare if preparing else communications.commit
+        return operation(event_scope.get(), kind, body)
+    return endpoint
+
+
+@app.post('/erp/follow-up-options')
+def follow_up_options(body: dict = Body(...), x_tool_secret: str | None = Header(default=None, alias='X-Tool-Secret')):
+    require_tool_auth(x_tool_secret)
+    try:
+        reason = communications.text_field(body, 'reason', 600)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return {'suggested': True, 'simulated': True, 'reason': reason,
+            'options': ['call_supervisor', 'draft_email', 'save_note'],
+            'message': 'Options only; no action taken. Ask the worker which path to take. Each save/call needs its own draft and confirmation.'}
+
+
+for communication_kind in ('email', 'call', 'note'):
+    for preparing in (True, False):
+        path = f'/erp/{"prepare" if preparing else "send"}-{communication_kind}'
+        app.add_api_route(path, communication_route(communication_kind, preparing), methods=['POST'],
+                          name=f'{"prepare" if preparing else "send"}_demo_{communication_kind}')
 
 
 # ---------------------------------------------------------------------------
@@ -1037,6 +1079,16 @@ def health(x_tool_secret: str | None = Header(default=None, alias="X-Tool-Secret
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(WEB_DIR / "index.html")
+
+
+@app.get('/agent-desktop.js', include_in_schema=False)
+def agent_desktop_script():
+    return FileResponse(WEB_DIR / 'agent-desktop.js', media_type='text/javascript', headers={'Cache-Control': 'no-cache'})
+
+
+@app.get('/agent-desktop.css', include_in_schema=False)
+def agent_desktop_styles():
+    return FileResponse(WEB_DIR / 'agent-desktop.css', media_type='text/css', headers={'Cache-Control': 'no-cache'})
 
 
 @app.get('/voice-policy.js', include_in_schema=False)

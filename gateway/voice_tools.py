@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 from . import session_scope
 
 INLINE_AGENT = 'inline-session'
-WRITE_TOOLS = {'post_goods_receipt', 'reverse_goods_receipt'}
+WRITE_TOOLS = {'post_goods_receipt', 'reverse_goods_receipt', 'send_email', 'place_call', 'save_note'}
 
 
 def correlation(scope: str, secret: str) -> str:

@@ -1,0 +1,101 @@
+/* Conversation on the left, the device Lena is using on the right. */
+#warehouseWork .console-wrap {max-width:1320px;overflow:visible;background:transparent;border:0;box-shadow:none;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:24px;align-items:start;}
+#warehouseWork .voice-column {min-width:0;background:#ffffffd9;border:1px solid #fff;border-radius:28px;box-shadow:0 16px 60px #303f4c09;}
+#warehouseWork .console-wrap>main {display:block;min-width:0;background:transparent;}
+#warehouseWork .console-wrap main>.right {display:block!important;background:transparent;border:0;padding:0;min-width:0;}
+#warehouseWork .legacy-erp {display:none;}
+#warehouseWork #log {height:clamp(220px,34vh,420px);max-height:480px;padding:20px 8px;}
+#warehouseWork #log .voice-fact-card {display:none;}
+#warehouseWork #voiceSuggestions {padding:0 20px;}
+#warehouseWork #voiceSuggestions q {font-size:11px;}
+#warehouseWork .console-wrap .write-progress {display:none;}
+#agentDesktop {color:#293c31;background:#f7f8f3e8;border:1px solid #d5ddd0;border-radius:28px;padding:24px;box-shadow:0 16px 60px #303f4c09;min-height:560px;box-sizing:border-box;font:14px/1.5 system-ui,sans-serif;}
+.desktop-heading {display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:22px;}
+.desktop-heading small {font:10px var(--mono);letter-spacing:.12em;color:#71806f;}
+#agentDesktop .desktop-heading h2 {display:block;margin:6px 0 0;padding:0;font:600 24px/1.2 system-ui;letter-spacing:-.04em;color:#253b2c;border:0;text-transform:none;background:none;box-shadow:none;}
+.desktop-badge {display:inline-block;font:600 10px/1.4 system-ui;letter-spacing:.03em;border:1px solid #d3dccd;background:#edf1e8;color:#4d674f;padding:6px 9px;border-radius:20px;}
+.desktop-empty {min-height:365px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;box-sizing:border-box;}
+.desktop-empty-symbol {width:64px;height:64px;display:grid;place-items:center;border:1px solid #cbd8c5;border-radius:20px;font-size:32px;color:#597556;background:#edf2e8;}
+#agentDesktop h3 {font:600 21px/1.3 system-ui;letter-spacing:-.035em;margin:18px 0 12px;}
+.desktop-empty p {max-width:290px;color:#72796e;}
+.desktop-device-list {margin-top:30px;font:10px var(--mono);color:#8b927f;}
+.desktop-status {display:flex;justify-content:space-between;gap:12px;font-size:11px;margin-bottom:18px;color:#6e7869;}
+.desktop-status strong {color:#536b48;font-weight:600;text-align:right;}
+.desktop-status.pending strong {color:#b27839;}
+.desktop-status.error strong,.desktop-status.uncertain strong,.desktop-status.rejected strong {color:#a24434;}
+.desktop-device {padding:4px 0 16px;}
+.desktop-fields {margin:0;}
+.desktop-fields>div {display:grid;grid-template-columns:minmax(90px,.7fr) minmax(0,1.3fr);gap:14px;border-bottom:1px solid #e8ebe3;padding:12px 0;}
+.desktop-fields dt {font-size:11px;color:#7a8274;}
+.desktop-fields dd {margin:0;font-size:13px;font-weight:550;overflow-wrap:anywhere;white-space:pre-wrap;}
+.desktop-notice {padding:12px 14px;background:#f6edda;border:1px solid #e8d9b8;border-radius:12px;color:#896839;font-size:12px;margin:18px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;}
+.desktop-notice.success {background:#e9f1e4;border-color:#cdddc4;color:#466642;}
+.desktop-notice.error {background:#faece7;border-color:#edd0c4;color:#9b5140;}
+.desktop-footnote,.device-disclaimer {font-size:10px;line-height:1.6;color:#828a7c;margin:18px 0 0;}
+.desktop-footnote {border-top:1px solid #e0e5da;padding-top:14px;}
+.work-phone {position:relative;max-width:276px;min-height:440px;margin:0 auto;padding:9px;border:2px solid #737b6e;border-radius:43px;background:linear-gradient(130deg,#485143,#161e18 55%,#424c3e);box-shadow:0 20px 32px #243b2c20,inset 0 0 0 2px #0e1810;}
+.phone-island {position:absolute;left:50%;top:18px;transform:translateX(-50%);width:76px;height:20px;border-radius:20px;background:#152017;z-index:1;}
+.phone-screen {background:linear-gradient(155deg,#f7f8ee,#e8eddf);border-radius:33px;min-height:425px;box-sizing:border-box;padding:45px 22px 24px;text-align:center;}
+.phone-owner {font-size:10px;color:#76846d;}
+#agentDesktop .phone-screen h3 {font-size:22px;margin-top:7px;}
+.contact-avatar {width:72px;height:72px;margin:28px auto 16px;border-radius:50%;background:#d6e0cc;color:#45603e;display:grid;place-items:center;font-size:23px;}
+.phone-screen h4 {margin:0;font-size:20px;letter-spacing:-.025em;}
+.contact-role,.contact-extension {font-size:11px;color:#78846f;margin:6px 0;}
+.call-purpose {font-size:12px;margin:18px 0;overflow-wrap:anywhere;}
+.phone-call-symbol {border-radius:50%;background:#5c8350;color:white;width:44px;height:44px;display:grid;place-items:center;font-size:22px;margin:24px auto 12px;}
+.contact-row {display:flex;align-items:center;gap:10px;text-align:left;border-bottom:1px solid #dbe2d1;padding:16px 0;}
+.contact-row strong {font-size:12px;display:block;}
+.contact-row small {display:block;font-size:10px;color:#748267;margin-top:4px;}
+.contact-initial {width:34px;height:34px;border-radius:50%;background:#d9e2d0;display:grid;place-items:center;flex-shrink:0;}
+.work-laptop {padding:8px 4px 16px;}
+.laptop-screen {background:#fffdf8;border:7px solid #343d35;border-top-width:12px;border-radius:15px 15px 5px 5px;box-shadow:0 15px 25px #25342a16;min-height:300px;overflow:hidden;}
+.laptop-toolbar {display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:#eeeee7;border-bottom:1px solid #dedfd6;font-size:10px;color:#62705b;}
+.window-controls {font-size:9px;color:#bc9064;letter-spacing:2px;}
+.laptop-toolbar .desktop-badge {font-size:8px;padding:3px 7px;}
+.laptop-screen .desktop-fields {padding:0 18px;}
+.laptop-screen .desktop-fields>div {grid-template-columns:48px minmax(0,1fr);gap:10px;padding:10px 0;}
+.laptop-screen .desktop-fields dd {font-size:12px;}
+.mail-folder {font:9px var(--mono);letter-spacing:.13em;color:#9a8e73;padding:18px 18px 0;margin:0 0 8px;}
+.mail-body {font:13px/1.8 system-ui;white-space:pre-wrap;overflow-wrap:anywhere;min-height:100px;padding:18px;margin:0;color:#3b4a39;}
+.laptop-screen .desktop-notice {margin:0 18px 12px;}
+.laptop-screen .device-disclaimer,.record-reference {display:block;padding:0 18px 14px;margin:0;font-size:10px;color:#7c8576;overflow-wrap:anywhere;}
+.laptop-screen .note-title {padding:0 18px;}
+.laptop-base {position:relative;width:calc(100% + 16px);height:10px;margin-left:-8px;background:linear-gradient(#d3d6cf,#929b8f);border-radius:2px 2px 40% 40%;box-shadow:0 8px 12px #25342a12;}
+.laptop-base:before {content:'';position:absolute;top:0;left:40%;width:20%;height:4px;background:#818b7c;border-radius:0 0 8px 8px;}
+.erp-screen {background:#fffdf8;border:1px solid #dce2d6;border-radius:16px;padding:0 22px 22px;overflow:hidden;}
+.erp-toolbar {display:flex;align-items:center;justify-content:space-between;gap:12px;background:#e9efe2;margin:0 -22px 24px;padding:12px 18px;font-size:12px;}
+.document-kicker {font:10px var(--mono);color:#879171;letter-spacing:.06em;}
+.desktop-record {padding:12px 0;border-bottom:1px solid #e0e5d8;}
+.desktop-suggestions {background:#edf1e5;border:1px solid #d9e1ce;border-radius:16px;padding:18px;margin:8px 0 18px;}
+#agentDesktop .desktop-suggestions h3 {font-size:16px;margin:0 0 8px;}
+.desktop-suggestions p {font-size:12px;color:#68765d;}
+.follow-up-options {display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 10px;}
+.follow-up-options button {border:1px solid #c9d4bc;border-radius:20px;color:#35502d;background:#fffef8;padding:10px 13px;font:600 11px system-ui;cursor:pointer;}
+.follow-up-options button:hover {background:#dce8cf;}
+.desktop-suggestions>small {font-size:10px;color:#7f8b72;}
+.desktop-activity {margin-top:8px;border-top:1px solid #e0e5da;padding-top:12px;}
+.desktop-activity summary {font-size:11px;cursor:pointer;color:#7c8773;}
+.desktop-activity ol {padding-left:20px;}
+.desktop-activity button {border:0;background:none;text-align:left;color:#55694a;padding:8px 0;font-size:11px;cursor:pointer;}
+.practice-section {border-top:1px solid #d5dccb;margin-top:28px;padding:18px 0 0;color:#5d6e52;}
+.practice-section>summary {cursor:pointer;font-size:13px;font-weight:600;}
+.practice-section p {font-size:12px;line-height:1.6;color:#748068;}
+.practice-section #newScenario {margin-top:8px;}
+#warehouseTasks #floorHint {display:block;}
+#agentDesktop button:focus-visible,.practice-section summary:focus-visible {outline:2px solid #548449;outline-offset:4px;}
+@media(min-width:1000px) {#warehouseWork .voice-column {position:sticky;top:96px;}}
+@media(max-width:900px) {
+ #warehouseWork .console-wrap {grid-template-columns:minmax(0,1fr);gap:18px;}
+ #warehouseWork #log {height:220px;}
+ #agentDesktop {min-height:350px;}
+ .desktop-empty {min-height:230px;}
+}
+@media(max-width:500px) {
+ #agentDesktop {padding:18px 14px;border-radius:22px;}
+ .desktop-heading .desktop-badge {font-size:9px;}
+ .desktop-heading {gap:8px;}
+ .laptop-screen {border-width:5px;border-top-width:10px;}
+ .laptop-toolbar {gap:5px;padding:8px;}
+ .window-controls {letter-spacing:0;}
+ .desktop-fields>div {grid-template-columns:90px minmax(0,1fr);}
+}

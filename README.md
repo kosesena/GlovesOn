@@ -1,5 +1,5 @@
 <h1 align="center">GlovesOn</h1>
-<p align="center"><b>Hands-free warehouse operator — a voice agent that <i>writes</i> to SAP.</b></p>
+<p align="center"><b>Hands-free warehouse work — an AssemblyAI voice agent with a mock SAP workflow.</b></p>
 
 <p align="center">
   <a href="https://gloveson.vercel.app"><img src="docs/img/landing.png" width="820"
@@ -51,6 +51,24 @@ asks.
 Built for the AssemblyAI Voice Agent Hackathon, September 2026.
 
 ---
+
+## Lena's workspace
+
+Conversation stays on the left; actual tool results appear on the right as an
+ERP page, a work phone or an email/notes screen. The fictional directory includes
+a supervisor, receiving colleague and maintenance colleague. Calls create demo
+logs; email goes to a demo outbox. Every save requires its own prepared draft,
+read-back and fresh spoken confirmation. No real call or email is delivered.
+
+Guided tasks now include damaged deliveries and dropped items. Lena can propose
+a call, email or incident note. A damage report does not silently post usable
+stock or perform a scrap movement. **Practice** holds the optional scenario
+builder; creating a brief does not change inventory or complete a task.
+
+See [workspace behavior and validation](docs/agent-workspace.md) and the
+[hackathon readiness check](docs/hackathon-readiness.md). New communication
+flows still need live microphone validation. The repository stays private for
+now, as requested; public submission access is a later decision.
 
 ## Architecture
 
@@ -135,6 +153,25 @@ refusing is cheaper than guessing.
 ---
 
 ## Talking to SAP
+
+### Connection status — 10 September 2026
+
+**GlovesOn currently uses its mock SAP environment.** Goods receipts, stock queries
+and reversals in the demo do not write to a company's SAP system.
+
+A personal SAP Business Accelerator Hub sandbox key has been obtained and stored
+locally in the gitignored `.env`. A read-only control request to SAP's SuccessFactors
+sandbox returned **HTTP 200**, confirming that the key works. The four S/4HANA
+services below returned **HTTP 401**, including a material-document read through
+the Hub's own **Try Out** screen. This points to an S/4HANA sandbox access problem;
+the precise SAP-side cause is not confirmed.
+
+SuccessFactors was used only to check the key. Development continues against the
+mock; **real S/4HANA reads and writes remain unverified**. No paid service was
+activated during these checks. Recheck the required S/4HANA sandbox endpoints
+before switching the demo backend or claiming a working SAP connection.
+
+### OData contract
 
 The gateway does not fake SAP. It speaks the released OData APIs over HTTP, with the CSRF
 handshake a real S/4HANA demands.
