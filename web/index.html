@@ -2674,7 +2674,7 @@ function enterWarehouseAreaWithIntro(key, force = false) {
   play.onclick = () => {
     if (video.ended) video.currentTime = 0;
     gotIt.hidden = true;
-    play.textContent = 'Starting…';
+    play.hidden = true; showToggle(false);
     // Keep a direct user gesture: no asynchronous preparation before play().
     return video.play().catch(() => {
       if (finished) return;
@@ -2689,7 +2689,7 @@ function enterWarehouseAreaWithIntro(key, force = false) {
     play.hidden = true; showToggle(false);
   };
   video.onpause = () => {
-    if (video.ended || finished) return;
+    if (video.ended || finished || !video.dataset.started) return;
     play.textContent = 'Resume ▶'; play.hidden = false; showToggle(true);
   };
   gotIt.onclick = () => finish(true);
@@ -2714,8 +2714,8 @@ function enterWarehouseAreaWithIntro(key, force = false) {
   video.src = `/assets/avatar/${key}-intro.mp4`;
   video.load();
   play.textContent = 'Play scene ▶';
-  play.hidden = false; gotIt.hidden = true;
-  showToggle(true);
+  play.hidden = true; gotIt.hidden = true;
+  showToggle(false);
   dialog.showModal();
   // This function runs synchronously from the area or replay click.
   play.onclick();
