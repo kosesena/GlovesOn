@@ -2591,17 +2591,8 @@ function applyWarehouseRoute() {
   }
 }
 function enterWarehouseArea(key) {
-  // The character walks to the chosen area; the screen changes after that
-  // walk finishes. Changing the screen first and walking afterwards would
-  // make the motion invisible - the work would already be done.
-  const transition = ++areaTransition;
-  const walk = window.gloveson?.avatarWalkTo?.(key);
-  if (walk) {
-    walk.then(() => {
-      if (transition === areaTransition && location.hash === '#warehouse' && warehouseStage === 'lobby') enterWarehouseAreaWithIntro(key);
-    });
-    return;
-  }
+  ++areaTransition;
+  // Open and play in the area click's user activation, before any awaited animation.
   enterWarehouseAreaWithIntro(key);
 }
 // Set after the generated scene has been reviewed; no placeholder media is shown.
@@ -2694,7 +2685,8 @@ function enterWarehouseAreaWithIntro(key, force = false) {
   play.hidden = false; gotIt.hidden = true;
   showToggle(true);
   dialog.showModal();
-  // Audible playback starts only from the explicit play button or screen tap.
+  // This function runs synchronously from the area or replay click.
+  play.onclick();
 }
 function enterWarehouseAreaNow(key) {
   warehouseAreaKey = key;
