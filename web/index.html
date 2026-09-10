@@ -2631,7 +2631,7 @@ function enterWarehouseAreaWithIntro(key, force = false) {
   }
   function cleanup() {
     video.pause(); video.removeAttribute('src'); video.load();
-    video.onended = video.onerror = video.onloadeddata = video.onplay = video.onpause = null;
+    video.onended = video.onerror = video.onloadeddata = video.onplay = video.onplaying = video.onpause = null;
     delete video.dataset.started;
     dialog.removeEventListener('cancel', skip);
     window.removeEventListener('hashchange', leave);
@@ -2649,23 +2649,25 @@ function enterWarehouseAreaWithIntro(key, force = false) {
   function skip(event) { event?.preventDefault(); finish(true); }
   function leave() { finish(false); }
   play.onclick = () => {
-    // Rewind from the end, and from the poster frame the clip is parked on
-    // before its first play — otherwise "Play scene" would start a quarter of
-    // the way in.
-    if (video.ended || !video.dataset.started) video.currentTime = 0;
-    video.dataset.started = '1';
+    if (video.ended) video.currentTime = 0;
     gotIt.hidden = true;
-    return video.play().then(() => { play.hidden = true; }).catch(() => { play.hidden = false; });
+    play.textContent = 'Starting…';
+    // Keep a direct user gesture: no asynchronous preparation before play().
+    return video.play().catch(() => {
+      if (finished) return;
+      play.textContent = 'Play scene ▶'; play.hidden = false;
+      showToggle(true);
+    });
   };
   screenToggle.onclick = () => (video.paused ? play.onclick() : video.pause());
-  video.onplay = () => showToggle(false);
-  video.onpause = () => showToggle(true);
-  video.onloadeddata = () => {
-    // The clips fade in from black, so frame zero is an empty rectangle. Park
-    // on a frame that has the character in it; play.onclick rewinds to zero.
-    if (video.paused && !video.dataset.started) {
-      try { video.currentTime = Math.min(1.2, (video.duration || 4) / 3); } catch { /* seek unsupported */ }
-    }
+  // The play event can fire before a single frame has been displayed.
+  video.onplaying = () => {
+    video.dataset.started = '1';
+    play.hidden = true; showToggle(false);
+  };
+  video.onpause = () => {
+    if (video.ended || finished) return;
+    play.textContent = 'Resume ▶'; play.hidden = false; showToggle(true);
   };
   gotIt.onclick = () => finish(true);
   document.getElementById('skipReceivingIntro').onclick = skip;
@@ -2678,17 +2680,21 @@ function enterWarehouseAreaWithIntro(key, force = false) {
     // Preserve keyboard focus when the playback button becomes hidden.
     if (document.activeElement === screenToggle || document.activeElement === play) gotIt.focus({preventScroll:true});
   };
-  video.onerror = () => finish(true);
+  video.onerror = () => {
+    play.hidden = true; showToggle(false); gotIt.hidden = false;
+    dialog.querySelector('footer p').textContent = 'The scene could not load. You can continue to your task.';
+  };
   document.getElementById('receivingIntroTitle').textContent = intro.title;
   dialog.querySelector('footer p').textContent = intro.line;
   video.setAttribute('aria-label', intro.title);
+  video.poster = '/assets/hero-scene.png';
   video.src = `/assets/avatar/${key}-intro.mp4`;
+  video.load();
   play.textContent = 'Play scene ▶';
   play.hidden = false; gotIt.hidden = true;
   showToggle(true);
   dialog.showModal();
-  // Browsers may block audible autoplay after the walk; keep an explicit play control.
-  play.onclick();
+  // Audible playback starts only from the explicit play button or screen tap.
 }
 function enterWarehouseAreaNow(key) {
   warehouseAreaKey = key;
