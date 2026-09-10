@@ -1145,22 +1145,22 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 #warehouseWork #log .who {font-size:10px;letter-spacing:.09em;color:#7c8078;margin-bottom:3px;}
 #warehouseWork #log .msg.tool {display:none;}
 #warehouseWork #log .msg.sys {font-size:13px;color:#8a542e;}
-/* Slow liquid color is clipped to the final word, independent of pointer input. */
+/* A narrow water ribbon flows through otherwise neutral letterforms. */
 .conversation-speak {
   display:inline-block;
-  color:#6863c8;
-  background-image:radial-gradient(ellipse at center,#9957c7 0%,#9957c700 65%),radial-gradient(ellipse at center,#168da8 0%,#168da800 65%),linear-gradient(110deg,#426dc6,#8854c4,#258caa,#426dc6);
-  background-size:140% 220%,160% 240%,300% 100%;
-  background-position:-100% 20%,180% 80%,0% 50%;
+  color:#777970;
+  background-color:#777970;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2280%22%20height%3D%2232%22%20viewBox%3D%220%200%2080%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22water%22%3E%3Cstop%20stop-color%3D%22%232d91be%22%2F%3E%3Cstop%20offset%3D%22.5%22%20stop-color%3D%22%238562c7%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%232d91be%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cpath%20d%3D%22M0%2017%20Q10%2012%2020%2017%20T40%2017%20T60%2017%20T80%2017%20L80%2021%20Q70%2016%2060%2021%20T40%2021%20T20%2021%20T0%2021%20Z%22%20fill%3D%22url%28%23water%29%22%2F%3E%3Cpath%20d%3D%22M0%2017%20Q10%2012%2020%2017%20T40%2017%20T60%2017%20T80%2017%22%20fill%3D%22none%22%20stroke%3D%22%2363c8e5%22%20stroke-width%3D%22.8%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat:repeat-x;
+  background-size:80px 100%;
+  background-position:0 0;
   -webkit-background-clip:text;
   background-clip:text;
   -webkit-text-fill-color:transparent;
-  animation:speak-water 9s ease-in-out infinite;
+  animation:speak-water 6s linear infinite;
 }
 @keyframes speak-water {
-  0%,100% {background-position:-100% 20%,180% 80%,0% 50%;}
-  33% {background-position:30% 80%,70% 10%,50% 50%;}
-  66% {background-position:160% 35%,-80% 65%,100% 50%;}
+  to {background-position:80px 0;}
 }
 @media (prefers-reduced-motion:reduce) {
   .conversation-speak {animation:none;}
