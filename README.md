@@ -2,6 +2,11 @@
 <p align="center"><b>Hands-free warehouse operator — a voice agent that <i>writes</i> to SAP.</b></p>
 
 <p align="center">
+  <a href="https://gloveson.vercel.app"><img src="docs/img/landing.png" width="820"
+     alt="The GlovesOn landing page: a warehouse worker in a headset holding a box, over the words Gloves on. Hands full. Just speak."></a>
+</p>
+
+<p align="center">
   <img alt="AssemblyAI Voice Agent API" src="https://img.shields.io/badge/AssemblyAI-Voice%20Agent%20API-5A31F4?style=flat-square">
   <img alt="SAP S/4HANA OData" src="https://img.shields.io/badge/SAP-S%2F4HANA%20OData-0FAAFF?style=flat-square">
   <img alt="Python 3.11" src="https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square">
@@ -232,6 +237,26 @@ options and what the choice costs.
 Start with [ADR-0001](docs/adr/0001-gateway-between-agent-and-erp.md) if you read only one,
 or [the judge guide](docs/JUDGE-GUIDE.md) if you would rather check the claims than read about
 them — it maps each one to a file and a command, and ends with what this system does not do.
+
+---
+
+## Check it without reading any of this
+
+<p align="center">
+  <a href="https://gloveson.vercel.app/how-it-works"><img src="docs/img/how-it-works.png" width="820"
+     alt="The how-it-works page: counters for tools, tests, decision records, keyterms and documents posted, above a map of the system whose selected node explains the gateway, the rules it cannot break, and where they live."></a>
+</p>
+
+[**gloveson.vercel.app/how-it-works**](https://gloveson.vercel.app/how-it-works) is the
+same map, in the browser, with no sign-up. Click any box and it tells you what that part
+does, the rule it must not break, the file and line it lives on, and the command that
+proves it.
+
+Every number on that page is computed when you load it — the tool count from
+`agent/agent.json`, the test count from the suites, the decision records from `docs/adr/`,
+the documents from the database. Even the sentence that says how many parts there are
+counts them. A page whose argument is *do not trust a typed number* had better not open
+with one.
 
 ---
 
