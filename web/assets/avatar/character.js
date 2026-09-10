@@ -138,8 +138,8 @@ async function start() {
       .filter(track => /^(RightShoulder|RightArm|RightForeArm|RightHand)\.quaternion$/.test(track.name))
       .map(track => ({bone: bones[track.name.split('.')[0]], sample: track.createInterpolant()}));
     const greetingRotation = new THREE.Quaternion();
-    const waveSpeed = .6;
-    let greetingDuration = greetingClip.duration / waveSpeed;
+    const WAVE = {rise: 1.25, hold: 2.2, fall: 1.35, poseTime: 1.5};
+    let greetingDuration = WAVE.rise + WAVE.hold + WAVE.fall;
     let greetingCount = 0, greetingIsWave = true;
     let current, elapsed = 0, phase = 'idle', phaseStart = 0, home = .8, near = .2, travelFrom = .8, travelTo = .2;
     let autoIntro = true, returning = false, arrival = null;
@@ -163,7 +163,7 @@ async function start() {
       if (touchNow > 0) return;
       mixer.stopAllAction(); current = null;
       greetingIsWave = greetingCount++ % 2 === 0;
-      greetingDuration = greetingIsWave ? greetingClip.duration / waveSpeed : 3.4;
+      greetingDuration = greetingIsWave ? WAVE.rise + WAVE.hold + WAVE.fall : 3.4;
       phase = 'wave'; phaseStart = elapsed;
     }
     bubble = document.createElement('p');
@@ -172,7 +172,7 @@ async function start() {
     hero.append(bubble);
     greet = document.createElement('button'); greet.className = 'avatar-greet';
     greet.setAttribute('aria-label', 'Say hello to your warehouse guide');
-    greet.addEventListener('pointerenter', wave);
+    // Greetings are intentional; moving the pointer past the guide does not restart them.
     greet.addEventListener('click', () => {
       wave();
       // Speech requires an intentional click, never an automatic idle gesture.
@@ -268,10 +268,19 @@ async function start() {
         const t = elapsed - phaseStart;
         const envelope = smoothstep(Math.max(0, Math.min(1, t / 1.1, (greetingDuration - t) / 1.2)));
         if (greetingIsWave) {
+          const lift = smoothstep(Math.max(0, Math.min(1, t / WAVE.rise,
+            (greetingDuration - t) / WAVE.fall)));
+          // Follow only the lift of the source clip, then keep shoulder and elbow still.
           for (const {bone, sample} of greetingTracks) {
             if (!bone) continue;
-            greetingRotation.fromArray(sample.evaluate(Math.min(t * waveSpeed, greetingClip.duration))).normalize();
-            bone.quaternion.slerp(greetingRotation, envelope);
+            greetingRotation.fromArray(sample.evaluate(WAVE.poseTime * lift)).normalize();
+            bone.quaternion.slerp(greetingRotation, lift);
+          }
+          const hold = (t - WAVE.rise) / WAVE.hold;
+          if (hold > 0 && hold < 1 && bones.RightHand) {
+            // Two small wrist sweeps with a zero-velocity entrance and exit.
+            const soften = Math.sin(Math.PI * hold) ** 2;
+            bones.RightHand.rotateZ(Math.sin(hold * Math.PI * 4) * .14 * soften);
           }
         } else {
           // Keep the fitted headset path separate from the waving arm clip.
