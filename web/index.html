@@ -2447,7 +2447,7 @@ let avatarLoaded = false;
 function loadAvatar() {
   if (avatarLoaded) return;
   avatarLoaded = true;
-  import('/assets/avatar/character.js?v=41').catch(() => {});
+  import('/assets/avatar/character.js?v=42').catch(() => {});
 }
 
 // Tying the download to the click brought the character into the lobby
@@ -2462,7 +2462,7 @@ function warmAvatar() {
   const assets = [
     ['prefetch', '/assets/avatar/worker.glb?v=2'],
     ['prefetch', '/assets/avatar/motions.json?v=4'],
-    ['modulepreload', '/assets/avatar/character.js?v=41'],
+    ['modulepreload', '/assets/avatar/character.js?v=42'],
     ['modulepreload', '/assets/avatar/vendor/three.module.js'],
     ['modulepreload', '/assets/avatar/vendor/three.core.js'],
     ['modulepreload', '/assets/avatar/vendor/GLTFLoader.js'],

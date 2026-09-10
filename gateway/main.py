@@ -1045,6 +1045,12 @@ def voice_policy_script() -> FileResponse:
                         headers={'Cache-Control': 'no-cache'})
 
 
+@app.get('/how-stories.js', include_in_schema=False)
+def how_stories_script() -> FileResponse:
+    return FileResponse(WEB_DIR / 'how-stories.js', media_type='text/javascript',
+                        headers={'Cache-Control': 'no-cache'})
+
+
 @app.get("/assets/{scene}.webp", include_in_schema=False)
 def scene_webp(scene: str) -> FileResponse:
     if scene not in {"worker-3d"}:

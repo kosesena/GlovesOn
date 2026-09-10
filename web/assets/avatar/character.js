@@ -276,6 +276,11 @@ async function start() {
           for (const {bone, sample} of greetingTracks) {
             if (!bone) continue;
             greetingRotation.fromArray(sample.evaluate(WAVE.poseTime)).normalize();
+            // Keep a relaxed elbow bend in the raised greeting pose.
+            if (bone === bones.RightForeArm) {
+              greetingRotation.multiply(new THREE.Quaternion().setFromAxisAngle(
+                new THREE.Vector3(1, 0, 0), .35));
+            }
             bone.quaternion.slerp(greetingRotation, lift);
           }
           const hold = (t - WAVE.rise) / WAVE.hold;
