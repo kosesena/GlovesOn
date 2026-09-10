@@ -70,6 +70,10 @@ See [workspace behavior and validation](docs/agent-workspace.md) and the
 flows still need live microphone validation. The repository stays private for
 now, as requested; public submission access is a later decision.
 
+Lena's [character references and production memory](docs/lena-memory.md) include
+four saved image sheets, generation prompts and the user-approved first scenario
+video. The selected damaged-delivery clip is ready; app integration is pending.
+
 ## Architecture
 
 <p align="center">

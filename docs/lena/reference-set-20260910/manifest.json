@@ -1,0 +1,37 @@
+{
+  "created": "2026-09-10",
+  "generator": "built-in imagegen",
+  "identity_reference": "web/assets/worker-3d.webp",
+  "files": [
+    {
+      "file": "01-turnaround.png",
+      "bytes": 1829516,
+      "sha256": "83e17051aed82e1d0c2df101a57eb8f897a86cbd00165011a285e03884aacae0"
+    },
+    {
+      "file": "02-gestures.png",
+      "bytes": 1724069,
+      "sha256": "2e12e3f95b986560662001b5ea4e5d089c46d0fe01ca9b09abd0222acd90f884"
+    },
+    {
+      "file": "03-at-work.png",
+      "bytes": 1738779,
+      "sha256": "80c569f99d161ca5d4ea75b627f6bd9f4dafa17ac19422a8ed46ac6c26c5a320"
+    },
+    {
+      "file": "04-expressions.png",
+      "bytes": 1909274,
+      "sha256": "dc4c889c3d1fe211acd3648875105d68531c602ac4548fecd7a5d67f67915a3c"
+    },
+    {
+      "file": "README.md",
+      "bytes": 925,
+      "sha256": "d4b6ec54e2e714376a5f26c60b0b73dc828c6c3378d25e62503e4a89d9c90fd7"
+    },
+    {
+      "file": "PROMPTS.md",
+      "bytes": 8581,
+      "sha256": "bd141d1832c5d38762c4d1c833dd76a87908376946bfa71d4995b66b523ed4ca"
+    }
+  ]
+}
