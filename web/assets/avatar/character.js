@@ -130,7 +130,7 @@ async function start() {
       if (bones.Spine01) bones.Spine01.rotation.x += Math.sin(t) * .022;
       if (bones.Head)    bones.Head.rotation.x    += Math.sin(t * .9 + 1) * .015;
     }
-    // Only travel uses an imported clip. Hover never advances the mixer.
+    // Travel uses the mixer; greetings sample arm rotations independently.
     const actions = { walk: mixer.clipAction(THREE.AnimationClip.parse(data.walk)) };
     // Sample the authored greeting on the arm only, keeping the feet planted.
     const greetingClip = THREE.AnimationClip.parse(data.wave);
@@ -138,8 +138,9 @@ async function start() {
       .filter(track => /^(RightShoulder|RightArm|RightForeArm|RightHand)\.quaternion$/.test(track.name))
       .map(track => ({bone: bones[track.name.split('.')[0]], sample: track.createInterpolant()}));
     const greetingRotation = new THREE.Quaternion();
-    const greetingDuration = greetingClip.duration;
-    let greetingIsWave = true;
+    const waveSpeed = .6;
+    let greetingDuration = greetingClip.duration / waveSpeed;
+    let greetingCount = 0, greetingIsWave = true;
     let current, elapsed = 0, phase = 'idle', phaseStart = 0, home = .8, near = .2, travelFrom = .8, travelTo = .2;
     let autoIntro = true, returning = false, arrival = null;
     function play(name) {
@@ -161,7 +162,8 @@ async function start() {
       // cosmetic: ignore it until the gesture finishes.
       if (touchNow > 0) return;
       mixer.stopAllAction(); current = null;
-      greetingIsWave = true;
+      greetingIsWave = greetingCount++ % 2 === 0;
+      greetingDuration = greetingIsWave ? greetingClip.duration / waveSpeed : 3.4;
       phase = 'wave'; phaseStart = elapsed;
     }
     bubble = document.createElement('p');
@@ -264,11 +266,16 @@ async function start() {
         // Restore every bone first so no travel pose can remain on the legs.
         applyRest(elapsed * 1.6);
         const t = elapsed - phaseStart;
-        const envelope = smoothstep(Math.max(0, Math.min(1, t / .85, (greetingDuration - t) / .9)));
-        for (const {bone, sample} of greetingTracks) {
-          if (!bone) continue;
-          greetingRotation.fromArray(sample.evaluate(Math.min(t, greetingDuration))).normalize();
-          bone.quaternion.slerp(greetingRotation, envelope);
+        const envelope = smoothstep(Math.max(0, Math.min(1, t / 1.1, (greetingDuration - t) / 1.2)));
+        if (greetingIsWave) {
+          for (const {bone, sample} of greetingTracks) {
+            if (!bone) continue;
+            greetingRotation.fromArray(sample.evaluate(Math.min(t * waveSpeed, greetingClip.duration))).normalize();
+            bone.quaternion.slerp(greetingRotation, envelope);
+          }
+        } else {
+          // Keep the fitted headset path separate from the waving arm clip.
+          applyTouch(envelope);
         }
         const answering = t > .75 && t < 2;
         bubble.textContent = answering ? (greetingIsWave ? 'Hi there!' : 'Okay!') : 'Pick an area — I’ll meet you there.';
