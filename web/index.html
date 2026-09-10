@@ -1145,33 +1145,22 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 #warehouseWork #log .who {font-size:10px;letter-spacing:.09em;color:#7c8078;margin-bottom:3px;}
 #warehouseWork #log .msg.tool {display:none;}
 #warehouseWork #log .msg.sys {font-size:13px;color:#8a542e;}
-/* Soft moving light stays behind the conversation and never intercepts input. */
-#warehouseWork #log {
-  border-radius:24px;
-  background-size:160% 180%,180% 160%;
-  background-position:0% 50%,100% 50%;
-  background-repeat:no-repeat;
-  background-color:transparent;
-  background-blend-mode:normal;
-  background-image:none;
-  transition:box-shadow .5s ease;
-}
+/* Each word catches light independently; the conversation surface stays plain. */
+.conversation-word {display:inline;transition:color .65s ease,text-shadow .65s ease;}
 @media (hover:hover) and (pointer:fine) {
-  #warehouseWork #log:hover {
-    background-image:radial-gradient(ellipse at 25% 50%,#c9eaff80,transparent 62%),
-      radial-gradient(ellipse at 75% 50%,#ded4ff70,transparent 62%);
-    box-shadow:0 0 28px #c9eaff35;
-    animation:conversation-light-wave 5s ease-in-out infinite alternate;
+  .conversation-word:hover {
+    color:#7761ce;
+    text-shadow:0 0 8px #ae8cff90,0 0 18px #75d9ff80;
+    animation:word-enchantment 1.6s ease-in-out infinite alternate;
   }
-  #warehouseWork #log:hover .conversation-empty {color:#42658b;transition:color .4s ease;}
 }
-@keyframes conversation-light-wave {
-  from {background-position:0% 25%,100% 75%;}
-  to {background-position:100% 75%,0% 25%;}
+@keyframes word-enchantment {
+  from {color:#537cce;text-shadow:0 0 6px #77d5ff90,0 0 14px #a08aff60;}
+  to {color:#ad5fbd;text-shadow:0 0 10px #db9cffa0,0 0 22px #82d9ff80;}
 }
 @media (prefers-reduced-motion:reduce) {
-  #warehouseWork #log:hover {animation:none;}
-  #warehouseWork #log,#warehouseWork #log:hover .conversation-empty {transition:none;}
+  .conversation-word:hover {animation:none;}
+  .conversation-word {transition:none;}
 }
 #warehouseWork .conversation-empty {color:#777970;font-size:16px;text-align:center;margin:auto;}
 #warehouseWork #resetBtn {margin:12px 24px 20px;}
@@ -1358,7 +1347,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 </header>
 <div id="voiceSuggestions" aria-label="Things you can ask"><span>Try saying</span><q>Check stock for material 4711</q><q>Receive twenty pieces of 4711</q><q>Show my recent receipts</q><small>Speak. Review. Confirm.</small></div>
 <section id="conversationDetails" class="live-conversation" aria-label="Live conversation">
-  <div id="log" role="log" aria-live="polite" aria-relevant="additions text"><p class="conversation-empty">Your conversation will appear here as you speak.</p></div>
+  <div id="log" role="log" aria-live="polite" aria-relevant="additions text"><p class="conversation-empty"><span class="conversation-word">Your</span> <span class="conversation-word">conversation</span> <span class="conversation-word">will</span> <span class="conversation-word">appear</span> <span class="conversation-word">here</span> <span class="conversation-word">as</span> <span class="conversation-word">you</span> <span class="conversation-word">speak.</span></p></div>
 </section>
 
 <main>
