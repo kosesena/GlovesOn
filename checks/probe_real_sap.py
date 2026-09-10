@@ -11,8 +11,13 @@ It is deliberately READ-ONLY. Nothing here posts a document. The sandbox is a
 shared environment belonging to SAP, and writing into it is a separate decision
 taken on purpose, not a side effect of finding out whether reads work.
 
-    export SAP_API_KEY=...            # api.sap.com → your profile → API keys
-    python3 checks/probe_real_sap.py
+Put the key in .env, which is gitignored, rather than in the shell — an exported
+key lives on in shell history, and this one is yours rather than the project's:
+
+    SAP_API_KEY=...                        # add the line to .env
+    ./.venv/bin/python checks/probe_real_sap.py
+
+The venv matters: httpx is installed there and not in the system python.
 
 The output is evidence either way. A failure that names its cause is worth more
 to this repository than a success nobody can reproduce, so every outcome is
@@ -27,6 +32,16 @@ import os
 import sys
 
 import httpx
+
+# This script does not import the gateway package, so nothing has loaded .env for
+# it. Do that here, so the key can live in the gitignored file rather than in the
+# shell's history.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:  # pragma: no cover - only when run outside the venv
+    pass
 
 SANDBOX = "https://sandbox.api.sap.com/s4hanacloud"
 
@@ -58,8 +73,10 @@ def first_words(body: str, limit: int = 160) -> str:
 
 async def main() -> int:
     key = os.getenv("SAP_API_KEY", "").strip()
-    if not key:
-        print("SAP_API_KEY is not set. Get one from api.sap.com, then export it.")
+    if not key or key in {"buraya", "...", "your-key", "change-me"}:
+        print("SAP_API_KEY is not set to a real key.")
+        print("Get one free from api.sap.com (log in, open any S/4HANA API, Show API Key),")
+        print("then add  SAP_API_KEY=<the key>  to .env and run this again.")
         return 2
 
     base = os.getenv("SAP_BASE_URL", "").strip().rstrip("/") or SANDBOX
