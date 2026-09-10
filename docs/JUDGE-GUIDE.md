@@ -65,18 +65,18 @@ voice and look again.)
 | It speaks SAP's real API, with the CSRF handshake | [`gateway/sap_client.py`](../gateway/sap_client.py) `_fetch_csrf` · [`sap_mock.py`](../gateway/sap_mock.py) refuses a write without a token | `test_a_write_without_a_csrf_token_is_refused` |
 | Material numbers are 18-character MATNR | [`gateway/store.py`](../gateway/store.py) `norm_matnr` | `test_a_spoken_material_number_becomes_an_18_character_matnr` |
 | Every document traces back to the sentence that caused it | [`gateway/audit.py`](../gateway/audit.py) · `/api/provenance/{mblnr}` · click any row in **Recent documents** | `test_a_document_can_be_traced_back_to_the_sentence_that_caused_it` |
-| Swapping the mock for a real tenant is one environment variable | `SAP_BASE_URL` in [`gateway/sap_client.py`](../gateway/sap_client.py) — there is no second code path | [ADR-0003](adr/0003-mock-erp-behind-a-faithful-contract.md) |
+| Swapping the mock for a real tenant is configuration, not code | `SAP_BASE_URL` and `SAP_API_KEY` in [`gateway/sap_client.py`](../gateway/sap_client.py) — two variables, and no second code path | [ADR-0003](adr/0003-mock-erp-behind-a-faithful-contract.md) · `test_a_configured_key_becomes_the_header_saps_gateway_asks_for` |
 
 Run the suite yourself:
 
 ```bash
 pip install -r requirements.txt pytest
-pytest checks/                               # 39 tests: no database, no keys, no setup
+pytest checks/                               # 43 tests: no database, no keys, no setup
 export TEST_DATABASE_URL=postgresql://…      # any empty Postgres; see below
-pytest                                       # all 80
+pytest                                       # all 84
 ```
 
-80 tests, in two suites. `checks/` (39) needs nothing at all: it exercises
+84 tests, in two suites. `checks/` (43) needs nothing at all: it exercises
 the draft protocol itself — confirmation, one-use tokens, session scoping,
 provider cleanup — against an in-memory app, so it is the part you can run
 thirty seconds after cloning. `tests/` (41) needs a Postgres because the

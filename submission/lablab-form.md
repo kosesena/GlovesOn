@@ -55,11 +55,11 @@ for the ERP instead of narrating an optimistic success.
 lobby, a guide, guided tasks — because you cannot ship a receiving floor to a
 judge. The scenery is the only fiction: underneath sit SAP's released OData
 contract, numbered documents, reversals and one-use write drafts, and pointing
-one environment variable at a real tenant takes the costume off.
+the base URL and a credential at a real tenant takes the costume off.
 
 **Honest about limits.** The ERP behind this is a **mock** — faithful to the
-released OData contract, CSRF handshake and all, and one environment variable
-away from a real tenant, but not proven against one. The posting is made by a
+released OData contract, CSRF handshake and all, and a base URL plus a
+credential away from a real tenant, but not proven against one. The posting is made by a
 service user, not the worker, so SAP cannot yet say who did it. Noise
 robustness is set up but unmeasured. The demo serves one session at a time.
 Nobody is authenticated. These are written up in the repo, not hidden — the
@@ -69,7 +69,7 @@ judge guide ends with them.
 system where every box names the file it lives in, the rule it cannot break and
 the command that proves it — and every figure on it is computed at request time,
 so the diagram cannot claim more than exists. The same evidence is in the repo's
-judge guide, and 39 of the 80 tests run with no database and no keys at all.
+judge guide, and 43 of the 84 tests run with no database and no keys at all.
 
 ## Technology & category tags
 AssemblyAI Voice Agent API · Speech-to-Text · Voice Agents · SAP · S/4HANA ·

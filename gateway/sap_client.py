@@ -2,10 +2,14 @@
 The SAP OData client.
 
 The single point of contact between the gateway and SAP. Everything inside
-speaks OData; the only thing that speaks to the outside is this file. Moving
-to a real S/4HANA amounts to changing the SAP_BASE_URL variable — because
-everything SAP-specific (the CSRF handshake, the {"d": ...} envelope, error
-codes, 18-digit MATNR) is already here.
+speaks OData; the only thing that speaks to the outside is this file. Moving to
+a real S/4HANA is a matter of configuration rather than code — SAP_BASE_URL for
+where, SAP_API_KEY for what to prove — because everything SAP-specific (the CSRF
+handshake, the {"d": ...} envelope, error codes, 18-digit MATNR) is already here.
+
+It used to say "one environment variable". That was true of routing and false of
+the whole, because the mock demands no credential and so this client sent none.
+Two variables is still configuration, but the sentence had to stop rounding down.
 """
 
 from __future__ import annotations
@@ -32,6 +36,26 @@ def env(name: str, default: str = "") -> str:
 
 SAP_BASE_URL = env("SAP_BASE_URL").rstrip("/")
 SAP_TIMEOUT = float(env("SAP_TIMEOUT_SECONDS", "8"))
+SAP_API_KEY = env("SAP_API_KEY")
+
+
+def credentials(api_key: str | None = None) -> dict[str, str]:
+    """
+    The header SAP's own API gateway wants, and the correction to a claim.
+
+    The mock needs no credential, so until now this client sent none at all —
+    which quietly made "moving to a real tenant is one environment variable"
+    untrue. It is two: where to go, and what to prove. `SAP_API_KEY` sends
+    `APIKey`, which is what the Business Accelerator Hub sandbox and SAP API
+    Management both expect.
+
+    This is not the answer for a productive tenant. There the call should carry
+    the *worker's* identity through BTP's Destination and Connectivity services,
+    not a single service credential — the gap `docs/clean-core.md` is about.
+    An API key gets us as far as a real SAP endpoint answering, and no further.
+    """
+    key = SAP_API_KEY if api_key is None else api_key
+    return {"APIKey": key} if key else {}
 
 MATERIAL_DOC = "/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV"
 MATERIAL_STOCK = "/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV"
@@ -57,15 +81,22 @@ class SapClient:
     """
 
     def __init__(self, base_url: str | None = None,
-                 transport: httpx.AsyncBaseTransport | None = None):
+                 transport: httpx.AsyncBaseTransport | None = None,
+                 api_key: str | None = None):
         self.base_url = (base_url or SAP_BASE_URL).rstrip("/")
         # With a transport, the request reaches the mock's ASGI app without
         # touching a socket. What is spoken does not change — same OData
         # path, same CSRF handshake, same {"d": ...} envelope — only the
         # carrier does. The environment forces this: a serverless function
         # has no listening port, so there is no such thing as loopback.
+        # The credential goes on the session, not on each call, so the CSRF fetch
+        # carries it too. Behind SAP's API gateway an unauthenticated fetch is
+        # rejected before it can hand back a token, and the failure surfaces as
+        # "could not obtain a CSRF token" — which reads like a protocol fault and
+        # is an authentication one.
         self._client = httpx.AsyncClient(timeout=SAP_TIMEOUT, follow_redirects=False,
-                                         transport=transport)
+                                         transport=transport,
+                                         headers=credentials(api_key))
         self._csrf: str | None = None
 
     async def aclose(self) -> None:

@@ -193,7 +193,7 @@
         <rect x="18" y="426" width="200" height="66" rx="12" fill="var(--paper)" stroke="#7fa389" stroke-width="2" stroke-dasharray="7 5"/>
         <text class="n-title" x="34" y="452">mock S/4HANA</text>
         <text class="n-sub" x="34" y="468">its own app · not routed publicly</text>
-        <text class="n-sub" x="34" y="483">one env var → a real tenant</text>
+        <text class="n-sub" x="34" y="483">config, not code → a real tenant</text>
       </g>
 
       <!-- guards -->
@@ -304,7 +304,7 @@ const NODES = {
   },
   gateway: {
     kicker:'The boundary', title:'The GlovesOn gateway',
-    what:'The agent speaks in warehouse terms — /erp/stock, /erp/goods-receipt — and never sees SAP. Everything SAP-specific lives behind this line: authentication, field translation, and every guardrail below. Swapping the mock for a real tenant is one environment variable, because there is no second code path.',
+    what:'The agent speaks in warehouse terms — /erp/stock, /erp/goods-receipt — and never sees SAP. Everything SAP-specific lives behind this line: authentication, field translation, and every guardrail below. Swapping the mock for a real tenant is configuration rather than code — a base URL and a credential — because there is no second code path.',
     files:[{p:'gateway/main.py',l:216,label:'require_tool_auth — constant-time secret check'},
            {p:'gateway/main.py',l:60,label:'refuses to start without TOOL_SHARED_SECRET'},
            {p:'gateway/sap_client.py',l:33,label:'SAP_BASE_URL — the one variable that moves it to a real tenant'}],
