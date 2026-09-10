@@ -702,7 +702,7 @@ body > .console-wrap, body > .demo-intro { display:none; }
    native control strip — chrome around a five-second shot is all cost. The
    clips are square (960² and 1440²), so the "screen" is square too; letter-
    boxing them into 16:9 would waste the height a phone actually has. */
-#receivingIntro { width:min(680px,calc(100dvh - 210px),calc(100vw - 32px)); max-width:none; max-height:calc(100dvh - 24px);
+#receivingIntro { width:min(680px,calc(100dvh - 250px),calc(100vw - 32px)); max-width:none; max-height:calc(100dvh - 24px);
   padding:0; border:0; border-radius:0; overflow:visible; background:transparent; color:#eef3ea; }
 #receivingIntro[open] { display:flex; flex-direction:column; gap:18px; }
 #receivingIntro::backdrop { background:#070b09f2; }
@@ -729,17 +729,18 @@ body > .console-wrap, body > .demo-intro { display:none; }
   box-shadow:0 10px 30px #00000073; }
 #receivingIntro .screen-toggle[hidden] { display:none; }
 
-#receivingIntro footer { flex:none; display:flex; align-items:center; background:transparent; padding:0 4px; gap:18px; flex-wrap:wrap; }
-#receivingIntro footer p { flex:1 1 240px; color:#dfe7da; font:500 17px/1.5 var(--sans, sans-serif); }
-#receivingIntro .intro-actions { display:flex; gap:10px; margin-left:auto; }
+#receivingIntro footer { flex:none; display:flex; flex-direction:column; align-items:stretch; width:100%; max-width:none; margin:0; border:0; background:transparent; padding:0 4px 6px; gap:16px; }
+#receivingIntro footer p { margin:0; color:#dfe7da; text-align:center; font:500 16px/1.5 var(--sans, sans-serif); }
+#receivingIntro .intro-actions { display:flex; justify-content:center; gap:12px; width:100%; margin:0; }
+#receivingIntro .intro-actions button { min-width:144px; min-height:48px; border-radius:999px; box-shadow:none; }
 #receivingIntro button { min-height:44px; padding:12px 20px; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer; }
 #receivingIntro #skipReceivingIntro { min-height:0; padding:8px 14px; background:transparent; color:#aab7a4; border:1px solid #ffffff2e; border-radius:20px; font:11px var(--mono); letter-spacing:.1em; }
 #receivingIntro #playReceivingIntro { background:transparent; color:#eef3ea; border:1px solid #ffffff40; }
 #receivingIntro #receivingGotIt { background:#eef3ea; color:#16221a; border:1px solid #eef3ea; }
-#receivingIntro button:focus-visible { outline:3px solid #ed8950; outline-offset:3px; }
+#receivingIntro button:focus-visible { outline:2px solid #b9dcf6; outline-offset:4px; }
 @media(max-width:520px) {
   #receivingIntro { width:calc(100vw - 24px); gap:14px; }
-  #receivingIntro footer { gap:12px; } #receivingIntro footer p { font-size:16px; flex-basis:100%; }
+  #receivingIntro footer { gap:12px; } #receivingIntro footer p { font-size:16px; }
   #receivingIntro .intro-actions { margin-left:0; width:100%; }
   #receivingIntro .intro-actions button { flex:1; }
   #receivingIntro .screen-toggle span { width:64px; height:64px; font-size:22px; }
@@ -2672,8 +2673,10 @@ function enterWarehouseAreaWithIntro(key, force = false) {
   window.addEventListener('hashchange', leave);
   video.onended = () => {
     play.textContent = 'Replay ↻'; play.hidden = false;
-    showToggle(true);
-    gotIt.hidden = false; gotIt.focus();
+    showToggle(false);
+    gotIt.hidden = false;
+    // Preserve keyboard focus when the playback button becomes hidden.
+    if (document.activeElement === screenToggle || document.activeElement === play) gotIt.focus({preventScroll:true});
   };
   video.onerror = () => finish(true);
   document.getElementById('receivingIntroTitle').textContent = intro.title;
@@ -2745,7 +2748,7 @@ window.addEventListener('pagehide', () => { if (ws || activeScopeToken || live) 
      what lets us paint a real frame instead of the black one the clip
      opens on when the browser blocks audible autoplay. -->
 <div class="screen"><video id="receivingIntroVideo" playsinline preload="auto" aria-label="Your warehouse guide receives and checks a delivery"></video><button class="screen-toggle" id="introScreenToggle" type="button" aria-label="Play the scene"><span aria-hidden="true">▶</span></button></div>
-<footer><p>Receiving bay · Your first delivery</p><div class="intro-actions"><button id="playReceivingIntro" type="button">Play scene ▶</button><button id="receivingGotIt" type="button" hidden>Got it →</button></div></footer>
+<footer><p>Receiving bay · Your first delivery</p><div class="intro-actions"><button id="playReceivingIntro" type="button">Play scene ▶</button><button id="receivingGotIt" type="button" hidden>Continue →</button></div></footer>
 </dialog>
 <script>
 // Keep outline lettering registered to the responsive avatar and font metrics.
