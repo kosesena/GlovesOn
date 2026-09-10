@@ -53,15 +53,24 @@ Built for the AssemblyAI Voice Agent Hackathon, September 2026.
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/img/architecture-dark.svg">
     <img src="docs/img/architecture-light.svg" width="880"
-         alt="Browser microphone feeds the AssemblyAI Voice Agent API, which calls the GlovesOn gateway over HTTPS; the gateway speaks OData to S/4HANA and streams the live warehouse screen over SSE.">
+         alt="The worker speaks to the browser, which streams audio to the AssemblyAI Voice Agent API. The agent's tool call comes back down to the browser, which posts it to the GlovesOn gateway with a session capability. The gateway holds the shared secret, speaks OData to S/4HANA, and streams the live warehouse screen back over SSE.">
   </picture>
 </p>
 
-**The agent never sees SAP.** It speaks in warehouse terms (`/erp/stock`,
-`/erp/goods-receipt`); the gateway owns authentication, SAP field translation and every
-guardrail around writing. That boundary is [ADR-0001](docs/adr/0001-gateway-between-agent-and-erp.md),
-and it is why swapping the mock for a real tenant is a change of environment variable
-rather than a change of code.
+**The agent never sees SAP.** It asks for a tool by name and gets warehouse terms back —
+quantity, unit, description, bin. The gateway owns authentication, SAP field translation
+and every guardrail around writing. That boundary is
+[ADR-0001](docs/adr/0001-gateway-between-agent-and-erp.md), and it is why swapping the
+mock for a real tenant is a change of environment variable rather than a change of code.
+
+**The agent never sees the gateway either.** Its tool call comes back down the same
+WebSocket that carries the audio, and the *browser* posts it on with a capability minted
+for that session alone. Nothing at AssemblyAI holds our address or our secret, and the
+two write tools are not in the configuration the agent receives at all: they are added
+only while a prepared draft is live, and taken away again the moment it is not. That is
+[ADR-0006](docs/adr/0006-tool-calls-return-to-the-browser.md), and it is also what it
+costs — the browser is in the write path now, so the rules that matter are the ones the
+gateway enforces after the relay, never the ones the page enforces before it.
 
 ---
 
@@ -71,14 +80,20 @@ rather than a change of code.
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/img/confirmed-write-dark.svg">
     <img src="docs/img/confirmed-write-light.svg" width="900"
-         alt="Sequence: the worker asks for a goods receipt; the agent looks up stock, reads the line back, waits for a spoken confirmation, then the gateway checks for a duplicate, fetches a CSRF token and posts the material document, which appears on the live screen.">
+         alt="Sequence: the worker names a delivery; the agent prepares a draft through the page and the gateway, which returns the authoritative quantity, description and bin plus a one-use token; the agent reads that back and waits for a spoken confirmation; only then does the write tool exist, and the gateway checks the token and the duplicate window, fetches a CSRF token, posts the material document, and streams it to the live screen.">
   </picture>
 </p>
 
 <sub align="center">Click the diagram to open it full size. Source: <a href="docs/img/confirmed-write.mmd"><code>docs/img/confirmed-write.mmd</code></a>.</sub>
 
-Four things in that diagram are deliberate and each one costs something:
+Five things in that diagram are deliberate and each one costs something:
 
+- **The write tool does not exist yet at step one.** `post_goods_receipt` is absent from
+  the configuration the agent is given, and appears only once a preparation has returned a
+  one-use token bound to the exact details about to be read back. It is removed again on
+  any turn that is not an unmistakable yes, on expiry two minutes later, and for the rest
+  of the session once a write result has been lost. Refusing to use a tool is a decision a
+  model makes; not having one is not.
 - **The read-back names four things** — quantity, unit, material *description* and
   destination bin. The description is load-bearing: it is what lets a worker catch that
   they are holding nuts, not bolts. It costs about two seconds per posting.
@@ -178,7 +193,8 @@ were read back, consumed together with the spoken yes.
 | AssemblyAI feature | Where |
 |---|---|
 | Voice Agent API, browser deployment | `web/index.html` |
-| HTTP tools with a shared secret header | `agent/agent.json` |
+| Inline session configuration, built per request | `gateway/voice_tools.py` — no agent is published, and the provider holds no URL or secret of ours |
+| JSON-Schema function tools, answered by the page | tool calls return over the WebSocket; `web/voice-policy.js` decides which exist right now |
 | `execution_mode: "hold"` on both writes | the agent waits for the ERP, and says so |
 | `transcription_prompt` | a receiving dock: forklift noise, spoken material numbers |
 | `keyterms` | material numbers, movement vocabulary, spelled-out digits |
@@ -198,7 +214,8 @@ options and what the choice costs.
 
 - **[docs/adr/](docs/adr/)** — why a gateway between agent and ERP · why every write is
   confirmed out loud · why the mock is faithful rather than convenient · why the browser
-  came before telephony
+  came before telephony · why the state left the process · why the tool call comes back
+  to the browser rather than the provider calling us
 - **[docs/nfr.md](docs/nfr.md)** — latency budget, concurrency ceiling, failure modes,
   security posture, cost model, known defects
 - **[docs/clean-core.md](docs/clean-core.md)** — where this complies with SAP Clean Core
@@ -233,23 +250,21 @@ because a serverless deployment has no disk to keep it on
 ([ADR-0005](docs/adr/0005-serverless-deployment-and-shared-state.md)). There is no
 offline mode. A free Neon database works; use its pooled connection string.
 
-Three tabs — the scripts find the virtualenv themselves:
+One tab — the script finds the virtualenv itself:
 
 ```bash
 ./serve.sh      # gateway on :8000
-./tunnel.sh     # public HTTPS — prints a NEW address every time
-./publish.sh    # push agent/agent.json to AssemblyAI
 ```
 
-Between the second and third: put the tunnel address into `GATEWAY_PUBLIC_URL` in `.env`.
-AssemblyAI refuses to save an agent whose tool host does not resolve, so a stale address
-fails the publish with a 422 instead of failing silently in front of an audience. Then
-open **http://localhost:8000 in Chrome** — Safari does not reliably give the
+Then open **http://localhost:8000 in Chrome** — Safari does not reliably give the
 `AudioContext` the 24 kHz rate the API expects.
 
-> **The tunnel is not optional in local development.** AssemblyAI calls tool endpoints
-> from its own servers: HTTPS and public hosts only, loopback blocked, redirects not
-> followed.
+> **No tunnel, and no publish step.** Nothing dials in: the session configuration is built
+> from `agent/agent.json` on every request and sent inline over the browser's own socket,
+> so changing the prompt, the voice or a tool schema is a file edit and a page reload.
+> `GATEWAY_PUBLIC_URL` is still read and still validated as public HTTPS — it checks the
+> tool template rather than telling anyone where to call — and an empty one answers 500
+> with no voice at all, which is how production spent 9 September.
 
 ## Deployment
 
@@ -279,14 +294,16 @@ always-on host if that trade ever stops being worth it.
 ## Layout
 
 ```
-agent/agent.json        system prompt + 8 HTTP tools
-agent/publish.py        publishes it; fills placeholders from .env
+agent/agent.json        system prompt + 8 tools; also the route allow-list
+agent/publish.py        legacy publisher, used only by the diagnostic path
 gateway/main.py         tool endpoints, SSE feed, token minting, write guardrails
+gateway/voice_tools.py  inline session config, session capability, allow-list
 gateway/sap_client.py   the only thing that speaks SAP — OData + CSRF
 gateway/sap_mock.py     the mock S/4HANA, reached over HTTP like a real one
 gateway/store.py        the mock's data, in Postgres
 gateway/live.py         live events + voice-session counter, also in Postgres
-web/index.html          voice client + live ERP screen — one file, no dependencies
+web/voice-policy.js     which tools the agent may see at this moment
+web/index.html          voice client + live ERP screen
 docs/                   ADRs, NFRs, Clean Core assessment, deploy runbook
 ```
 
@@ -300,6 +317,13 @@ materials, non-integer and non-positive quantities, a write whose draft is missi
 expired, altered or already spent, a duplicate of a posting made in the last two minutes,
 a reversal of an already-reversed document, and any call that does not carry the shared
 tool secret. A mis-behaving prompt still cannot corrupt stock.
+
+There are two doors, and neither one opens with a sentence. `/erp/*` needs the shared
+secret, which never leaves the gateway. `/api/voice-tools/{name}` — the one the browser
+uses — needs a capability minted for that session, dies with it, and only reaches tool
+names present in `agent/agent.json`. The relay through the page can withhold a call or
+send one nobody asked for; what it cannot do is produce a draft token, and without one
+there is no write.
 
 What is *not* solved is named rather than hidden: the posting is made by a service user,
 not by the worker, so SAP cannot say who did it. That gap is written up in

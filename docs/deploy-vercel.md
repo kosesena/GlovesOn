@@ -36,8 +36,8 @@ Project*. This sets `DATABASE_URL` in the project's environment; the code reads 
 |---|---|
 | `ASSEMBLYAI_API_KEY` | your key |
 | `TOOL_SHARED_SECRET` | a value of your own — **the gateway refuses to start without one** |
-| `AGENT_ID` | legacy published agent id (browser sessions create their own agent) |
-| `GATEWAY_PUBLIC_URL` | HTTPS URL of this gateway, required for session tool callbacks |
+| `AGENT_ID` | legacy; nothing on the session path reads it |
+| `GATEWAY_PUBLIC_URL` | this gateway's own HTTPS URL — validated, not dialled; **must not be empty** |
 | `GLOVESON_ENABLE_RESET` | `0` on any day strangers have the address |
 
 Optional: `SAP_BASE_URL` to point at a real S/4HANA, `MOCK_SAP_BASE_URL` to reach the
@@ -54,19 +54,20 @@ curl https://<your-deployment>/health
 something is configured that should not be. A 500 here is almost always a missing
 `DATABASE_URL` or `TOOL_SHARED_SECRET` — both fail loudly on purpose.
 
-**5. Point the agent at it, once.** Put the deployment address in
-`GATEWAY_PUBLIC_URL` in your local `.env`, keep `TOOL_SHARED_SECRET` identical to the
-Vercel value, then:
+**5. There is no step five.** Nothing has to be pushed to AssemblyAI. Since
+[ADR-0006](adr/0006-tool-calls-return-to-the-browser.md) the session configuration is
+assembled from `agent/agent.json` on every `/api/voice-token` request and sent inline
+over the browser's socket, so a deploy is the whole release: the next session runs
+whatever the commit says. `./publish.sh` and `./tunnel.sh` remain for the diagnostic
+path only.
+
+What still has to match is `TOOL_SHARED_SECRET`, because it is the key behind the
+per-session capability the browser presents. Confirm both ends agree without printing
+either:
 
 ```bash
-./publish.sh
+curl -s https://<your-deployment>/health | python3 -m json.tool | grep -A4 configured
 ```
-
-`publish.py` rejects an `http://` or `localhost` address before it calls the API, so a
-half-filled `.env` fails here rather than in the middle of a demo.
-
-After this, `./tunnel.sh` is only needed when you want the agent to reach code running
-on your laptop.
 
 ---
 
@@ -109,15 +110,17 @@ judges are watching.
 by the SSE stream. If it ever feels slow, `EVENT_POLL_SECONDS` in `gateway/main.py` is
 the dial, and every poll is a database query.
 
-**For separately published stored agents, the secret has to match in two places**: the Vercel environment variable and the
-local `.env` value that `publish.sh` bakes into the agent definition. When they differ,
-every tool call comes back 401 and the agent says it cannot reach the system — which
-sounds like a network problem and is not.
+**A deploy is the whole release.** Changing `agent/agent.json` and redeploying is all
+there is: browser sessions read that file per request, so the prompt, the voice, the
+keyterms and the tool schemas ship with the commit. Nothing is held at AssemblyAI to
+fall out of step with it.
 
-**Publishing a stored agent is a separate act from deploying the gateway.** Changing
-`agent/agent.json` and redeploying does nothing; AssemblyAI holds its own copy of the
-definition. `./publish.sh` is what moves it. Browser sessions load the bundled
-template directly and therefore receive template changes on gateway deployment.
+**The two stale-copy traps below apply only to the diagnostic path**, which is the one
+place a stored agent is still published. There, the secret has to match in two places —
+the Vercel variable and the local `.env` value `publish.sh` bakes in — or every tool call
+comes back 401 and the agent says it cannot reach the system, which sounds like a network
+problem and is not. And there, `./publish.sh` is what moves a template change; a redeploy
+alone does nothing.
 
 **Going back to a process host is cheap.** The code still runs unchanged on an
 always-on machine — Fly.io, Render, a Replit Reserved VM. Set `DATABASE_URL` and it
@@ -140,5 +143,7 @@ stored agents still receive provider cleanup, retried after expiry on later toke
 requests. There is no scheduled sweep when the app is idle. The scope expires after
 ten minutes; provider voice sessions are limited to five minutes.
 
-Preview deployments must point GATEWAY_PUBLIC_URL to their own reachable gateway
-when testing scoped results; a production callback URL routes events to production.
+A preview deployment needs its own `GATEWAY_PUBLIC_URL` set to something — the variable
+is validated on every session and an empty one answers 500 — but nothing calls it, so it
+no longer has to be the preview's own address for results to arrive. The browser talks to
+whichever origin served it.

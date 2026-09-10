@@ -16,23 +16,33 @@
 
 sequenceDiagram
     autonumber
+    %% Ordered as the chain actually runs, so every message is one hop and no
+    %% arrow crosses a lifeline it has nothing to do with. The page sits between
+    %% the agent and the gateway because that is now literally where it sits.
     actor W as Worker
     participant A as Voice Agent
+    participant P as Page
     participant G as Gateway
     participant S as S/4HANA
 
-    W->>A: "post a goods receipt, twenty pieces of 4711"
-    A->>G: get_stock(4711)
-    G->>S: stock + product description
-    S-->>G: 280 EA · hex bolt M8×40 · bin A-03-02
+    W->>A: "twenty pieces of 4711 arrived"
+    Note over A: the agent has no write tool yet
+    A->>P: prepare_goods_receipt(4711, 20)
+    P->>G: /api/voice-tools/… + session capability
+    G->>S: stock, description, bin
+    S-->>G: 280 EA · hex bolt M8×40 · A-03-02
+    G-->>P: prepared · one-use token · valid 2 min
+    P-->>A: result — and now post_goods_receipt exists
     A-->>W: "Twenty pieces of hex bolt M8 by 40,<br/>into bin A-03-02. Confirm?"
     W->>A: "confirm"
-    A->>G: post_goods_receipt (execution_mode: hold)
-    G->>G: same intent in the last 120 s?
+    A->>P: post_goods_receipt(token + the spoken sentence)
+    P->>G: /api/voice-tools/… + session capability
+    G->>G: token unused? same intent in the last 120 s?
     G->>S: X-CSRF-Token: Fetch
     S-->>G: token
     G->>S: POST A_MaterialDocumentHeader · movement 501
     S-->>G: document 4900000123
-    G-->>A: posted
+    G-->>P: posted
+    P-->>A: result
     A-->>W: "Posted. Material document 4900000123."
-    G--)W: live screen updates over SSE
+    G--)P: live screen updates over SSE
