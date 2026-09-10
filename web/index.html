@@ -637,7 +637,17 @@
   }
 
 
-.warehouse-shell:has(#warehouseLobby:not([hidden])) { background:linear-gradient(#11182055,#11182008 60%,#11182044),url('/assets/warehouse-composite.svg') center/cover; color:#fff; }
+.warehouse-shell:has(#warehouseLobby:not([hidden])) { background:linear-gradient(#11182055,#11182008 60%,#11182044),url('/assets/avatar/warehouse-detail.jpg') center/cover; color:#fff; }
+/* Lamp hit targets follow the cover-cropped background, including on resize. */
+.warehouse-lights {position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden;}
+.warehouse-shell:not(:has(#warehouseLobby:not([hidden]))) .warehouse-lights {display:none;}
+.warehouse-lamp {position:absolute;transform:translate(-50%,-50%);width:48px;height:44px;min-height:44px;padding:0;border:0;border-radius:50%;background:transparent;pointer-events:auto;cursor:pointer;}
+.warehouse-lamp:hover,.warehouse-lamp:focus-visible {outline:2px solid #ffe6a7;outline-offset:4px;box-shadow:0 0 22px #ffdc7b80;}
+.warehouse-lamp::after {content:'';position:absolute;left:50%;top:50%;width:var(--bulb-width);height:var(--bulb-height);transform:translate(-50%,-50%);border-radius:50%;background:#453e2c;opacity:0;transition:opacity .4s;pointer-events:none;}
+.warehouse-lamp[aria-pressed=false]::after {opacity:.96;}
+.lamp-shade {position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .5s;background:radial-gradient(ellipse var(--spread) var(--spread) at var(--lamp-x) var(--lamp-y),#07111bb3,transparent 85%);}
+.lamp-shade.is-off {opacity:1;}
+@media(prefers-reduced-motion:reduce) {.lamp-shade,.warehouse-lamp::after {transition:none;}}
 #warehouseLobby:before,#warehouseLobby:after,#warehouseLobby .warehouse-room:before,#warehouseLobby .warehouse-room:after { display:none; }
 /* The labels sit on a photograph, so their ground is whatever the render put
    there — dark racking under one, a pale roller door under another, where a
@@ -2527,6 +2537,40 @@ talkBtn.onclick = () => (live ? end() : start());
 document.getElementById('voiceOrbButton').onclick = () => talkBtn.click();
 
 const warehouseShell = document.getElementById('warehouseShell');
+const lampLayer = document.createElement('div');
+lampLayer.className = 'warehouse-lights';
+warehouseShell.prepend(lampLayer);
+const lampControls = [[389,46,48,16],[770,46,48,16],[1147,46,48,16],[471,132,35,12],[1067,132,35,12],[774,433,22,7]].map(([x,y,w,h],i) => {
+  const shade=document.createElement('div'); shade.className='lamp-shade';
+  const button=document.createElement('button'); button.type='button'; button.className='warehouse-lamp';
+  button.setAttribute('aria-pressed','true');
+  button.setAttribute('aria-label',`Warehouse lamp ${i+1}`);
+  button.title='Turn light off';
+  button.onclick=()=>{
+    const on=button.getAttribute('aria-pressed')==='true';
+    button.setAttribute('aria-pressed',String(!on));
+    button.title=on?'Turn light on':'Turn light off';
+    shade.classList.toggle('is-off',on);
+  };
+  lampLayer.append(shade,button);
+  return {x,y,w,h,shade,button};
+});
+function positionWarehouseLamps() {
+  const w=warehouseShell.clientWidth,h=warehouseShell.clientHeight;
+  if (!w || !h) return;
+  const scale=Math.max(w/1536,h/1024),dx=(w-1536*scale)/2,dy=(h-1024*scale)/2;
+  for(const lamp of lampControls) {
+    const x=dx+lamp.x*scale,y=dy+lamp.y*scale;
+    lamp.button.style.left=x+'px';lamp.button.style.top=y+'px';
+    lamp.button.hidden=x<0||x>w||y<0||y>h;
+    lamp.button.style.setProperty('--bulb-width',lamp.w*scale+'px');
+    lamp.button.style.setProperty('--bulb-height',lamp.h*scale+'px');
+    lamp.shade.style.setProperty('--lamp-x',x+'px');lamp.shade.style.setProperty('--lamp-y',y+'px');
+    lamp.shade.style.setProperty('--spread',360*scale+'px');
+  }
+}
+new ResizeObserver(positionWarehouseLamps).observe(warehouseShell);
+
 // Map source-image coordinates through the same centered cover transform as the backdrop.
 function alignWarehouseTargets() {
   const shell = warehouseShell.getBoundingClientRect();

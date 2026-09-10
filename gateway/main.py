@@ -1077,7 +1077,7 @@ def scenario_image(scene: str) -> FileResponse:
 
 @app.get("/assets/avatar/{filename:path}", include_in_schema=False)
 def avatar_asset(filename: str) -> FileResponse:
-    allowed = {"worker.glb", "motions.json", "character.js", "receiving-intro.mp4", "review-intro.mp4", "storage-intro.mp4",
+    allowed = {"worker.glb", "motions.json", "character.js", "warehouse-detail.jpg", "receiving-intro.mp4", "review-intro.mp4", "storage-intro.mp4",
                "vendor/three.module.js", "vendor/three.core.js", "vendor/GLTFLoader.js",
                "vendor/BufferGeometryUtils.js", "vendor/LICENSE"}
     if filename not in allowed:
