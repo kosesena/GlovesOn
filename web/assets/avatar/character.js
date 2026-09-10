@@ -138,7 +138,17 @@ async function start() {
       .filter(track => /^(RightShoulder|RightArm|RightForeArm|RightHand)\.quaternion$/.test(track.name))
       .map(track => ({bone: bones[track.name.split('.')[0]], sample: track.createInterpolant()}));
     const greetingRotation = new THREE.Quaternion();
-    const WAVE = {rise: 1.25, hold: 2.2, fall: 1.35, poseTime: 1.5};
+    const waveParent = new THREE.Quaternion();
+    const waveAxis = new THREE.Vector3();
+    const waveTurn = new THREE.Quaternion();
+    function turnInView(bone, angle) {
+      if (!bone) return;
+      bone.parent.getWorldQuaternion(waveParent);
+      waveAxis.set(0, 0, 1).applyQuaternion(waveParent.invert());
+      waveTurn.setFromAxisAngle(waveAxis, angle);
+      bone.quaternion.premultiply(waveTurn);
+    }
+    const WAVE = {rise: 1.4, hold: 3.0, fall: 1.5, poseTime: 1.5};
     let greetingDuration = WAVE.rise + WAVE.hold + WAVE.fall;
     let greetingCount = 0, greetingIsWave = true;
     let current, elapsed = 0, phase = 'idle', phaseStart = 0, home = .8, near = .2, travelFrom = .8, travelTo = .2;
@@ -274,7 +284,10 @@ async function start() {
           const lift = progress ** 3 * (progress * (progress * 6 - 15) + 10);
           // Raise the hand along the fitted headset path, then greet beside the ear.
           applyTouch(lift);
+          // Move clear of the headset, with fingertips upright in the viewer's plane.
+          turnInView(bones.RightForeArm, .28 * lift);
           if (bones.RightHand) bones.RightHand.rotateY(-.65 * lift);
+          turnInView(bones.RightHand, .65 * lift);
           // Open the glove gently; each finger now has three skinning joints.
           const spread = {Thumb: -.22, Index: -.12, Middle: -.025, Ring: .065, Pinky: .16};
           for (const [finger, angle] of Object.entries(spread)) {
@@ -288,8 +301,10 @@ async function start() {
           const hold = (t - WAVE.rise) / WAVE.hold;
           if (hold > 0 && hold < 1 && bones.RightHand) {
             // Two small wrist sweeps with a zero-velocity entrance and exit.
-            const soften = Math.sin(Math.PI * hold) ** 2;
-            bones.RightHand.rotateZ(Math.sin(hold * Math.PI * 4) * .18 * soften);
+            const soften = smoothstep(Math.min(1, hold / .12, (1 - hold) / .12));
+            const swing = Math.sin(hold * Math.PI * 4) * soften;
+            turnInView(bones.RightForeArm, .055 * swing);
+            turnInView(bones.RightHand, .38 * swing);
           }
         } else {
           // Keep the fitted headset path separate from the waving arm clip.
