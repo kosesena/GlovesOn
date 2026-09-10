@@ -1155,22 +1155,25 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 #warehouseWork #log .who {font-size:10px;letter-spacing:.09em;color:#7c8078;margin-bottom:3px;}
 #warehouseWork #log .msg.tool {display:none;}
 #warehouseWork #log .msg.sys {font-size:13px;color:#8a542e;}
-/* Each word catches light independently; the conversation surface stays plain. */
-.conversation-word {display:inline;transition:color .65s ease,text-shadow .65s ease;}
-@media (hover:hover) and (pointer:fine) {
-  .conversation-word:hover {
-    color:#7761ce;
-    text-shadow:0 0 8px #ae8cff90,0 0 18px #75d9ff80;
-    animation:word-enchantment 1.6s ease-in-out infinite alternate;
-  }
+/* Slow liquid color is clipped to the final word, independent of pointer input. */
+.conversation-speak {
+  display:inline-block;
+  color:#6863c8;
+  background-image:radial-gradient(ellipse at center,#9957c7 0%,#9957c700 65%),radial-gradient(ellipse at center,#168da8 0%,#168da800 65%),linear-gradient(110deg,#426dc6,#8854c4,#258caa,#426dc6);
+  background-size:140% 220%,160% 240%,300% 100%;
+  background-position:-100% 20%,180% 80%,0% 50%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:speak-water 9s ease-in-out infinite;
 }
-@keyframes word-enchantment {
-  from {color:#537cce;text-shadow:0 0 6px #77d5ff90,0 0 14px #a08aff60;}
-  to {color:#ad5fbd;text-shadow:0 0 10px #db9cffa0,0 0 22px #82d9ff80;}
+@keyframes speak-water {
+  0%,100% {background-position:-100% 20%,180% 80%,0% 50%;}
+  33% {background-position:30% 80%,70% 10%,50% 50%;}
+  66% {background-position:160% 35%,-80% 65%,100% 50%;}
 }
 @media (prefers-reduced-motion:reduce) {
-  .conversation-word:hover {animation:none;}
-  .conversation-word {transition:none;}
+  .conversation-speak {animation:none;}
 }
 #warehouseWork .conversation-empty {color:#777970;font-size:16px;text-align:center;margin:auto;}
 #warehouseWork #resetBtn {margin:12px 24px 20px;}
@@ -1357,7 +1360,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 </header>
 <div id="voiceSuggestions" aria-label="Things you can ask"><span>Try saying</span><q>Check stock for material 4711</q><q>Receive twenty pieces of 4711</q><q>Show my recent receipts</q><small>Speak. Review. Confirm.</small></div>
 <section id="conversationDetails" class="live-conversation" aria-label="Live conversation">
-  <div id="log" role="log" aria-live="polite" aria-relevant="additions text"><p class="conversation-empty"><span class="conversation-word">Your</span> <span class="conversation-word">conversation</span> <span class="conversation-word">will</span> <span class="conversation-word">appear</span> <span class="conversation-word">here</span> <span class="conversation-word">as</span> <span class="conversation-word">you</span> <span class="conversation-word">speak.</span></p></div>
+  <div id="log" role="log" aria-live="polite" aria-relevant="additions text"><p class="conversation-empty">Your conversation will appear here as you <span class="conversation-speak">speak</span>.</p></div>
 </section>
 
 <main>
