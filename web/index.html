@@ -1145,26 +1145,14 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 #warehouseWork #log .who {font-size:10px;letter-spacing:.09em;color:#7c8078;margin-bottom:3px;}
 #warehouseWork #log .msg.tool {display:none;}
 #warehouseWork #log .msg.sys {font-size:13px;color:#8a542e;}
-/* Blue water fills the letters below a slowly moving wave surface. */
-.conversation-speak {
-  display:inline-block;
-  color:#777970;
-  background-color:#777970;
-  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2280%22%20height%3D%2232%22%20viewBox%3D%220%200%2080%2032%22%3E%3Cpath%20d%3D%22M0%2017%20Q10%2012%2020%2017%20T40%2017%20T60%2017%20T80%2017%20V32%20H0%20Z%22%20fill%3D%22%23358ac7%22%2F%3E%3Cpath%20d%3D%22M0%2017%20Q10%2012%2020%2017%20T40%2017%20T60%2017%20T80%2017%22%20fill%3D%22none%22%20stroke%3D%22%2363c8e5%22%20stroke-width%3D%22.8%22%2F%3E%3C%2Fsvg%3E");
-  background-repeat:repeat-x;
-  background-size:80px 100%;
-  background-position:0 0;
-  -webkit-background-clip:text;
-  background-clip:text;
-  -webkit-text-fill-color:transparent;
-  animation:speak-water 6s linear infinite;
-}
-@keyframes speak-water {
-  to {background-position:80px 0;}
-}
-@media (prefers-reduced-motion:reduce) {
-  .conversation-speak {animation:none;}
-}
+/* Fine vibrating bars accent the conversation prompt. */
+.conversation-vibration {display:inline-flex;align-items:center;gap:3px;height:18px;margin-left:6px;vertical-align:middle;}
+.conversation-vibration i {display:block;width:2px;height:12px;border-radius:2px;background:#438bbe;transform-origin:center;animation:conversation-vibrate 1.4s ease-in-out infinite alternate;}
+.conversation-vibration i:nth-child(1),.conversation-vibration i:nth-child(5) {height:6px;animation-delay:-.6s;}
+.conversation-vibration i:nth-child(2),.conversation-vibration i:nth-child(4) {height:12px;animation-delay:-.3s;}
+.conversation-vibration i:nth-child(3) {height:18px;animation-delay:-.9s;}
+@keyframes conversation-vibrate {from {transform:scaleY(.4);}to {transform:scaleY(1);}}
+@media (prefers-reduced-motion:reduce) {.conversation-vibration i {animation:none;}}
 #warehouseWork .conversation-empty {color:#777970;font-size:16px;text-align:center;margin:auto;}
 #warehouseWork #resetBtn {margin:12px 24px 20px;}
 @media(max-width:650px) {#warehouseWork .console-wrap #conversationDetails {padding:4px 12px 12px;}#warehouseWork #log .msg {font-size:16px;}}
@@ -1350,7 +1338,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 </header>
 <div id="voiceSuggestions" aria-label="Things you can ask"><span>Try saying</span><q>Check stock for material 4711</q><q>Receive twenty pieces of 4711</q><q>Show my recent receipts</q><small>Speak. Review. Confirm.</small></div>
 <section id="conversationDetails" class="live-conversation" aria-label="Live conversation">
-  <div id="log" role="log" aria-live="polite" aria-relevant="additions text"><p class="conversation-empty">Your conversation will appear here as you <span class="conversation-speak">speak</span>.</p></div>
+  <div id="log" role="log" aria-live="polite" aria-relevant="additions text"><p class="conversation-empty">Your conversation will appear here as you speak.<span class="conversation-vibration" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></p></div>
 </section>
 
 <main>
