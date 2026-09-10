@@ -57,5 +57,5 @@ export function createDeliveryScene(host) {
   function reset(){active=false;renderer.setAnimationLoop(null);renderer.domElement.style.opacity='0';}
   reset();
   document.addEventListener('visibilitychange',()=>{if(document.hidden)reset();});
-  return {play(done){resize();complete=done;beginning=performance.now();active=true;renderer.domElement.style.opacity='1';renderer.setAnimationLoop(render);},reset};
+  return {play(done){resize();complete=done;beginning=performance.now();active=true;render(beginning);renderer.domElement.style.opacity='1';renderer.setAnimationLoop(render);},reset};
 }
