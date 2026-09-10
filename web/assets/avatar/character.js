@@ -272,22 +272,13 @@ async function start() {
             (greetingDuration - t) / WAVE.fall));
           // Quintic easing starts and ends with zero velocity and acceleration.
           const lift = progress ** 3 * (progress * (progress * 6 - 15) + 10);
-          // Blend directly to one stable pose; resampling the source lift introduced jitter.
-          for (const {bone, sample} of greetingTracks) {
-            if (!bone) continue;
-            greetingRotation.fromArray(sample.evaluate(WAVE.poseTime)).normalize();
-            // Keep a relaxed elbow bend in the raised greeting pose.
-            if (bone === bones.RightForeArm) {
-              greetingRotation.multiply(new THREE.Quaternion().setFromAxisAngle(
-                new THREE.Vector3(1, 0, 0), .35));
-            }
-            bone.quaternion.slerp(greetingRotation, lift);
-          }
+          // Raise the hand along the fitted headset path, then greet beside the ear.
+          applyTouch(lift);
           const hold = (t - WAVE.rise) / WAVE.hold;
           if (hold > 0 && hold < 1 && bones.RightHand) {
             // Two small wrist sweeps with a zero-velocity entrance and exit.
             const soften = Math.sin(Math.PI * hold) ** 2;
-            bones.RightHand.rotateZ(Math.sin(hold * Math.PI * 4) * .14 * soften);
+            bones.RightHand.rotateZ(Math.sin(hold * Math.PI * 4) * .10 * soften);
           }
         } else {
           // Keep the fitted headset path separate from the waving arm clip.

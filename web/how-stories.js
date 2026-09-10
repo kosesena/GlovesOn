@@ -1,60 +1,30 @@
-// Each scene plays once per visit to the card, then reveals its explanation.
+// Hover previews on desktop; explicit buttons also support touch and keyboards.
 (() => {
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   document.querySelectorAll('.how-story').forEach(card => {
-    const play = card.querySelector('.how-story-play');
-    const video = card.querySelector('video');
-    const details = card.querySelector('.how-story-details');
+    const front = card.querySelector('.how-story-play');
+    const back = card.querySelector('.how-story-details');
     const toggle = card.querySelector('.how-story-toggle');
-    let version = 0;
-    const reveal = () => {
-      version++;
-      video.pause();
-      card.classList.remove('is-playing');
-      details.hidden = false;
-      play.hidden = true;
-      play.setAttribute('aria-expanded', 'true');
-      toggle.setAttribute('aria-expanded', 'true');
-      toggle.textContent = 'Replay ↺';
-    };
-    const reset = () => {
-      version++;
-      video.pause();
-      card.classList.remove('is-playing');
-      details.hidden = true;
-      play.hidden = false;
-      play.setAttribute('aria-expanded', 'false');
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.textContent = 'Details ↗';
-    };
-    const start = async () => {
-      if (!details.hidden || card.classList.contains('is-playing')) return;
-      if (reducedMotion.matches) return reveal();
-      const current = ++version;
-      if (!video.getAttribute('src')) video.src = video.dataset.src;
-      video.muted = true;
-      video.currentTime = 0;
-      card.classList.add('is-playing');
-      try { await video.play(); } catch (_) {
-        if (current === version) reveal();
-      }
-    };
+    let flipped = false;
+    function flip(next) {
+      flipped = next;
+      card.classList.toggle('is-flipped', next);
+      back.inert = !next;
+      back.setAttribute('aria-hidden', String(!next));
+      front.setAttribute('aria-expanded', String(next));
+      toggle.setAttribute('aria-expanded', String(next));
+      toggle.textContent = next ? 'Back ↺' : 'Details ↗';
+    }
     card.addEventListener('pointerenter', event => {
-      if (event.pointerType === 'mouse') start();
+      if (event.pointerType === 'mouse') flip(true);
     });
     card.addEventListener('pointerleave', event => {
-      if (event.pointerType === 'mouse' && !card.contains(document.activeElement)) reset();
+      if (event.pointerType === 'mouse') flip(false);
     });
-    play.addEventListener('click', start);
-    toggle.addEventListener('click', () => {
-      if (details.hidden) reveal();
-      else { reset(); start(); }
+    front.addEventListener('click', () => flip(true));
+    toggle.addEventListener('click', () => flip(!flipped));
+    card.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { flip(false); toggle.focus(); }
     });
-    video.addEventListener('ended', reveal);
-    video.addEventListener('error', reveal);
-    window.addEventListener('hashchange', reset);
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) reset();
-    });
+    window.addEventListener('hashchange', () => flip(false));
   });
 })();
