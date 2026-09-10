@@ -934,6 +934,32 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 }
 @media(max-width:700px) { body > #how:target { grid-template-columns:1fr; padding:18px 22px 40px; } }
 
+
+/* Large scene cards: reserve the same space for the clip and its explanation. */
+body > #how:target { max-width:1240px; gap:20px; padding-top:24px; padding-bottom:30px; }
+#how article.how-story { padding:0; overflow:hidden; background:#edf0e5; border-radius:24px; }
+.how-story-stage { position:relative; height:390px; overflow:hidden; }
+.how-story-play { position:absolute; inset:0; width:100%; border:0; background:radial-gradient(ellipse at 50% 45%,#fffdf3,#e7ebdf); cursor:pointer; padding:20px; }
+#how article .how-story-play .warehouse-art { float:none; width:260px; max-width:95%; height:290px; margin:auto; background-color:transparent; transition:transform .7s ease; }
+.how-story-play:hover .warehouse-art { transform:translateY(-5px) scale(1.035); }
+.how-story-cue { display:block; margin-top:14px; font:12px var(--mono); color:#42604b; }
+.how-story-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; pointer-events:none; transition:opacity .35s; }
+.how-story.is-playing .how-story-video { opacity:1; }
+.how-story.is-playing .how-story-play { visibility:hidden; }
+.how-story-details { position:absolute; inset:0; padding:22px; overflow:auto; background:#f2f3e9; }
+.how-story-details:not([hidden]) { animation:howDetailsIn .45s ease both; }
+#how .how-story-details h3 { margin:12px 0; font-size:23px; }
+#how .how-story-details .card-head > p { font-size:13px; line-height:1.6; }
+#how .how-story-details .how-outcome { margin-top:14px; }
+.how-story-footer { min-height:76px; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 18px; border-top:1px solid #d6dccd; }
+.how-story-footer > span { font-size:15px; font-weight:600; }
+.how-story-footer small { display:block; margin-bottom:5px; }
+.how-story-toggle { border:1px solid #bcc9b6; border-radius:30px; padding:9px 12px; background:#fffdf5; color:#294d37; cursor:pointer; white-space:nowrap; font-size:12px; }
+.how-story button:focus-visible { outline:3px solid #ce713d; outline-offset:-4px; }
+@keyframes howDetailsIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@media(prefers-reduced-motion:reduce) { .how-story *, .how-story-details:not([hidden]) { animation:none!important; transition:none!important; } }
+@media(max-width:900px) { body > #how:target { grid-template-columns:1fr; max-width:560px; } .how-story-stage { height:390px; } }
+
 /* Depth poster: the headline's first two lines pass behind the figure and
    "Just speak" passes in front, magazine-cover style. It works through
    z-order alone — the copy must NOT form a stacking context (no position,
@@ -1420,21 +1446,43 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <!-- The dialogs quote the demo's real seed data — material 4711, hex bolt
      M8x40, bin A-03-02, 240 on hand — and the guide's line is the read-back
      format agent.json itself prescribes. If the seed changes, change these. -->
-<article><div class="card-head"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><small>01 / RECEIVE</small><h3>Check in a delivery.</h3><p>Say what arrived and how many. The bin, the unit and the description are looked up for you.</p></div>
+<article class="how-story">
+ <div class="how-story-stage">
+  <button class="how-story-play" aria-label="Watch: Check in a delivery" aria-expanded="false"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><span class="how-story-cue">Watch the scene ↗</span></button>
+  <video class="how-story-video" muted playsinline preload="none" aria-hidden="true" data-src="/assets/avatar/receiving-intro.mp4"></video>
+  <div class="how-story-details" hidden><div class="card-head"><small>01 / RECEIVE</small><h3>Check in a delivery.</h3><p>Say what arrived and how many. The bin, the unit and the description are looked up for you.</p></div>
 <div class="how-dialog"><p><b>YOU</b>“Forty M8 bolts arrived.”</p><p class="g"><b>YOUR GUIDE</b>“Forty pieces of hex bolt M8x40 into bin A-03-02 — confirm?”</p><p><b>YOU</b>“Yes.”</p></div>
-<p class="how-outcome">Receipt posted · stock 240 → 280</p></article>
-<article><div class="card-head"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><small>02 / FIND</small><h3>Find material and stock.</h3><p>Ask where a material lives and how much is on hand. A lookup — nothing changes.</p></div>
+<p class="how-outcome">Receipt posted · stock 240 → 280</p></div>
+ </div>
+ <div class="how-story-footer"><span><small>01</small> Check in a delivery</span><button class="how-story-toggle" aria-expanded="false">Details ↗</button></div>
+</article>
+<article class="how-story">
+ <div class="how-story-stage">
+  <button class="how-story-play" aria-label="Watch: Find material and stock" aria-expanded="false"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><span class="how-story-cue">Watch the scene ↗</span></button>
+  <video class="how-story-video" muted playsinline preload="none" aria-hidden="true" data-src="/assets/avatar/storage-intro.mp4"></video>
+  <div class="how-story-details" hidden><div class="card-head"><small>02 / FIND</small><h3>Find material and stock.</h3><p>Ask where a material lives and how much is on hand. A lookup — nothing changes.</p></div>
 <div class="how-dialog"><p><b>YOU</b>“Where are the M8 bolts?”</p><p class="g"><b>YOUR GUIDE</b>“Bin A-03-02 — 240 on hand.”</p></div>
-<p class="how-outcome">No confirmation needed · stock untouched</p></article>
-<article><div class="card-head"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><small>03 / REVIEW</small><h3>Reverse the right receipt.</h3><p>A wrong receipt is corrected with a reversal document. Nothing is ever deleted.</p></div>
+<p class="how-outcome">No confirmation needed · stock untouched</p></div>
+ </div>
+ <div class="how-story-footer"><span><small>02</small> Find material and stock</span><button class="how-story-toggle" aria-expanded="false">Details ↗</button></div>
+</article>
+<article class="how-story">
+ <div class="how-story-stage">
+  <button class="how-story-play" aria-label="Watch: Reverse the right receipt" aria-expanded="false"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><span class="how-story-cue">Watch the scene ↗</span></button>
+  <video class="how-story-video" muted playsinline preload="none" aria-hidden="true" data-src="/assets/avatar/review-intro.mp4"></video>
+  <div class="how-story-details" hidden><div class="card-head"><small>03 / REVIEW</small><h3>Reverse the right receipt.</h3><p>A wrong receipt is corrected with a reversal document. Nothing is ever deleted.</p></div>
 <div class="how-dialog"><p><b>YOU</b>“That last receipt was wrong.”</p><p class="g"><b>YOUR GUIDE</b>“Reversing it — forty hex bolts back out of A-03-02. Confirm?”</p><p><b>YOU</b>“Yes.”</p></div>
-<p class="how-outcome">Reversal posted · both documents stay</p></article>
+<p class="how-outcome">Reversal posted · both documents stay</p></div>
+ </div>
+ <div class="how-story-footer"><span><small>03</small> Reverse the right receipt</span><button class="how-story-toggle" aria-expanded="false">Details ↗</button></div>
+</article>
 <div class="how-rules"><small>THE RULES OF THE FLOOR</small><span>Every write is read back before it happens.</span><span>Nothing posts without your spoken yes.</span><span>Nothing is deleted — a reversal keeps both records.</span></div>
 <a class="how-cta" href="#warehouse">Start your shift ↗</a>
 </div>
 <footer><span>GlovesOn · Built for the receiving floor.</span><span><svg class="aai-mark" role="img" aria-label="AssemblyAI"><use href="#aai-dark"/></svg> Voice Agent Hackathon / 2026</span></footer>
 
 <script src="/voice-policy.js"></script>
+<script src="/how-stories.js" defer></script>
 <script>
 // ---------------------------------------------------------------------------
 // Live ERP panel — Server-Sent Events'ten beslenir
