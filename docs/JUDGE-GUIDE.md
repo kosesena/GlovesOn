@@ -71,15 +71,15 @@ Run the suite yourself:
 
 ```bash
 pip install -r requirements.txt pytest
-pytest checks/                               # 32 tests: no database, no keys, no setup
+pytest checks/                               # 39 tests: no database, no keys, no setup
 export TEST_DATABASE_URL=postgresql://…      # any empty Postgres; see below
-pytest                                       # all 71
+pytest                                       # all 80
 ```
 
-71 tests, in two suites. `checks/` (32) needs nothing at all: it exercises
+80 tests, in two suites. `checks/` (39) needs nothing at all: it exercises
 the draft protocol itself — confirmation, one-use tokens, session scoping,
 provider cleanup — against an in-memory app, so it is the part you can run
-thirty seconds after cloning. `tests/` (39) needs a Postgres because the
+thirty seconds after cloning. `tests/` (41) needs a Postgres because the
 mock's data lives in one
 ([ADR-0005](adr/0005-serverless-deployment-and-shared-state.md)) and because a
 stubbed database would test none of what matters — the CSRF handshake, the
