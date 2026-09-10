@@ -2,6 +2,11 @@
 
 **Status:** Accepted · **Date:** 2026-09-06
 
+> **Since superseded in part.** The first paragraph below describes what was true on
+> 2026-09-06. AssemblyAI no longer calls anything of ours: see
+> [ADR-0006](0006-tool-calls-return-to-the-browser.md). The hosting decision stands on
+> the rest of this record, which is unaffected.
+
 ## Context
 
 The gateway needed a stable public HTTPS address. AssemblyAI calls tool endpoints

@@ -52,8 +52,12 @@ checked. Every material document this system creates would carry a single techni
 user. In a real deployment that is not a rough edge, it is a blocker: an ERP posting
 that cannot name the person who made it is not auditable.
 
-**Authentication is a shared secret.** One header value stands between the agent
-platform and the write endpoint. Single factor, no rotation, no per-worker identity.
+**Authentication is a shared secret.** One header value stands between anything on the
+network and the write endpoint. Single factor, no rotation, no per-worker identity. The
+secret is at least no longer stored at the agent platform — since
+[ADR-0006](adr/0006-tool-calls-return-to-the-browser.md) the browser presents a
+session-scoped capability instead and the secret stays in the gateway — but a capability
+identifies a session, not a person, and Clean Core cares about the person.
 
 **No BTP connectivity model.** A real side-by-side extension reaches the backend through
 the Destination service, with credentials held there and principal propagation
@@ -82,10 +86,11 @@ What this would look like as a real side-by-side extension. Only the middle box 
    Warehouse worker (headset)
             │
             ▼
-   ┌─────────────────────────┐
-   │  AssemblyAI Voice Agent │   STT · turn detection · LLM · TTS
-   └───────────┬─────────────┘
-               │  HTTPS + OAuth, tool calls
+   ┌─────────────────────────┐     ┌─────────────────────────┐
+   │  The page, signed in     │◀───▶│  AssemblyAI Voice Agent │
+   │  against IAS             │     │  STT · turns · LLM · TTS│
+   └───────────┬─────────────┘     └─────────────────────────┘
+               │  the tool call, now bearing the worker's own token
                ▼
    ┌──────────────────────────────────────────────┐
    │  SAP BTP — Cloud Foundry or Kyma             │
@@ -112,6 +117,15 @@ The gateway does not move and does not change shape. What arrives is identity: t
 worker signs in, the call is made under their name, and SAP applies their
 authorizations. The material document then carries who posted it — which is what makes
 it auditable, and what makes the whole thing deployable.
+
+One thing did get easier since this section was first written. Tool calls no longer
+originate at AssemblyAI; they come back to the page and the page forwards them
+([ADR-0006](adr/0006-tool-calls-return-to-the-browser.md)). The page is where a signed-in
+worker's session would already live, so the token that has to reach SAP would be attached
+at the point it already exists, rather than having to be smuggled into an agent
+definition held by a third party. It removes an obstacle. It does not do the work: none
+of the five steps below is implemented, and this section still describes a design, not a
+deployment.
 
 ---
 
