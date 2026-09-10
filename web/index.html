@@ -2614,9 +2614,23 @@ function applyWarehouseRoute() {
     shiftSection.querySelector('.floor').hidden = false;
   }
 }
-function enterWarehouseArea(key) {
-  ++areaTransition;
-  // Open and play in the area click's user activation, before any awaited animation.
+async function enterWarehouseArea(key) {
+  const transition = ++areaTransition;
+  const video = document.getElementById('receivingIntroVideo');
+  let seen = false;
+  try { seen = sessionStorage.getItem(`gloveson-${key}-intro-v1`) === '1'; } catch {}
+  // Authorize this same media element during the click, then hold it for arrival.
+  let ready = Promise.resolve();
+  if (!seen && !reducedMotion.matches) {
+    video.src = `/assets/avatar/${key}-intro.mp4`;
+    const playback = video.play();
+    video.pause();
+    ready = Promise.resolve(playback).catch(() => {});
+  }
+  const arrival = window.gloveson?.avatarWalkTo?.(key);
+  await Promise.all([ready, arrival]);
+  if (transition !== areaTransition || location.hash !== '#warehouse') return;
+  video.currentTime = 0;
   enterWarehouseAreaWithIntro(key);
 }
 // Set after the generated scene has been reviewed; no placeholder media is shown.
@@ -2703,13 +2717,16 @@ function enterWarehouseAreaWithIntro(key, force = false) {
   dialog.querySelector('footer p').textContent = intro.line;
   video.setAttribute('aria-label', intro.title);
   video.poster = '/assets/hero-scene.png';
-  video.src = `/assets/avatar/${key}-intro.mp4`;
-  video.load();
+  const source = `/assets/avatar/${key}-intro.mp4`;
+  if (video.getAttribute('src') !== source) {
+    video.src = source;
+    video.load();
+  }
   play.textContent = 'Play scene ▶';
   play.hidden = true; gotIt.hidden = true;
   showToggle(false);
   dialog.showModal();
-  // This function runs synchronously from the area or replay click.
+  // Area clicks prime this media element before walking; replay is a direct click.
   play.onclick();
 }
 function enterWarehouseAreaNow(key) {
