@@ -95,7 +95,7 @@ every test drops and reseeds the schema.
 
 ## Where the reasoning is
 
-Five decision records, each naming the options rejected and what the choice
+Six decision records, each naming the options rejected and what the choice
 costs — not a summary of what was built.
 
 - [ADR-0001](adr/0001-gateway-between-agent-and-erp.md) — why a gateway between the agent and the ERP
@@ -103,6 +103,7 @@ costs — not a summary of what was built.
 - [ADR-0003](adr/0003-mock-erp-behind-a-faithful-contract.md) — why the mock is faithful rather than convenient
 - [ADR-0004](adr/0004-browser-first-not-telephony.md) — why the browser came before telephony
 - [ADR-0005](adr/0005-serverless-deployment-and-shared-state.md) — why the state left the process, and what that cost
+- [ADR-0006](adr/0006-tool-calls-return-to-the-browser.md) — why the tool call comes back to the browser, and why the write tool does not exist until a draft does
 
 Also: [`nfr.md`](nfr.md) latency, concurrency, failure modes, security posture,
 cost · [`clean-core.md`](clean-core.md) where this complies with SAP Clean Core
