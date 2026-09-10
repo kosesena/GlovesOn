@@ -132,8 +132,14 @@ async function start() {
     }
     // Only travel uses an imported clip. Hover never advances the mixer.
     const actions = { walk: mixer.clipAction(THREE.AnimationClip.parse(data.walk)) };
-    const greetingDuration = 2.8;
-    let greetingCount = 0, greetingIsWave = true;
+    // Sample the authored greeting on the arm only, keeping the feet planted.
+    const greetingClip = THREE.AnimationClip.parse(data.wave);
+    const greetingTracks = greetingClip.tracks
+      .filter(track => /^(RightShoulder|RightArm|RightForeArm|RightHand)\.quaternion$/.test(track.name))
+      .map(track => ({bone: bones[track.name.split('.')[0]], sample: track.createInterpolant()}));
+    const greetingRotation = new THREE.Quaternion();
+    const greetingDuration = greetingClip.duration;
+    let greetingIsWave = true;
     let current, elapsed = 0, phase = 'idle', phaseStart = 0, home = .8, near = .2, travelFrom = .8, travelTo = .2;
     let autoIntro = true, returning = false, arrival = null;
     function play(name) {
@@ -155,7 +161,7 @@ async function start() {
       // cosmetic: ignore it until the gesture finishes.
       if (touchNow > 0) return;
       mixer.stopAllAction(); current = null;
-      greetingIsWave = greetingCount++ % 2 === 0;
+      greetingIsWave = true;
       phase = 'wave'; phaseStart = elapsed;
     }
     bubble = document.createElement('p');
@@ -254,22 +260,15 @@ async function start() {
         actor.position.y = Math.sin(elapsed * 1.6) * .006;
         actor.rotation.z = Math.sin(elapsed * .8) * .004;
       } else if (phase === 'wave') {
-        // A planted, procedural greeting using the already fitted headset pose.
+        // Blend the authored wave into and out of the planted rest pose.
         // Restore every bone first so no travel pose can remain on the legs.
         applyRest(elapsed * 1.6);
         const t = elapsed - phaseStart;
         const envelope = smoothstep(Math.max(0, Math.min(1, t / .85, (greetingDuration - t) / .9)));
-        if (greetingIsWave) {
-          // A separate greeting pose: hold the upper arm still, wave gently
-          // from the forearm only after the arm has finished rising.
-          applyTouch(envelope);
-          if (bones.RightArm) bones.RightArm.rotation.z -= .42 * envelope;
-          const waveTime = Math.max(0, t - .85);
-          const waveWeight = smoothstep(Math.min(1, waveTime / .25)) * envelope;
-          if (bones.RightForeArm) bones.RightForeArm.rotation.z += Math.sin(waveTime * 6.2) * .16 * waveWeight;
-          if (bones.RightHand) bones.RightHand.rotation.z += Math.sin(waveTime * 6.2 + .2) * .045 * waveWeight;
-        } else {
-          applyTouch(envelope);
+        for (const {bone, sample} of greetingTracks) {
+          if (!bone) continue;
+          greetingRotation.fromArray(sample.evaluate(Math.min(t, greetingDuration))).normalize();
+          bone.quaternion.slerp(greetingRotation, envelope);
         }
         const answering = t > .75 && t < 2;
         bubble.textContent = answering ? (greetingIsWave ? 'Hi there!' : 'Okay!') : 'Pick an area — I’ll meet you there.';
