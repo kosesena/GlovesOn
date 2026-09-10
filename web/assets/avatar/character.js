@@ -268,12 +268,14 @@ async function start() {
         const t = elapsed - phaseStart;
         const envelope = smoothstep(Math.max(0, Math.min(1, t / 1.1, (greetingDuration - t) / 1.2)));
         if (greetingIsWave) {
-          const lift = smoothstep(Math.max(0, Math.min(1, t / WAVE.rise,
-            (greetingDuration - t) / WAVE.fall)));
-          // Follow only the lift of the source clip, then keep shoulder and elbow still.
+          const progress = Math.max(0, Math.min(1, t / WAVE.rise,
+            (greetingDuration - t) / WAVE.fall));
+          // Quintic easing starts and ends with zero velocity and acceleration.
+          const lift = progress ** 3 * (progress * (progress * 6 - 15) + 10);
+          // Blend directly to one stable pose; resampling the source lift introduced jitter.
           for (const {bone, sample} of greetingTracks) {
             if (!bone) continue;
-            greetingRotation.fromArray(sample.evaluate(WAVE.poseTime * lift)).normalize();
+            greetingRotation.fromArray(sample.evaluate(WAVE.poseTime)).normalize();
             bone.quaternion.slerp(greetingRotation, lift);
           }
           const hold = (t - WAVE.rise) / WAVE.hold;
