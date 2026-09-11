@@ -2688,17 +2688,24 @@ let warehouseAreaKey = 'receiving';
 // is left of the chooser screen, and it costs no screen of its own.
 function renderTaskStrip() {
   const strip = document.getElementById('taskStrip');
-  const active = document.getElementById('warehouseBriefTitle').textContent.trim();
+  // Which task is running is a fact the cards already hold. Comparing the
+  // strip's label with the heading looked equivalent and was not: the stock
+  // task was renamed to "Find your material" on the way in, so nothing matched,
+  // no pill filled, and clicking the running task restarted it instead of
+  // looking ignored.
+  const pressed = document.querySelector('[data-scenario][aria-pressed="true"]');
+  const heading = document.getElementById('warehouseBriefTitle').textContent.trim();
   const sources = [...document.querySelectorAll('[data-scenario]')]
     .filter(b => areaFor[b.dataset.scenario] === warehouseAreaKey)
     .concat([...document.querySelectorAll('#customTasks [data-custom-task]')]);
   strip.replaceChildren();
   for (const source of sources) {
     const label = (source.querySelector('b') || source).textContent.replace('↗','').trim();
+    const current = pressed ? source === pressed : label === heading;
     const item = document.createElement('button');
     item.type = 'button'; item.className = 'task-strip-item'; item.textContent = label;
     // The card already knows how to start its own task; the strip only points at it.
-    if (label === active) item.setAttribute('aria-current','true');
+    if (current) item.setAttribute('aria-current','true');
     else item.onclick = () => source.click();
     strip.append(item);
   }
@@ -2707,14 +2714,14 @@ function renderTaskStrip() {
 }
 function showWarehouseStage(stage) {
   if (stage === 'area') stage = 'tasks';
-  const lookup = stage === 'work' && (activeScenario?.action === 'stock' || document.querySelector('[data-scenario="stock"]')?.getAttribute('aria-pressed') === 'true');
-  warehouseShell.classList.toggle('is-lookup', lookup);
+  // The stock task used to get a screen of its own: its own skin, and its own
+  // name, "Find your material", different from the "Find it on the shelf" on
+  // its card. Since the workspace split, that skin only hides things that are
+  // already hidden and re-colours the rest, and the second name broke the one
+  // thing the strip needs — knowing which task is running. One task, one name,
+  // one layout. The .is-lookup rules are now unreachable and can go with a
+  // later sweep.
   document.getElementById('conversationDetails').open = false;
-  if (lookup && !document.querySelector('[data-scenario][aria-pressed="true"]')) { /* Custom task keeps its own brief. */ }
-  else if (lookup) {
-    document.getElementById('warehouseBriefTitle').textContent = 'Find your material';
-    document.getElementById('warehouseBriefText').textContent = 'Ask where it is stored and how much is available.';
-  }
   document.querySelector('.console-wrap .plant').textContent = 'PLANT 1000 / ' + areaTitles[warehouseAreaKey].toUpperCase() + ' · DEMO';
   areaTransition++;
   window.dispatchEvent(new CustomEvent('gloveson:warehouse-stage', {detail:stage}));
