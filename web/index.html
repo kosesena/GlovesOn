@@ -872,12 +872,18 @@ body:not(.in-warehouse):has(#how:target) { background:#f7f3ea; }
 /* On the how page the closing CTA owns "start"; a second copy in the nav made
    the two corners of a one-screen page say the same thing. The brand mark and
    "Back to home" still lead out. */
-body:has(#how:target) > .site-nav .nav-links { display:none; }
+body:has(#how:target) > .site-nav .nav-links a:not(.nav-back) { display:none; }
+/* The way out scrolled off the top with the heading, and on a page this long
+   that left the logo as the only exit. The bar carries both now and stays.
+   The back link sits second in the markup on purpose: the script rewrites the
+   first link in this bar into the closing call to action. */
+.nav-links .nav-back { display:none; }
+body:has(#how:target) > .site-nav { position:sticky; top:0; z-index:40; padding-top:16px; padding-bottom:16px; background:#f7f3eaf2; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); border-bottom:1px solid #dfe2d4; }
+body:has(#how:target) > .site-nav .nav-links .nav-back { display:inline-flex; align-items:center; min-height:44px; padding:11px 20px; border:1px solid #c7cfbb; border-radius:28px; background:#fffdf7; color:#244b35; font-weight:600; }
 body:not(.in-warehouse):has(#how:target) > .hero,
 body:has(#how:target) > .landing-hackathon { display:none; }
 body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:24px 32px 60px; gap:28px; background:#f7f3ea; color:#253b2c; scroll-margin-top:110px; }
 .how-heading { grid-column:1/-1; }
-.how-heading a { display:inline-block; padding:10px 0; color:#244b35; font-weight:600; }
 .how-heading h1 { margin:20px 0 14px; font-size:clamp(30px,4vw,48px); letter-spacing:-.04em; }
 .how-heading p { color:#52634e; font-size:18px; line-height:1.5; }
 #how .project-context { order:2; border-top:1px solid #cbd1c0; padding-top:20px; font-size:12px; }
@@ -893,7 +899,11 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
 #how .how-dialog .g { color:#2f5e44; }
 #how .how-outcome { margin:14px 0 0; font:600 11px var(--mono); letter-spacing:.04em; color:#244b35; }
 #how .how-outcome:before { content:'→ '; color:#ce5428; }
-#how .how-rules { grid-column:1/-1; order:1; display:flex; align-items:baseline; gap:10px 28px; flex-wrap:wrap; border:1px dashed #b6bda4; border-radius:14px; padding:16px 22px; }
+/* One line, or it reads as a paragraph of small print. The three rules and
+   their label need 777px of column; at a 22px gap they needed 803 and the last
+   one dropped. Tighter gap, shorter third rule. Below the desktop layout the
+   column collapses and wrapping is correct again. */
+#how .how-rules { grid-column:1/-1; order:1; display:flex; align-items:baseline; gap:10px 16px; flex-wrap:wrap; border:1px dashed #b6bda4; border-radius:14px; padding:16px 20px; }
 #how .how-rules span { font-size:13.5px; color:#3f4c3a; }
 #how .how-rules span:before { content:'✓ '; color:#244b35; font-weight:700; }
 #how .how-cta { grid-column:1/-1; order:1; justify-self:center; background:#244b35; color:#fffaf0; border-radius:30px; padding:14px 26px; font-size:13px; font-weight:600; margin-top:4px; }
@@ -909,7 +919,6 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
     unaffected — with no free space align-content does nothing. */
  body > #how:target { margin:0 auto; padding:6px 32px 8px; gap:10px; min-height:calc(100svh - 94px); align-content:center; }
  #how .how-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 18px; }
- #how .how-heading a { flex-basis:100%; padding:2px 0; font-size:13px; }
  .how-heading h1 { margin:0; font-size:clamp(26px,2.6vw,38px); }
  .how-heading p { margin:0; flex-basis:100%; font-size:14px; }
  /* article is a flex column so the outcome can pin to the bottom; floats are
@@ -926,7 +935,10 @@ body > #how:target { display:grid; max-width:1100px; margin:24px auto; padding:2
  /* margin-top:auto pins all three outcome lines to one shared baseline at
     the card bottoms; the leftover space sits between dialog and outcome. */
  #how .how-outcome { margin-top:auto; padding-top:8px; }
- #how .how-rules { grid-column:1/3; padding:9px 18px; gap:6px 22px; align-self:center; }
+ /* Two of three columns, 777px, and the three rules wanted 803 at a 22px gap,
+    so the last one sat alone on a second line and the box read as small print.
+    A 14px gap and a shorter third rule bring it under. */
+ #how .how-rules { grid-column:1/3; padding:9px 16px; gap:6px 14px; align-self:center; }
  #how .how-rules span { font-size:12.5px; }
  #how .how-cta { grid-column:3; justify-self:end; align-self:center; margin:0; }
  #how .project-context { display:flex; flex-wrap:wrap; gap:6px 22px; padding-top:10px; font-size:11px; }
@@ -1313,7 +1325,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 
 <nav class="site-nav" aria-label="Main navigation">
   <a class="brand" href="#top" aria-label="GlovesOn home"><span class="brand-mark" aria-hidden="true">↗</span>GlovesOn</a>
-  <div class="nav-links"><a href="#how">How it works</a></div>
+  <div class="nav-links"><a href="#how">How it works</a><a class="nav-back" href="#top">← Back to home</a></div>
 </nav>
 <div class="hero" id="top">
   <img class="hero-image" src="/assets/worker-3d.webp" alt="A warehouse worker wearing gloves and a headset carries a box with both hands." width="742" height="1165" fetchpriority="high" />
@@ -1489,7 +1501,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
   </section>
 </main>
 </div>
-<div class="how" id="how"><div class="how-heading"><a href="#top">← Back to home</a><h1>How GlovesOn works</h1><p>Every delivery has to end up in SAP. That used to mean gloves off and a walk to a terminal — here it takes one spoken sentence.</p></div><p class="project-context"><span>GlovesOn · Built for the receiving floor.</span><span>Goods receipt · Stock · Reversal</span><span>SAP OData · Demo environment</span><span><svg class="aai-mark" role="img" aria-label="AssemblyAI"><use href="#aai-dark"/></svg> Voice Agent Hackathon / 2026</span></p>
+<div class="how" id="how"><div class="how-heading"><h1>How GlovesOn works</h1><p>Every delivery has to end up in SAP. That used to mean gloves off and a walk to a terminal — here it takes one spoken sentence.</p></div><p class="project-context"><span>GlovesOn · Built for the receiving floor.</span><span>Goods receipt · Stock · Reversal</span><span>SAP OData · Demo environment</span><span><svg class="aai-mark" role="img" aria-label="AssemblyAI"><use href="#aai-dark"/></svg> Voice Agent Hackathon / 2026</span></p>
 <!-- The dialogs quote the demo's real seed data — material 4711, hex bolt
      M8x40, bin A-03-02, 240 on hand — and the guide's line is the read-back
      format agent.json itself prescribes. If the seed changes, change these. -->
@@ -1520,7 +1532,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
  </div>
  <div class="how-story-footer"><span><small>03</small> Reverse the right receipt</span><button class="how-story-toggle" aria-expanded="false">Details ↗</button></div>
 </article>
-<div class="how-rules"><small>THE RULES OF THE FLOOR</small><span>Every write is read back before it happens.</span><span>Nothing posts without your spoken yes.</span><span>Nothing is deleted — a reversal keeps both records.</span></div>
+<div class="how-rules"><small>THE RULES OF THE FLOOR</small><span>Every write is read back.</span><span>Nothing posts without your yes.</span><span>Nothing deleted, only reversed.</span></div>
 <a class="how-cta" href="#warehouse">Start your shift ↗</a>
 </div>
 <footer><span>GlovesOn · Built for the receiving floor.</span><span><svg class="aai-mark" role="img" aria-label="AssemblyAI"><use href="#aai-dark"/></svg> Voice Agent Hackathon / 2026</span></footer>
