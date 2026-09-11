@@ -15,6 +15,11 @@ run a prewritten success animation or control another application.
   Dana Ruiz (purchasing) are fictional work contacts. Their `.example` addresses
   cannot receive mail. `/api/directory` reads the same list for the screen, so a
   name on the panel is always a name the tools accept.
+- `suggest_follow_up` returns the colleague the exception belongs to and why:
+  damage goes to maintenance, a delivery that does not match its order goes to
+  purchasing, everything else to the supervisor, and a worker holding that role
+  escalates instead. The agent names that colleague; the worker can choose
+  another, and the suggestion never becomes a record on its own.
 - Each communication needs a prepare, read-back and fresh spoken confirmation.
   The same one-use, two-minute draft mechanism used for ERP writes binds the
   exact action, recipient and content to its session. Only one draft is pending

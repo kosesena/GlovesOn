@@ -90,6 +90,12 @@ def test_invalid_replacement_invalidates_old_and_directory_is_bounded(isolated_s
     assert not communications.commit('a','call',confirmed(draft,colleague_id='alex'))['completed']
     assert communications.find_colleague('warehouse supervisor')['matches'][0]['id']=='alex'
     assert communications.find_colleague('mom')['matches']==[]
+    # A follow-up is routed by what was said, and a worker never reports to
+    # their own role.
+    assert communications.follow_up_recipient('Two bearings dropped and broke')[0]['id']=='sam'
+    assert communications.follow_up_recipient('Only twelve of twenty arrived')[0]['id']=='dana'
+    assert communications.follow_up_recipient('The paperwork is unclear')[0]['id']=='alex'
+    assert communications.follow_up_recipient('A pallet broke','Maintenance technician')[0]['id']=='alex'
 
 
 def test_browser_relay_routes_are_gated_and_suggestions_do_not_write(isolated_store):

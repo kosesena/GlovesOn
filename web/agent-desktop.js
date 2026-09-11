@@ -168,8 +168,13 @@
       if(state.suggestions) {
         const box=node('section','desktop-suggestions');
         add(box,node('h3','','What would you like to do?'),node('p','',state.suggestions.reason));
+        // The gateway decides who this belongs to; the buttons say the name so
+        // the worker can disagree with it before anything is drafted.
+        const to=state.suggestions.recipient;
+        if(to) add(box,node('p','follow-up-recipient',to.name+' · '+to.role+' — '+state.suggestions.because));
         const options=node('div','follow-up-options');
-        for(const [key,label] of [['call_supervisor','Call supervisor'],['draft_email','Draft email'],['save_note','Save a note']]) {
+        const labels=[['call_colleague',to?'Call '+to.name:'Call a colleague'],['draft_email',to?'Email '+to.name:'Draft email'],['save_note','Save a note']];
+        for(const [key,label] of labels) {
           const button=node('button','',label);button.type='button';button.onclick=()=>onChoice(key);add(options,button);
         }
         add(box,options,node('small','','Choose here or tell Lena. Nothing happens until you confirm.'));add(host,box);

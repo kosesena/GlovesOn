@@ -1373,7 +1373,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <form id="scenarioForm">
 <h2 id="scenarioDialogTitle">Create a practice scenario</h2><p>Set up a situation to rehearse with Lena. Saved in this browser. This creates a brief; records change only through confirmed voice actions.</p>
 <label>Task title<input name="title" required maxlength="70" placeholder="A short delivery at the loading bay"></label>
-<label>Worker role<select name="role"><option>Warehouse operator</option><option>Maintenance technician</option><option>Receiving supervisor</option></select></label>
+<label>Worker role<select name="role"><option>Warehouse operator</option><option>Maintenance technician</option><option>Warehouse supervisor</option></select></label>
 <label>Situation<textarea name="situation" required maxlength="400" rows="2" placeholder="A delivery has arrived. Check and record the quantity."></textarea></label>
 <label>Expected action<select name="action"><option value="receive">Receive a delivery</option><option value="correct">Correct a quantity before confirming</option><option value="stock">Find material and stock</option><option value="reverse">Reverse a receipt</option></select></label>
 <label>Material<select name="material"><option value="4711">4711 · Hex bolts</option><option value="4712">4712 · Hex nuts</option><option value="4713">4713 · Hydraulic hose</option><option value="5100">5100 · Ball bearings</option><option value="5101">5101 · Timing belt</option></select></label>
@@ -2247,7 +2247,12 @@ async function start() {
     if (policyDirty) { socket.send(JSON.stringify({type:'session.update',session:policy.update()})); policyDirty=false; }
   }
   globalThis.requestWorkspaceAction = key => {
-    const requests = {call_supervisor:'Call the warehouse supervisor about the issue we just discussed.', draft_email:'Draft an email to the warehouse supervisor about the issue we just discussed.', save_note:'Save a follow-up note about the issue we just discussed.'};
+    // The colleague comes from the tool result, not from this file: hard-coding
+    // "the warehouse supervisor" here sent every follow-up to Alex whatever the
+    // gateway had worked out from what the worker said.
+    const to = globalThis.agentDesktop?.state?.suggestions?.recipient;
+    const who = to ? to.name : 'the warehouse supervisor';
+    const requests = {call_colleague:`Call ${who} about the issue we just discussed.`, draft_email:`Draft an email to ${who} about the issue we just discussed.`, save_note:'Save a follow-up note about the issue we just discussed.'};
     if (!requests[key] || activeScopeToken !== scopeToken || !socket || socket.readyState !== WebSocket.OPEN || lastToolEvent !== 'reply.done' || [...handledCalls.values()].some(value => value === null) || toolResults.length) return false;
     policy.user('new action selected'); policyDirty = false;
     globalThis.agentDesktop?.invalidateDraft(); globalThis.agentDesktop?.dismissSuggestions();

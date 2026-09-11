@@ -79,6 +79,9 @@
 .desktop-suggestions {background:#edf1e5;border:1px solid #d9e1ce;border-radius:16px;padding:18px;margin:8px 0 18px;}
 #agentDesktop .desktop-suggestions h3 {font-size:16px;margin:0 0 8px;}
 .desktop-suggestions p {font-size:12px;color:#68765d;}
+/* Who it is going to, and why, above the buttons that name them. Said out
+   loud by the agent too; on screen so a worker can object before a draft. */
+.desktop-suggestions .follow-up-recipient {margin:10px 0 0;font-size:12px;font-weight:600;color:#3d5238;}
 .follow-up-options {display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 10px;}
 .follow-up-options button {border:1px solid #c9d4bc;border-radius:20px;color:#35502d;background:#fffef8;padding:10px 13px;font:600 11px system-ui;cursor:pointer;}
 .follow-up-options button:hover {background:#dce8cf;}

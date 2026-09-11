@@ -43,6 +43,35 @@ def directory():
     return [dict(person) for person in COLLEAGUES]
 
 
+# Who a follow-up belongs to. The words are matched against what the worker
+# actually said, not against a category the agent invented, and a miss lands on
+# the supervisor rather than on nobody. A wrong guess here costs a suggestion
+# the worker declines; it can never cost a record, because every message still
+# needs its own draft, read-back and spoken yes.
+INCIDENT_WORDS = ('broke', 'broken', 'damag', 'dropped', 'crack', 'leak', 'faulty', 'torn', 'split', 'unsafe')
+SUPPLY_WORDS = ('missing', 'short', 'fewer', 'shortage', 'wrong item', 'wrong material',
+                'supplier', 'purchase order', 'not delivered', 'never arrived', 'overdelivered',
+                # A count that does not match is rarely said with the word
+                # "shortage": it is said as "only twelve", "instead of twenty".
+                'only', 'instead of', 'not enough', 'less than', 'discrepanc', 'mismatch')
+
+
+def follow_up_recipient(reason, worker_role=''):
+    people = {person['id']: dict(person) for person in COLLEAGUES}
+    text = (reason or '').lower()
+    if any(word in text for word in INCIDENT_WORDS):
+        person, because = people['sam'], 'damaged or broken goods go to maintenance'
+    elif any(word in text for word in SUPPLY_WORDS):
+        person, because = people['dana'], 'a delivery that does not match its order goes to purchasing'
+    else:
+        person, because = people['alex'], 'anything else goes to the shift supervisor'
+    # Nobody is told to report to themselves: the maintenance technician who
+    # reports the broken pallet escalates instead of calling their own extension.
+    if worker_role and worker_role.strip().lower() == person['role'].lower() and person['id'] != 'alex':
+        person, because = people['alex'], 'the worker holds that role, so it escalates to the supervisor'
+    return person, because
+
+
 def find_colleague(query):
     terms = query.lower().split()
     matches = [dict(person) for person in COLLEAGUES if all(

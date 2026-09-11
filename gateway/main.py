@@ -352,9 +352,17 @@ def follow_up_options(body: dict = Body(...), x_tool_secret: str | None = Header
         reason = communications.text_field(body, 'reason', 600)
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+    # Who it should go to is decided here, from what the worker said and the role
+    # they are working as, so the agent reads a name back instead of choosing one.
+    recipient, because = communications.follow_up_recipient(
+        reason, str(body.get('worker_role') or ''))
     return {'suggested': True, 'simulated': True, 'reason': reason,
-            'options': ['call_supervisor', 'draft_email', 'save_note'],
-            'message': 'Options only; no action taken. Ask the worker which path to take. Each save/call needs its own draft and confirmation.'}
+            'recipient': recipient, 'because': because,
+            'options': ['call_colleague', 'draft_email', 'save_note'],
+            'message': f'Options only; no action taken. Suggested colleague: {recipient["name"]}, '
+                       f'{recipient["role"]} — {because}. Name them when you offer the choice, and '
+                       'use this colleague_id unless the worker names someone else. Each call, email '
+                       'or note still needs its own draft, read-back and spoken confirmation.'}
 
 
 for communication_kind in ('email', 'call', 'note'):
