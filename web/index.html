@@ -1209,6 +1209,13 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar {background:transparent;color:#303830;box-shadow:none;border-bottom:1px solid #dedfd9;border-radius:0;padding:0 0 16px;position:relative;top:auto;}
 .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar button {background:#fff;color:#343b34;border:1px solid #dedfd9;}
 .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar span,.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar a {color:#667067;}
+/* The task strip: what is left of the chooser screen. A row of the area's
+   tasks above the work, the running one filled in. Pills clear 44px so a
+   gloved thumb can switch task without opening anything. */
+#warehouseWork .task-strip {display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:1320px;margin:0 auto;padding:4px 0 0;}
+#warehouseWork .task-strip-item {display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border:1px solid #dedfd9;border-radius:999px;background:#fff;color:#4a5a49;font:500 13px/1.2 system-ui,sans-serif;cursor:pointer;}
+#warehouseWork .task-strip-item:hover {border-color:#b9c4b4;color:#244b35;}
+#warehouseWork .task-strip-item[aria-current="true"] {background:#244b35;border-color:#244b35;color:#fff;cursor:default;}
 /* The signature closes the screen the way a credit closes a film: centred,
    quiet, and below the work rather than beside it. It is the only place on
    this screen that says why the thing exists. */
@@ -1323,7 +1330,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <div class="warehouse-toolbar"><button id="warehouseBack">← Back to site</button><span id="warehouseCrumb">PLANT 1000 / WAREHOUSE</span><button id="replayAreaIntro" hidden>Watch a walkthrough ↗</button><button id="warehouseCreate">+ Create a task</button></div>
 <div id="warehouseLobby"><div class="warehouse-title"><div class="eyebrow">YOUR SHIFT / PLANT 1000</div><h1>Where are you working today?</h1><p>Step into an area to pick up your next task.</p></div><div class="warehouse-room" id="warehouseRoom"><div id="avatarStage" class="avatar-stage"></div><button class="warehouse-entry" data-enter="receiving"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><b>Receiving bay</b><small>Deliveries & quantity checks</small><em>3 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="storage"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><b>Storage aisles</b><small>Materials, stock & incidents</small><em>2 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="review"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><b>Review desk</b><small>Check receipts & reverse entries</small><em>1 guided task ↗</em></button></div></div>
 <div id="warehouseArea" hidden><div class="warehouse-title"><h1 id="warehouseAreaTitle"></h1><p>Take the next guided task, or open the task folder.</p></div><div class="warehouse-choice"><article><small>01 / TAKE A TASK</small><h2>Next on your shift</h2><p id="nextTaskDescription"></p><button id="takeNextTask">Take this task ↗</button></article><article><small>02 / TASK FOLDER</small><h2>Choose your task</h2><p>Browse the guided scenarios and the tasks you have created for this area.</p><button id="browseTasks">Open task folder ↗</button></article></div></div>
-<div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><p class="work-signature">Built for the <strong>AssemblyAI Voice Agent Hackathon</strong> · September 2026</p><div id="warehouseBrief"><span id="warehouseBriefImage" class="warehouse-art" aria-hidden="true" ></span><div class="brief-copy"><small class="brief-eyebrow">YOUR NEXT TASK</small><h2 id="warehouseBriefTitle"></h2><p id="warehouseBriefText"></p><blockquote id="warehouseGuideQuote" hidden><small>YOUR WAREHOUSE GUIDE</small><p>“A delivery just arrived. Let’s check it in.”</p></blockquote></div></div></div>
+<div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><p class="work-signature">Built for the <strong>AssemblyAI Voice Agent Hackathon</strong> · September 2026</p><nav id="taskStrip" class="task-strip" aria-label="Tasks in this area" hidden></nav><div id="warehouseBrief"><span id="warehouseBriefImage" class="warehouse-art" aria-hidden="true" ></span><div class="brief-copy"><small class="brief-eyebrow">YOUR NEXT TASK</small><h2 id="warehouseBriefTitle"></h2><p id="warehouseBriefText"></p><blockquote id="warehouseGuideQuote" hidden><small>YOUR WAREHOUSE GUIDE</small><p>“A delivery just arrived. Let’s check it in.”</p></blockquote></div></div></div>
 </section>
 <section class="shift" aria-label="Warehouse shift">
   <div class="shift-heading"><div><h3>Your shift starts here.</h3><p>Choose an area. Pick a task. Work by voice.</p></div></div>
@@ -2665,9 +2672,26 @@ const areaTitles = {receiving:'Receiving bay',storage:'Storage aisles',review:'R
 let warehouseStage = 'lobby';
 let areaTransition = 0;
 let warehouseAreaKey = 'receiving';
-function warehouseTaskCount(key) {
-  return [...document.querySelectorAll('[data-scenario]')].filter(b => areaFor[b.dataset.scenario] === key).length
-    + savedTasks.filter(t => areaFor[t.action] === key).length;
+// Every task in this area on one line, with the running one marked. It is what
+// is left of the chooser screen, and it costs no screen of its own.
+function renderTaskStrip() {
+  const strip = document.getElementById('taskStrip');
+  const active = document.getElementById('warehouseBriefTitle').textContent.trim();
+  const sources = [...document.querySelectorAll('[data-scenario]')]
+    .filter(b => areaFor[b.dataset.scenario] === warehouseAreaKey)
+    .concat([...document.querySelectorAll('#customTasks [data-custom-task]')]);
+  strip.replaceChildren();
+  for (const source of sources) {
+    const label = (source.querySelector('b') || source).textContent.replace('↗','').trim();
+    const item = document.createElement('button');
+    item.type = 'button'; item.className = 'task-strip-item'; item.textContent = label;
+    // The card already knows how to start its own task; the strip only points at it.
+    if (label === active) item.setAttribute('aria-current','true');
+    else item.onclick = () => source.click();
+    strip.append(item);
+  }
+  // One task is not a choice, and the strip would only repeat the heading.
+  strip.hidden = strip.children.length < 2;
 }
 function showWarehouseStage(stage) {
   if (stage === 'area') stage = 'tasks';
@@ -2688,7 +2712,10 @@ function showWarehouseStage(stage) {
     document.querySelector('.shift-heading p').textContent = 'Choose a task to start your voice session.';
   }
   for (const [id,key] of [['warehouseLobby','lobby'],['warehouseArea','area'],['warehouseTasks','tasks'],['warehouseWork','work']]) document.getElementById(id).hidden = stage !== key;
-  document.getElementById('warehouseBack').textContent = stage === 'lobby' ? '← Back to site' : stage === 'tasks' || warehouseTaskCount(warehouseAreaKey) === 1 ? '← Warehouse' : '← '+areaTitles[warehouseAreaKey];
+  if (stage === 'work') renderTaskStrip();
+  // One step back from anywhere: the task chooser is no longer on the way in,
+  // so returning through it would be a screen nobody asked to see.
+  document.getElementById('warehouseBack').textContent = stage === 'lobby' ? '← Back to site' : '← Warehouse';
   document.getElementById('warehouseCrumb').textContent = 'PLANT 1000 / '+(stage === 'lobby' ? 'WAREHOUSE' : areaTitles[warehouseAreaKey].toUpperCase());
   window.scrollTo({top:0,behavior:'instant'});
 }
@@ -2839,10 +2866,12 @@ function enterWarehouseAreaNow(key) {
   document.getElementById('warehouseAreaTitle').textContent = areaTitles[key];
   const first = [...document.querySelectorAll('[data-scenario]')].find(b => areaFor[b.dataset.scenario] === key);
   document.getElementById('nextTaskDescription').textContent = first.querySelector('.scenario-desc').textContent;
+  // Walking into an area already answers "which area?". Asking "which task?"
+  // on a screen of its own spent the whole viewport on a decision the worker
+  // in the story never makes: a delivery simply arrives. The first task starts,
+  // and the strip above the work carries the rest of the area's tasks.
   const choices = [...document.querySelectorAll('[data-scenario]')].filter(b => areaFor[b.dataset.scenario] === key);
-  const customCount = savedTasks.filter(t => areaFor[t.action] === key).length;
-  if (choices.length === 1 && customCount === 0) choices[0].click();
-  else showWarehouseStage('tasks');
+  choices[0].click();
 }
 document.getElementById('replayAreaIntro').onclick = () => enterWarehouseAreaWithIntro(warehouseAreaKey, true);
 document.querySelectorAll('[data-enter]').forEach(b => b.onclick = () => enterWarehouseArea(b.dataset.enter));
@@ -2869,7 +2898,7 @@ document.getElementById('customTasks').addEventListener('click',event => {
 });
 document.getElementById('warehouseBack').onclick = () => {
   if (warehouseStage === 'lobby') location.hash = 'top';
-  else showWarehouseStage(warehouseStage === 'tasks' || warehouseTaskCount(warehouseAreaKey) === 1 ? 'lobby' : 'tasks');
+  else showWarehouseStage('lobby');
 };
 document.getElementById('warehouseCreate').onclick = () => scenarioDialog.showModal();
 scenarioForm.addEventListener('submit',() => {
