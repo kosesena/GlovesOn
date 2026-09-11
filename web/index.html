@@ -878,7 +878,10 @@ body:has(#how:target) > .site-nav .nav-links a:not(.nav-back) { display:none; }
    The back link sits second in the markup on purpose: the script rewrites the
    first link in this bar into the closing call to action. */
 .nav-links .nav-back { display:none; }
-body:has(#how:target) > .site-nav { position:sticky; top:0; z-index:40; padding-top:16px; padding-bottom:16px; background:#f7f3eaf2; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); border-bottom:1px solid #dfe2d4; }
+/* The way out sits beside the mark, not in the opposite corner: a back control
+   belongs on the side you read from, and the bar's right edge is where this
+   page's call to action used to live. The mark keeps the far left. */
+body:has(#how:target) > .site-nav { position:sticky; top:0; z-index:40; justify-content:flex-start; gap:20px; padding-top:16px; padding-bottom:16px; background:#f7f3eaf2; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); border-bottom:1px solid #dfe2d4; }
 body:has(#how:target) > .site-nav .nav-links .nav-back { display:inline-flex; align-items:center; min-height:44px; padding:11px 20px; border:1px solid #c7cfbb; border-radius:28px; background:#fffdf7; color:#244b35; font-weight:600; }
 body:not(.in-warehouse):has(#how:target) > .hero,
 body:has(#how:target) > .landing-hackathon { display:none; }
