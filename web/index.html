@@ -1155,7 +1155,10 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 #how .how-heading>a:hover {background:#d7decd;}
 #how .how-heading>a:focus-visible {outline:2px solid #244b35;outline-offset:4px;}
 #how .how-heading h1 {margin:0 0 14px;}
-#how .how-heading p {flex:0 0 auto;width:100%;max-width:760px;margin:0 0 18px;font-size:16px;line-height:1.6;}
+/* The lead sentence broke in two because the measure was capped at 760px while
+   the heading row is wider than that. One idea, one line, where the width
+   exists; below that it wraps like any other paragraph. */
+#how .how-heading p {flex:0 0 auto;width:100%;max-width:1040px;margin:0 0 18px;font-size:16px;line-height:1.6;}
 /* Keep the mobile guide's canvas and camera at the same aspect ratio. */
 @media(max-width:900px) {
  #warehouseLobby .avatar-stage { top:auto; bottom:0; height:250px; }
