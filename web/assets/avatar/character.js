@@ -33,6 +33,24 @@ async function start() {
       fetch('/assets/avatar/motions.json?v=4').then(r => { if (!r.ok) throw Error('Motion unavailable'); return r.json(); })
     ]);
     if (reduced.matches) { renderer.dispose(); loaded = false; return; }
+    // The canvas already draws at the display's own pixels; what limits detail
+    // is one 1024px texture stretched over the whole figure. Anisotropic
+    // filtering is the part of that we can still ask for: it keeps the cloth
+    // and the hair from smearing where the surface turns away from the camera.
+    // It does not add detail that the texture does not have.
+    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+    gltf.scene.traverse(object => {
+      const materials = object.material ? [].concat(object.material) : [];
+      for (const material of materials) {
+        for (const slot of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap']) {
+          const texture = material[slot];
+          if (texture && texture.anisotropy !== maxAnisotropy) {
+            texture.anisotropy = maxAnisotropy;
+            texture.needsUpdate = true;
+          }
+        }
+      }
+    });
     const scene = new THREE.Scene();
     // Vertical framing 2.37 -> 2.05 units: the figure stands larger in the same scene.
     const camera = new THREE.OrthographicCamera(-2, 2, 1.90, -.15, .1, 20);
