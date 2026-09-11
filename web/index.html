@@ -1209,6 +1209,11 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar {background:transparent;color:#303830;box-shadow:none;border-bottom:1px solid #dedfd9;border-radius:0;padding:0 0 16px;position:relative;top:auto;}
 .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar button {background:#fff;color:#343b34;border:1px solid #dedfd9;}
 .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar span,.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar a {color:#667067;}
+/* The signature closes the screen the way a credit closes a film: centred,
+   quiet, and below the work rather than beside it. It is the only place on
+   this screen that says why the thing exists. */
+#warehouseWork .work-signature {max-width:1320px;margin:34px auto 0;text-align:center;font:10px/1.7 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#8b927f;}
+#warehouseWork .work-signature strong {font-weight:600;color:#5c6a58;}
 #warehouseWork #warehouseBrief {max-width:900px;background:none;border:0;text-align:center;justify-content:center;padding:22px 16px 8px;margin-bottom:8px;}
 #warehouseWork #warehouseBriefTitle {font-size:clamp(24px,3vw,34px);font-weight:600;letter-spacing:-.04em;}
 #warehouseWork .console-wrap {max-width:900px;margin:0 auto;background:#ffffffc9;border:1px solid #fff;border-radius:28px;box-shadow:0 16px 60px #303f4c09;}
@@ -1318,7 +1323,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <div class="warehouse-toolbar"><button id="warehouseBack">← Back to site</button><span id="warehouseCrumb">PLANT 1000 / WAREHOUSE</span><button id="replayAreaIntro" hidden>Watch a walkthrough ↗</button><button id="warehouseCreate">+ Create a task</button></div>
 <div id="warehouseLobby"><div class="warehouse-title"><div class="eyebrow">YOUR SHIFT / PLANT 1000</div><h1>Where are you working today?</h1><p>Step into an area to pick up your next task.</p></div><div class="warehouse-room" id="warehouseRoom"><div id="avatarStage" class="avatar-stage"></div><button class="warehouse-entry" data-enter="receiving"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><b>Receiving bay</b><small>Deliveries & quantity checks</small><em>3 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="storage"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><b>Storage aisles</b><small>Materials, stock & incidents</small><em>2 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="review"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><b>Review desk</b><small>Check receipts & reverse entries</small><em>1 guided task ↗</em></button></div></div>
 <div id="warehouseArea" hidden><div class="warehouse-title"><h1 id="warehouseAreaTitle"></h1><p>Take the next guided task, or open the task folder.</p></div><div class="warehouse-choice"><article><small>01 / TAKE A TASK</small><h2>Next on your shift</h2><p id="nextTaskDescription"></p><button id="takeNextTask">Take this task ↗</button></article><article><small>02 / TASK FOLDER</small><h2>Choose your task</h2><p>Browse the guided scenarios and the tasks you have created for this area.</p><button id="browseTasks">Open task folder ↗</button></article></div></div>
-<div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><div id="warehouseBrief"><span id="warehouseBriefImage" class="warehouse-art" aria-hidden="true" ></span><div class="brief-copy"><small class="brief-eyebrow">YOUR NEXT TASK</small><h2 id="warehouseBriefTitle"></h2><p id="warehouseBriefText"></p><blockquote id="warehouseGuideQuote" hidden><small>YOUR WAREHOUSE GUIDE</small><p>“A delivery just arrived. Let’s check it in.”</p></blockquote></div></div></div>
+<div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><p class="work-signature">Built for the <strong>AssemblyAI Voice Agent Hackathon</strong> · September 2026</p><div id="warehouseBrief"><span id="warehouseBriefImage" class="warehouse-art" aria-hidden="true" ></span><div class="brief-copy"><small class="brief-eyebrow">YOUR NEXT TASK</small><h2 id="warehouseBriefTitle"></h2><p id="warehouseBriefText"></p><blockquote id="warehouseGuideQuote" hidden><small>YOUR WAREHOUSE GUIDE</small><p>“A delivery just arrived. Let’s check it in.”</p></blockquote></div></div></div>
 </section>
 <section class="shift" aria-label="Warehouse shift">
   <div class="shift-heading"><div><h3>Your shift starts here.</h3><p>Choose an area. Pick a task. Work by voice.</p></div></div>
@@ -2652,6 +2657,7 @@ const shiftSection = document.querySelector('.shift');
 const scenarioBar = document.querySelector('.scenario-bar');
 const practiceSection = document.getElementById('practiceSection');
 const consoleSection = document.querySelector('.console-wrap');
+const workSignature = document.querySelector('.work-signature');
 const shiftAnchor = document.createComment('shift'); shiftSection.before(shiftAnchor);
 const cardsAnchor = document.createComment('cards'); scenarioBar.before(cardsAnchor);
 const consoleAnchor = document.createComment('console'); consoleSection.before(consoleAnchor);
@@ -2699,7 +2705,9 @@ function applyWarehouseRoute() {
   document.body.classList.toggle('in-warehouse',active); warehouseShell.hidden = !active;
   if (active) {
     document.getElementById('warehouseTasks').append(shiftSection,scenarioBar,practiceSection);
-    document.getElementById('warehouseWork').append(consoleSection);
+    // Order matters: appending both puts the signature under the console,
+    // even though the markup declares it first.
+    document.getElementById('warehouseWork').append(consoleSection, workSignature);
     shiftSection.querySelector('.floor').hidden = true;
     showWarehouseStage('lobby');
     loadAvatar();
