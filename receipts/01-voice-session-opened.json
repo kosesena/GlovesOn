@@ -1,0 +1,21 @@
+{
+  "step": 1,
+  "name": "voice-session-opened",
+  "recorded_at": "2026-09-11T14:49:36Z",
+  "gateway": "https://gloveson.vercel.app",
+  "request": {
+    "method": "GET",
+    "path": "/api/voice-token",
+    "body": null,
+    "query": null
+  },
+  "status": 200,
+  "elapsed_ms": 1924,
+  "response": {
+    "token": "<redacted: short-lived>",
+    "session_config": "<redacted: short-lived>",
+    "scope_token": "<redacted: short-lived>",
+    "tool_catalog": "<redacted: short-lived>",
+    "tool_capability": "<redacted: short-lived>"
+  }
+}

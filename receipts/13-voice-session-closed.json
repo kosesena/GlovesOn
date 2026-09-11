@@ -1,0 +1,20 @@
+{
+  "step": 13,
+  "name": "voice-session-closed",
+  "recorded_at": "2026-09-11T14:49:41Z",
+  "gateway": "https://gloveson.vercel.app",
+  "request": {
+    "method": "POST",
+    "path": "/api/voice-session/end",
+    "body": {
+      "scope_token": "<redacted: short-lived>"
+    },
+    "query": null
+  },
+  "status": 200,
+  "elapsed_ms": 193,
+  "response": {
+    "closed": true,
+    "cleanup_pending": false
+  }
+}

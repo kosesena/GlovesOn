@@ -1,0 +1,32 @@
+{
+  "step": 10,
+  "name": "prepare_reversal",
+  "recorded_at": "2026-09-11T14:49:40Z",
+  "gateway": "https://gloveson.vercel.app",
+  "request": {
+    "method": "POST",
+    "path": "/api/voice-tools/prepare_reversal",
+    "body": {
+      "document": "4922857164"
+    },
+    "query": null
+  },
+  "status": 200,
+  "elapsed_ms": 403,
+  "response": {
+    "prepared": true,
+    "draft_token": "<redacted: short-lived>",
+    "details": {
+      "MATNR": "4711",
+      "MENGE": 40,
+      "MEINS": "EA",
+      "MAKTX": "Hex Bolt M8x40 Zinc Plated",
+      "WERKS": "1000",
+      "LGORT": "0001",
+      "LGPLA": "A-03-02",
+      "document": "4922857164",
+      "original_movement": "501"
+    },
+    "message": "Nothing recorded. Read back quantity, unit, description and bin (and document for reversal). Wait for explicit confirmation. Any correction requires a new draft."
+  }
+}

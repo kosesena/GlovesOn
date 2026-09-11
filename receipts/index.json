@@ -1,0 +1,100 @@
+{
+  "gateway": "https://gloveson.vercel.app",
+  "recorded_at": "2026-09-11T14:49:41Z",
+  "material_document": "4922857164",
+  "spoken": false,
+  "note": "Real HTTP calls through the browser's own tool door. The arguments were supplied by this script, not by a worker or an agent.",
+  "steps": [
+    {
+      "step": 1,
+      "name": "voice-session-opened",
+      "status": 200,
+      "file": "01-voice-session-opened.json",
+      "elapsed_ms": 1924
+    },
+    {
+      "step": 2,
+      "name": "get_stock",
+      "status": 200,
+      "file": "02-get_stock.json",
+      "elapsed_ms": 466
+    },
+    {
+      "step": 3,
+      "name": "prepare_goods_receipt",
+      "status": 200,
+      "file": "03-prepare_goods_receipt.json",
+      "elapsed_ms": 373
+    },
+    {
+      "step": 4,
+      "name": "refused-quantity-changed-after-readback",
+      "status": 200,
+      "file": "04-refused-quantity-changed-after-readback.json",
+      "elapsed_ms": 214
+    },
+    {
+      "step": 5,
+      "name": "prepare_goods_receipt",
+      "status": 200,
+      "file": "05-prepare_goods_receipt.json",
+      "elapsed_ms": 352
+    },
+    {
+      "step": 6,
+      "name": "posted-goods-receipt",
+      "status": 200,
+      "file": "06-posted-goods-receipt.json",
+      "elapsed_ms": 269
+    },
+    {
+      "step": 7,
+      "name": "prepare_goods_receipt",
+      "status": 200,
+      "file": "07-prepare_goods_receipt.json",
+      "elapsed_ms": 351
+    },
+    {
+      "step": 8,
+      "name": "refused-duplicate",
+      "status": 200,
+      "file": "08-refused-duplicate.json",
+      "elapsed_ms": 418
+    },
+    {
+      "step": 9,
+      "name": "provenance",
+      "status": 200,
+      "file": "09-provenance.json",
+      "elapsed_ms": 194
+    },
+    {
+      "step": 10,
+      "name": "prepare_reversal",
+      "status": 200,
+      "file": "10-prepare_reversal.json",
+      "elapsed_ms": 403
+    },
+    {
+      "step": 11,
+      "name": "reversed",
+      "status": 200,
+      "file": "11-reversed.json",
+      "elapsed_ms": 250
+    },
+    {
+      "step": 12,
+      "name": "get_stock",
+      "status": 200,
+      "file": "12-get_stock.json",
+      "elapsed_ms": 250
+    },
+    {
+      "step": 13,
+      "name": "voice-session-closed",
+      "status": 200,
+      "file": "13-voice-session-closed.json",
+      "elapsed_ms": 193
+    }
+  ]
+}

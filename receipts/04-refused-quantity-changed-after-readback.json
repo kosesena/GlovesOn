@@ -1,0 +1,25 @@
+{
+  "step": 4,
+  "name": "refused-quantity-changed-after-readback",
+  "recorded_at": "2026-09-11T14:49:38Z",
+  "gateway": "https://gloveson.vercel.app",
+  "request": {
+    "method": "POST",
+    "path": "/api/voice-tools/post_goods_receipt",
+    "body": {
+      "material": "4711",
+      "quantity": 41,
+      "draft_token": "<redacted: short-lived>",
+      "confirmed_utterance": "yes, confirm — typed by checks/record_receipts.py, no microphone and no spoken turn in this run",
+      "user_confirmation": "yes"
+    },
+    "query": null
+  },
+  "status": 200,
+  "elapsed_ms": 214,
+  "response": {
+    "posted": false,
+    "reversed": false,
+    "message": "Details changed. Prepare and read back a new draft before confirmation."
+  }
+}

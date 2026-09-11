@@ -1,0 +1,34 @@
+{
+  "step": 11,
+  "name": "reversed",
+  "recorded_at": "2026-09-11T14:49:41Z",
+  "gateway": "https://gloveson.vercel.app",
+  "request": {
+    "method": "POST",
+    "path": "/api/voice-tools/reverse_goods_receipt",
+    "body": {
+      "document": "4922857164",
+      "draft_token": "<redacted: short-lived>",
+      "confirmed_utterance": "yes, confirm — typed by checks/record_receipts.py, no microphone and no spoken turn in this run",
+      "user_confirmation": "yes"
+    },
+    "query": null
+  },
+  "status": 200,
+  "elapsed_ms": 250,
+  "response": {
+    "reversed": true,
+    "MBLNR": "4914312408",
+    "reverses": "4922857164",
+    "BWART": "502",
+    "MATNR": "4711",
+    "MAKTX": "Hex Bolt M8x40 Zinc Plated",
+    "MENGE": 40,
+    "MEINS": "EA",
+    "LGORT": "0001",
+    "LGPLA": "A-03-02",
+    "new_stock_level": 271,
+    "posted_at": 1789138181.3340795,
+    "message": "Material document 4914312408 reverses 4922857164. 40 EA of Hex Bolt M8x40 Zinc Plated taken back out of bin A-03-02. New stock level is 271. Both documents stay in the system."
+  }
+}

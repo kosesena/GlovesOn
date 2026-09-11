@@ -51,6 +51,9 @@ curl -s -H "X-Tool-Secret: $S" https://gloveson.vercel.app/erp/recent-documents
 
 # 5. why does that document exist? the sentence that caused it
 curl -s https://gloveson.vercel.app/api/provenance/<MBLNR from step 4>
+
+# 6. no secret, no empty list: a run that already happened, kept in the repo
+curl -s https://gloveson.vercel.app/api/provenance/4922857164
 ```
 
 Step 3 is the one worth watching, and it is worth watching because it **fails**.
@@ -60,9 +63,17 @@ the exact details and then confirmed them, so the strongest thing a curl can
 demonstrate is the refusal itself — valid input, correct secret, and still no
 document. The full prepare→confirm dance, the duplicate refusal and the
 reversal are all exercised end-to-end by the test suite below; the live posting
-you can watch happen is the voice demo. (If step 4 returns an empty list,
-nobody has spoken to the demo since its last reset — run one goods receipt by
-voice and look again.)
+you can watch happen is the voice demo.
+
+Step 6 needs no secret and does not depend on anybody having used the demo
+recently. [`receipts/`](../receipts/) holds one complete run against this same
+address — request and response for each step, including the write refused
+because the confirmation named a different quantity than the read-back, the
+duplicate the gateway turned down, and the reversal that left both documents
+standing. Its README says plainly what the run was not: nobody spoke, and the
+audit trail says so in the confirmation text itself. (If step 4 returns an
+empty list, nobody has spoken to the demo since its last reset, and the
+receipts are there for exactly that morning.)
 
 ---
 

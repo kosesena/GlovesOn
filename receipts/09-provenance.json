@@ -1,0 +1,33 @@
+{
+  "step": 9,
+  "name": "provenance",
+  "recorded_at": "2026-09-11T14:49:40Z",
+  "gateway": "https://gloveson.vercel.app",
+  "request": {
+    "method": "GET",
+    "path": "/api/provenance/4922857164",
+    "body": null,
+    "query": null
+  },
+  "status": 200,
+  "elapsed_ms": 194,
+  "response": {
+    "MBLNR": "4922857164",
+    "BWART": "501",
+    "MATNR": "4711",
+    "MENGE": 40,
+    "MEINS": "EA",
+    "LGPLA": "A-03-02",
+    "BUDAT": "2026-09-11",
+    "posted_at": 1789138179.6977856,
+    "BKTXT": "GLOVESON VOICE",
+    "XBLNR": "VOICE:b4a453e1bf",
+    "reverses": null,
+    "voice": {
+      "action": "goods_receipt",
+      "utterance": "yes, confirm — typed by checks/record_receipts.py, no microphone and no spoken turn in this run",
+      "session_id": "b4a453e1bf8d7eb5dbb21e77ad07ba84",
+      "recorded_at": 1789138179.7102947
+    }
+  }
+}

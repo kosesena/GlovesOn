@@ -1,0 +1,27 @@
+{
+  "step": 8,
+  "name": "refused-duplicate",
+  "recorded_at": "2026-09-11T14:49:40Z",
+  "gateway": "https://gloveson.vercel.app",
+  "request": {
+    "method": "POST",
+    "path": "/api/voice-tools/post_goods_receipt",
+    "body": {
+      "material": "4711",
+      "quantity": 40,
+      "draft_token": "<redacted: short-lived>",
+      "confirmed_utterance": "yes, confirm — typed by checks/record_receipts.py, no microphone and no spoken turn in this run",
+      "user_confirmation": "yes"
+    },
+    "query": null
+  },
+  "status": 200,
+  "elapsed_ms": 418,
+  "response": {
+    "posted": false,
+    "duplicate": true,
+    "MBLNR": "4922857164",
+    "seconds_ago": 0,
+    "message": "This exact posting already went through 0 seconds ago as material document 4922857164: 40 EA of Hex Bolt M8x40 Zinc Plated into bin A-03-02. Nothing was posted this time. Ask the worker whether this is a second, separate delivery. If it is, call again with prepare a new draft with allow_duplicate true, read it back and obtain fresh confirmation."
+  }
+}

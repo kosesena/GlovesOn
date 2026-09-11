@@ -1,0 +1,32 @@
+{
+  "step": 2,
+  "name": "get_stock",
+  "recorded_at": "2026-09-11T14:49:38Z",
+  "gateway": "https://gloveson.vercel.app",
+  "request": {
+    "method": "POST",
+    "path": "/api/voice-tools/get_stock",
+    "body": {
+      "material": "4711"
+    },
+    "query": null
+  },
+  "status": 200,
+  "elapsed_ms": 466,
+  "response": {
+    "found": true,
+    "MATNR": "4711",
+    "MAKTX": "Hex Bolt M8x40 Zinc Plated",
+    "MEINS": "EA",
+    "WERKS": "1000",
+    "total_unrestricted": 271,
+    "locations": [
+      {
+        "LGORT": "0001",
+        "LGPLA": "A-03-02",
+        "LABST": 271,
+        "MEINS": "EA"
+      }
+    ]
+  }
+}

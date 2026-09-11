@@ -299,6 +299,15 @@ the documents from the database. Even the sentence that says how many parts ther
 counts them. A page whose argument is *do not trust a typed number* had better not open
 with one.
 
+And if nobody has used the demo lately, that page's document counter is honest and
+unhelpful at the same time. [`receipts/`](receipts/) is the fix: one complete run against
+the deployed address, recorded on 11 September 2026 — the stock read, the write refused
+because the confirmation named a different quantity than the read-back, material document
+4922857164, the duplicate the gateway turned down, the provenance row, and the reversal
+that left both documents standing. Request and response, as they happened. Its README is
+equally clear about what the run was not: nobody spoke, and the audit trail says so in the
+confirmation text itself.
+
 ---
 
 ## Run it
