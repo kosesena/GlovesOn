@@ -1,5 +1,10 @@
 /* Conversation on the left, the device Lena is using on the right. */
-#warehouseWork .console-wrap {max-width:1320px;overflow:visible;background:transparent;border:0;box-shadow:none;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:24px;align-items:start;}
+/* Equal halves. The .9/1.1 split gave the workspace the wider column and the
+   two panels ended at different heights, so the pair read as one main panel
+   with something attached beside it. They are the same thing seen twice: what
+   was said, and what it did. Stretching costs the workspace some empty space
+   while it is waiting, which is the honest state of it anyway. */
+#warehouseWork .console-wrap {max-width:1320px;overflow:visible;background:transparent;border:0;box-shadow:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:stretch;}
 #warehouseWork .voice-column {min-width:0;background:#ffffffd9;border:1px solid #fff;border-radius:28px;box-shadow:0 16px 60px #303f4c09;}
 #warehouseWork .console-wrap>main {display:block;min-width:0;background:transparent;}
 #warehouseWork .console-wrap main>.right {display:block!important;background:transparent;border:0;padding:0;min-width:0;}
