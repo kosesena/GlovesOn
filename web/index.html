@@ -1373,7 +1373,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <form id="scenarioForm">
 <h2 id="scenarioDialogTitle">Create a practice scenario</h2><p>Set up a situation to rehearse with Lena. Saved in this browser. This creates a brief; records change only through confirmed voice actions.</p>
 <label>Task title<input name="title" required maxlength="70" placeholder="A short delivery at the loading bay"></label>
-<label>Worker role<select name="role"><option>Warehouse operator</option><option>Maintenance technician</option><option>Warehouse supervisor</option></select></label>
+<label>Worker role<select name="role"><option value="Warehouse operator">Warehouse operator</option><option value="Maintenance technician">Maintenance technician</option><option value="Warehouse supervisor">Warehouse supervisor</option></select></label>
 <label>Situation<textarea name="situation" required maxlength="400" rows="2" placeholder="A delivery has arrived. Check and record the quantity."></textarea></label>
 <label>Expected action<select name="action"><option value="receive">Receive a delivery</option><option value="correct">Correct a quantity before confirming</option><option value="stock">Find material and stock</option><option value="reverse">Reverse a receipt</option></select></label>
 <label>Material<select name="material"><option value="4711">4711 · Hex bolts</option><option value="4712">4712 · Hex nuts</option><option value="4713">4713 · Hydraulic hose</option><option value="5100">5100 · Ball bearings</option><option value="5101">5101 · Timing belt</option></select></label>
@@ -1563,7 +1563,19 @@ globalThis.agentDesktop = GlovesOnDesktop.mount(F('agentDesktop'), key => {
 // that drifts from the one the tools accept sends the worker to a colleague
 // the agent cannot find. If the fetch fails the panel keeps its old line.
 fetch('/api/directory').then(r => r.ok ? r.json() : null)
-  .then(data => data && globalThis.agentDesktop.setDirectory(data.colleagues))
+  .then(data => {
+    if (!data) return;
+    globalThis.agentDesktop.setDirectory(data.colleagues);
+    // Who holds each role, in the role menu itself: picking "Maintenance
+    // technician" now says whose job you are standing in, and the follow-up
+    // rule that stops you reporting to yourself becomes readable rather than
+    // surprising. The option's value keeps the bare role, because that string
+    // is compared against the directory on the server.
+    for (const option of document.querySelectorAll('#scenarioForm select[name="role"] option')) {
+      const holder = data.colleagues.find(person => person.role === option.value);
+      option.textContent = holder ? `${option.value} (${holder.name})` : option.value;
+    }
+  })
   .catch(() => {});
 
 // ---------------------------------------------------------------------------
