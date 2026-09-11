@@ -33,12 +33,23 @@ def init():
         conn.execute(SCHEMA)
 
 
+def directory():
+    """Everyone who exists. A screen that cannot say who is reachable sends the
+    worker guessing at names, and a name nobody has is a dead end in a demo."""
+    return [dict(person) for person in COLLEAGUES]
+
+
 def find_colleague(query):
     terms = query.lower().split()
     matches = [dict(person) for person in COLLEAGUES if all(
         term in ' '.join(person.values()).lower() for term in terms)]
-    return {"simulated": True, "matches": matches,
-            "message": "Fictional demo directory. Choose the intended colleague; never guess when ambiguous."}
+    # A miss returns the whole directory rather than nothing, so the agent can
+    # read the real options back instead of dead-ending on a name that does not
+    # exist. matches stays exact: the list is offered, never selected from.
+    return {"simulated": True, "matches": matches, "directory": directory(),
+            "message": "Fictional demo directory. Choose the intended colleague; never guess when ambiguous."
+            if matches else
+            "No colleague matched. These are the only people in the fictional demo directory; ask which one is meant."}
 
 
 def text_field(body, key, maximum, required=True):

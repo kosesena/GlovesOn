@@ -1209,6 +1209,12 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar {background:transparent;color:#303830;box-shadow:none;border-bottom:1px solid #dedfd9;border-radius:0;padding:0 0 16px;position:relative;top:auto;}
 .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar button {background:#fff;color:#343b34;border:1px solid #dedfd9;}
 .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar span,.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar a {color:#667067;}
+/* The demo directory on the empty workspace: three invented people, named
+   before anybody speaks, because a worker cannot ask for a name they have
+   never been told. */
+#warehouseWork .desktop-directory {margin-top:26px;font:11px/1.9 var(--mono);color:#8b927f;letter-spacing:.02em;}
+#warehouseWork .desktop-directory small {display:block;margin-bottom:8px;font-size:9px;letter-spacing:.14em;color:#a2a894;}
+#warehouseWork .desktop-directory p {margin:0;color:#6c7a68;}
 /* The task strip: what is left of the chooser screen. A row of the area's
    tasks above the work, the running one filled in. Pills clear 44px so a
    gloved thumb can switch task without opening anything. */
@@ -1537,6 +1543,12 @@ const F = id => document.getElementById(id);
 globalThis.agentDesktop = GlovesOnDesktop.mount(F('agentDesktop'), key => {
   if (!globalThis.requestWorkspaceAction?.(key)) append('sys', '', 'Start a conversation, or let Lena finish speaking, then choose a next step.');
 });
+// The names come from the gateway, not from a copy in this file: a directory
+// that drifts from the one the tools accept sends the worker to a colleague
+// the agent cannot find. If the fetch fails the panel keeps its old line.
+fetch('/api/directory').then(r => r.ok ? r.json() : null)
+  .then(data => data && globalThis.agentDesktop.setDirectory(data.colleagues))
+  .catch(() => {});
 
 // ---------------------------------------------------------------------------
 // The document. It fills as you speak; its stamp says its state.

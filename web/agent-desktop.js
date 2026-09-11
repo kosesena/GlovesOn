@@ -57,6 +57,8 @@
   }
   function mount(host,onChoice) {
     const state=new DesktopState();
+    // Who exists, for the empty screen. Fetched by the page, never invented here.
+    let directory=[];
     const node=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e;};
     const add=(parent,...children)=>{parent.append(...children.filter(Boolean));return parent;};
     const words=value=>value === undefined || value === null || value === '' ? '—' : String(value);
@@ -80,7 +82,10 @@
         else if(entry.state==='draft') add(screen,notice('Say “confirm” to simulate this call.'));
       } else if(entry.state==='pending') add(screen,notice('Looking up your colleague…'));
       else for(const p of result.matches||[]) add(screen,add(node('article','contact-row'),node('span','contact-initial',p.name[0]),add(node('div'),node('strong','',p.name),node('small','',p.role+' · Ext. '+p.extension))));
-      if(result.matches?.length===0) add(screen,notice('No colleague found. Try a name or role.'));
+      if(result.matches?.length===0) {
+        add(screen,notice('No colleague matched. The whole demo directory:'));
+        for(const person of result.directory||[]) add(screen,add(node('article','contact-row'),node('span','contact-initial',person.name[0]),add(node('div'),node('strong','',person.name),node('small','',person.role+' · Ext. '+person.extension))));
+      }
       add(screen,node('p','device-disclaimer','Demo phone · no real call is placed.'));
       return shell;
     }
@@ -141,7 +146,15 @@
       state.expire(); host.replaceChildren();
       add(host,add(node('div','desktop-heading'),add(node('div'),node('small','',"LENA’S WORKSPACE"),node('h2','','See it happen')),badge('Mock environment')));
       if(!state.current) {
-        add(host,add(node('div','desktop-empty'),node('div','desktop-empty-symbol','↗'),node('h3','','Your words. Work in motion.'),node('p','','Ask Lena to receive a delivery, email a colleague or make a work call.'),node('div','desktop-device-list','ERP records  /  Work phone  /  Mail')));
+        const empty=add(node('div','desktop-empty'),node('div','desktop-empty-symbol','↗'),node('h3','','Your words. Work in motion.'),node('p','','Ask Lena to receive a delivery, email a colleague or make a work call.'));
+        // A worker who does not know a name cannot ask for one. The list is
+        // short and fictional, so it can simply be on the screen.
+        if(directory.length) {
+          const list=add(node('div','desktop-directory'),node('small','','WHO YOU CAN REACH · FICTIONAL DEMO DIRECTORY'));
+          for(const person of directory) add(list,node('p','',person.name+' · '+person.role+' · Ext. '+person.extension));
+          add(empty,list);
+        } else add(empty,node('div','desktop-device-list','ERP records  /  Work phone  /  Mail'));
+        add(host,empty);
       } else {
         const entry=state.current;
         add(host,add(node('div','desktop-status '+entry.state),node('span','',labels[entry.name]||'Workspace'),node('strong','',stateText[entry.state])));
@@ -179,6 +192,7 @@
       reset(){state.reset();render();},
       invalidateDraft(){state.invalidateDraft();render();},
       dismissSuggestions(){state.suggestions=null;render();},
+      setDirectory(list){directory=Array.isArray(list)?list:[];render();},
       end(){state.end();render();},
       destroy(){clearInterval(interval);}
     };

@@ -996,6 +996,18 @@ def how_it_works() -> FileResponse:
     return FileResponse(WEB_DIR / "how-it-works.html")
 
 
+@app.get("/api/directory")
+def demo_directory() -> dict[str, Any]:
+    """
+    Who the worker can reach, for the screen to show before anybody speaks.
+
+    Invented people at a reserved example domain, and the only names the demo
+    accepts; no secret, because there is nothing here to protect and a worker
+    guessing at names is the failure this answers.
+    """
+    return {"simulated": True, "colleagues": communications.directory()}
+
+
 @app.get("/api/provenance/{mblnr}")
 def provenance(mblnr: str) -> dict[str, Any]:
     """
