@@ -11,8 +11,10 @@ run a prewritten success animation or control another application.
 - Communication tools write persistent, session-scoped rows to
   `demo_communications` in Postgres. Calls are log entries, emails are demo
   outbox records, and notes are saved text. Nobody is contacted.
-- Alex Morgan (supervisor), Jamie Chen (receiving) and Sam Patel (maintenance)
-  are fictional work contacts. Their `.example` addresses cannot receive mail.
+- Alex Morgan (supervisor), Jamie Chen (receiving), Sam Patel (maintenance) and
+  Dana Ruiz (purchasing) are fictional work contacts. Their `.example` addresses
+  cannot receive mail. `/api/directory` reads the same list for the screen, so a
+  name on the panel is always a name the tools accept.
 - Each communication needs a prepare, read-back and fresh spoken confirmation.
   The same one-use, two-minute draft mechanism used for ERP writes binds the
   exact action, recipient and content to its session. Only one draft is pending

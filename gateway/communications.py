@@ -12,6 +12,10 @@ COLLEAGUES = (
      "email": "jamie.chen@gloveson.example", "extension": "202"},
     {"id": "sam", "name": "Sam Patel", "role": "Maintenance technician", "area": "Storage aisles",
      "email": "sam.patel@gloveson.example", "extension": "203"},
+    # A short delivery is answered off the floor, not on it: without somebody in
+    # purchasing the shortage scenario ends at a name the directory does not have.
+    {"id": "dana", "name": "Dana Ruiz", "role": "Purchasing officer", "area": "Purchasing office",
+     "email": "dana.ruiz@gloveson.example", "extension": "204"},
 )
 
 SCHEMA = """
