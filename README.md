@@ -158,7 +158,7 @@ refusing is cheaper than guessing.
 
 ## Talking to SAP
 
-### Connection status — 10 September 2026
+### Connection status — rechecked 11 September 2026
 
 **GlovesOn currently uses its mock SAP environment.** Goods receipts, stock queries
 and reversals in the demo do not write to a company's SAP system.
@@ -169,6 +169,12 @@ sandbox returned **HTTP 200**, confirming that the key works. The four S/4HANA
 services below returned **HTTP 401**, including a material-document read through
 the Hub's own **Try Out** screen. This points to an S/4HANA sandbox access problem;
 the precise SAP-side cause is not confirmed.
+
+Rechecked on 11 September: the same four services still answer 401. Sending the
+same request with no key returns `FailedToResolveAPIKey` from SAP's API gateway
+and with a made-up key `Invalid ApiKey`, while our key returns neither and
+reaches the backend's own logon failure instead. The key is accepted; the refusal
+happens behind the gateway.
 
 SuccessFactors was used only to check the key. Development continues against the
 mock; **real S/4HANA reads and writes remain unverified**. No paid service was
