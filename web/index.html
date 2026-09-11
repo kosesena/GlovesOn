@@ -1222,6 +1222,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 #warehouseWork .task-strip-item {display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border:1px solid #dedfd9;border-radius:999px;background:#fff;color:#4a5a49;font:500 13px/1.2 system-ui,sans-serif;cursor:pointer;}
 #warehouseWork .task-strip-item:hover {border-color:#b9c4b4;color:#244b35;}
 #warehouseWork .task-strip-item[aria-current="true"] {background:#244b35;border-color:#244b35;color:#fff;cursor:default;}
+#warehouseWork .task-strip-new {border-style:dashed;color:#7c8a79;background:transparent;}
 /* The signature closes the screen the way a credit closes a film: centred,
    quiet, and below the work rather than beside it. It is the only place on
    this screen that says why the thing exists. */
@@ -2709,8 +2710,14 @@ function renderTaskStrip() {
     else item.onclick = () => source.click();
     strip.append(item);
   }
-  // One task is not a choice, and the strip would only repeat the heading.
-  strip.hidden = strip.children.length < 2;
+  // Creating a task needs a door, and the toolbar's one is hidden on this
+  // screen: after the chooser left the path it had none. The strip is where
+  // this area's tasks live, so the new one is made from here.
+  const create = document.createElement('button');
+  create.type = 'button'; create.className = 'task-strip-item task-strip-new'; create.textContent = '+ New task';
+  create.onclick = () => scenarioDialog.showModal();
+  strip.append(create);
+  strip.hidden = !strip.children.length;
 }
 function showWarehouseStage(stage) {
   if (stage === 'area') stage = 'tasks';
@@ -2922,7 +2929,13 @@ document.getElementById('warehouseBack').onclick = () => {
 document.getElementById('warehouseCreate').onclick = () => scenarioDialog.showModal();
 scenarioForm.addEventListener('submit',() => {
   if (location.hash === '#warehouse' && !scenarioDialog.open) {
-    warehouseAreaKey = selectedArea || 'receiving'; showWarehouseStage('tasks');
+    warehouseAreaKey = selectedArea || 'receiving';
+    // Writing the scenario down is already the choice. Landing on a chooser
+    // afterwards asked for it a second time, and that chooser is no longer on
+    // any other path. The new task starts, and the strip shows it beside the
+    // guided ones for its area.
+    const created = [...document.querySelectorAll('#customTasks [data-custom-task]')].pop();
+    if (created) created.click(); else showWarehouseStage('work');
   }
 });
 window.addEventListener('hashchange',applyWarehouseRoute);
