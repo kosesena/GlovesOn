@@ -148,7 +148,13 @@ async function start() {
       waveTurn.setFromAxisAngle(waveAxis, angle);
       bone.quaternion.premultiply(waveTurn);
     }
-    const WAVE = {rise: 1.4, hold: 3.0, fall: 1.5, poseTime: 1.5};
+    // A greeting is punctuation, not a performance. At 1.4 + 3.0 + 1.5 the
+    // hand hung beside the ear long enough to read as a held pose, and two
+    // wrist sweeps spread over three seconds looked languid rather than
+    // friendly. Halved, the authored path is unchanged and the sweeps land at
+    // the pace an actual wave has. The cost is that the spoken "Hi there!"
+    // now has to fit inside three seconds instead of six.
+    const WAVE = {rise: .75, hold: 1.35, fall: .85};
     let greetingDuration = WAVE.rise + WAVE.hold + WAVE.fall;
     let greetingCount = 0, greetingIsWave = true;
     let current, elapsed = 0, phase = 'idle', phaseStart = 0, home = .8, near = .2, travelFrom = .8, travelTo = .2;
@@ -173,7 +179,9 @@ async function start() {
       if (touchNow > 0) return;
       mixer.stopAllAction(); current = null;
       greetingIsWave = greetingCount++ % 2 === 0;
-      greetingDuration = greetingIsWave ? WAVE.rise + WAVE.hold + WAVE.fall : 3.4;
+      // The nod comes down with the wave: at 3.4 it was the longer of the two
+      // greetings, and one of them dragging is as noticeable as both doing it.
+      greetingDuration = greetingIsWave ? WAVE.rise + WAVE.hold + WAVE.fall : 2.8;
       phase = 'wave'; phaseStart = elapsed;
     }
     bubble = document.createElement('p');
