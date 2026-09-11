@@ -6,8 +6,13 @@
    while it is waiting, which is the honest state of it anyway. */
 #warehouseWork .console-wrap {max-width:1320px;overflow:visible;background:transparent;border:0;box-shadow:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:stretch;}
 #warehouseWork .voice-column {min-width:0;background:#ffffffd9;border:1px solid #fff;border-radius:28px;box-shadow:0 16px 60px #303f4c09;}
-#warehouseWork .console-wrap>main {display:block;min-width:0;background:transparent;}
-#warehouseWork .console-wrap main>.right {display:block!important;background:transparent;border:0;padding:0;min-width:0;}
+/* Stretching the grid item was not enough: the visible card is #agentDesktop,
+   three levels inside <main>, so the column filled the row while the panel
+   inside it stayed as tall as its text. The chain has to carry the height
+   down, or the two cards end at different lines however equal the columns are. */
+#warehouseWork .console-wrap>main {display:flex;flex-direction:column;min-width:0;background:transparent;}
+#warehouseWork .console-wrap main>.right {display:flex!important;flex-direction:column;flex:1;background:transparent;border:0;padding:0;min-width:0;}
+#warehouseWork .console-wrap main>.right>#agentDesktop {flex:1;}
 #warehouseWork .legacy-erp {display:none;}
 #warehouseWork #log {height:clamp(220px,34vh,420px);max-height:480px;padding:20px 8px;}
 #warehouseWork #log .voice-fact-card {display:none;}
