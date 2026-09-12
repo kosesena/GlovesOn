@@ -581,3 +581,33 @@
  #agentDesktop .desk-number-blank {font-size:16px;letter-spacing:.04em;}
  #warehouseWork .action-stream,#warehouseWork .console-wrap header,#warehouseWork #voiceSuggestions,#warehouseWork .console-wrap #conversationDetails {margin-left:14px;margin-right:14px;}
 }
+
+/* Two corrections against the drawing. The spoken menu is a single column:
+   the label's full-width basis, sensible in a wrapping row, became a
+   full-height basis in a column and pushed the three lines into a second
+   column past the card. And the ground is the drawing's cream, with no frame
+   around the two halves — the sheet and the cards carry their own edges. */
+#warehouseWork #voiceSuggestions {flex-wrap:nowrap;}
+#warehouseWork #voiceSuggestions>span {flex-basis:auto;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) {background:#f7f3ea;}
+#warehouseWork .console-wrap {background:transparent;border:0;box-shadow:none;border-radius:0;gap:0 26px;overflow:visible;}
+#warehouseWork .voice-column,#warehouseWork .console-wrap>main,#warehouseWork .console-wrap main>.right {background:transparent;border:0;box-shadow:none;}
+#warehouseWork .action-stream,#warehouseWork .console-wrap header,#warehouseWork #voiceSuggestions {margin-left:0;margin-right:0;}
+#warehouseWork .console-wrap #conversationDetails {margin-left:0;margin-right:0;}
+#warehouseWork .action-stream {margin-top:0;}
+#warehouseWork .task-strip-item {background:#fffdf7;border-color:#d9d5c8;}
+#warehouseWork .task-strip-item[aria-current="true"] {background:#244b35;border-color:#244b35;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar {border-color:#e3dfd2;}
+@media(max-width:760px) {
+ #warehouseWork .action-stream,#warehouseWork .console-wrap header,#warehouseWork #voiceSuggestions,#warehouseWork .console-wrap #conversationDetails {margin-left:0;margin-right:0;}
+ #warehouseWork .voice-column {border-top:0;padding-top:14px;}
+}
+
+/* The bar as drawn: the mark, then the way out as a pill, then the place in
+   mono, all in one group on the left; the walkthrough and help stay right. */
+.warehouse-shell:has(#warehouseWork:not([hidden])) .work-brand {margin-right:0;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) #warehouseBack {display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border:1px solid #d9d5c8;border-radius:999px;background:#fffdf7;color:#343b34;font:600 13px/1 system-ui;margin-left:16px;white-space:nowrap;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) #warehouseCrumb {font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#71806f;margin:0 auto 0 16px;}
+@media(max-width:760px) {
+ .warehouse-shell:has(#warehouseWork:not([hidden])) #warehouseBack {margin-left:8px;min-height:34px;padding:0 12px;font-size:12px;}
+}
