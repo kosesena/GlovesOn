@@ -106,7 +106,7 @@
 .stream-item {position:relative;padding-bottom:18px;}
 .stream-item:last-child {padding-bottom:6px;}
 .stream-item.is-link {cursor:pointer;}
-.stream-time {position:absolute;left:-84px;top:1px;width:52px;font:11px var(--mono);color:#8b927f;}
+.stream-time {position:absolute;left:-84px;top:1px;width:52px;font:11px/1.35 var(--mono);color:#8b927f;white-space:pre-line;}
 .stream-item.is-wait .stream-time {color:#a54b16;}
 .stream-item.is-next .stream-time {color:#b9c4b4;}
 .stream-dot {position:absolute;left:-27px;top:3px;width:12px;height:12px;border-radius:50%;background:#3f8a5a;border:2px solid #fffdf7;box-sizing:content-box;}

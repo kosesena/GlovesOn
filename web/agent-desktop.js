@@ -180,6 +180,9 @@
     const stateText={pending:'Working…',draft:'Your confirmation needed',saved:'Saved',read:'Checked',rejected:'Needs attention',error:'Could not finish',uncertain:'Result uncertain',expired:'Draft expired',superseded:'Draft replaced',submitted:'Draft used',stopped:'Stopped'};
     const clock=ms=>{const d=new Date(ms);return [d.getHours(),d.getMinutes(),d.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');};
     // Today's documents carry the clock, older ones the day, as drawn.
+    // The timeline is exact to the second, as drawn; a document from another
+    // day carries that day above its clock, so nothing is rounded away.
+    const stamp=ms=>{const d=new Date(ms),now=new Date();return d.toDateString()===now.toDateString()?clock(ms):dayOrClock(ms)+'\n'+clock(ms);};
     const dayOrClock=ms=>{const d=new Date(ms),now=new Date();return d.toDateString()===now.toDateString()?clock(ms).slice(0,5):d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];};
     const countdown=at=>{const s=Math.max(0,Math.round((at-Date.now())/1000));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;};
     const isWrite=e=>writes.has(e.name), isPrepare=e=>/^prepare_/.test(e.name);
@@ -364,7 +367,7 @@
       // times are real ones from the mock ERP rather than a promise.
       if(!items.length) {
         const kinds={'101':'Posted earlier','501':'Posted earlier','102':'Reversed earlier','502':'Reversed earlier'};
-        for(const d of recent.slice(0,3).reverse()) add(list,add(node('div','stream-item is-past'),node('span','stream-time',d.created_at?dayOrClock(Number(d.created_at)*1000):''),node('i','stream-dot'),node('div','stream-title',kinds[String(d.BWART)]||'Earlier'),node('div','stream-text',`Material document ${d.MBLNR} · ${words(d.MENGE)} ${d.MEINS||''} ${d.MATNR}`)));
+        for(const d of recent.slice(0,3).reverse()) add(list,add(node('div','stream-item is-past'),node('span','stream-time',d.created_at?stamp(Number(d.created_at)*1000):''),node('i','stream-dot'),node('div','stream-title',kinds[String(d.BWART)]||'Earlier'),node('div','stream-text',`Material document ${d.MBLNR} · ${words(d.MENGE)} ${d.MEINS||''} ${d.MATNR}`)));
         add(list,add(node('div','stream-item is-wait'),node('span','stream-time','now'),node('i','stream-dot'),node('div','stream-title','You said'),node('div','stream-text','Say what arrived; it appears here with the time.')));
       }
       for(const it of items) {
