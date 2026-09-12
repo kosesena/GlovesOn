@@ -322,3 +322,53 @@
 #agentDesktop .receipt-steps {margin-top:20px;}
 #agentDesktop:has(.receipt-draft) .desktop-device {padding-bottom:4px;}
 @media(max-width:760px){#warehouseWork .console-wrap #conversationDetails {margin:0 24px;}}
+
+/* Desktop workstation fits the viewport; only long transcripts/results scroll. */
+@media(min-width:761px) and (min-height:600px) {
+ .warehouse-shell:has(#warehouseWork:not([hidden])) {height:100dvh;min-height:0;padding:0 24px 10px;display:flex;flex-direction:column;overflow:hidden;}
+ .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar {height:54px;min-height:54px;margin:0;flex-shrink:0;}
+ #warehouseWork:not([hidden]) {flex:1;min-height:0;grid-template-rows:92px minmax(0,1fr) 24px;}
+ #warehouseWork #warehouseBrief {padding:12px 12px;}
+ #warehouseWork #warehouseBriefTitle {font-size:clamp(25px,2.5vw,36px);}
+ #warehouseWork #warehouseBriefText {font-size:14px;}
+ #warehouseWork #taskStrip {padding:8px 0;}
+ #warehouseWork .console-wrap {height:100%;min-height:0;}
+ #warehouseWork .voice-column {min-height:0;display:flex;flex-direction:column;overflow:auto;}
+ .voice-heading {padding:18px 24px 0;flex-shrink:0;}
+ #warehouseWork .voice-heading h2 {font-size:26px;margin:6px 0 3px;}
+ .voice-heading p {font-size:14px;}
+ #warehouseWork .console-wrap header,#warehouseWork header:has(#talkBtn.live) {padding:10px 24px 14px;gap:7px 8px;flex-shrink:0;}
+ #warehouseWork #voiceOrbButton {width:120px;height:120px;}
+ #warehouseWork .console-wrap header #voiceOrbButton #orb {width:110px;height:110px;}
+ #warehouseWork #talkBtn {min-height:42px;min-width:210px;font-size:15px;padding:10px 20px;margin-top:3px;}
+ #warehouseWork #voiceSuggestions {margin:0 24px 12px;padding-top:12px;flex-shrink:0;}
+ #warehouseWork #voiceSuggestions>span {margin-bottom:6px;}
+ #warehouseWork #voiceSuggestions q {min-height:38px;padding:8px 10px 2px;font-size:14px;}
+ .suggestion-dots {padding:6px 0 8px;}
+ #warehouseWork .console-wrap #conversationDetails {min-height:60px;flex:1;display:flex;flex-direction:column;margin:0 24px;padding:12px 0!important;overflow:hidden;}
+ #warehouseWork #log,#warehouseWork #log:has(.conversation-empty) {height:auto;min-height:0;max-height:none;flex:1;padding:10px 0;gap:14px;overflow:auto;}
+ #warehouseWork .console-wrap>main,#warehouseWork .console-wrap main>.right {min-height:0;overflow:hidden;}
+ #warehouseWork #agentDesktop {height:100%;min-height:0;overflow:auto;padding:20px 24px 12px;}
+ #agentDesktop .desktop-heading h2 {font-size:30px;}
+ .desktop-heading {margin-bottom:8px;}
+ .desktop-heading p {font-size:14px;}
+ .desktop-tabs button {padding:12px 6px;font-size:13px;}
+ #agentDesktop .desktop-empty {min-height:170px;padding:8px 0;}
+ #agentDesktop .desktop-empty-symbol {height:clamp(85px,16vh,155px);width:210px;}
+ #agentDesktop .desktop-empty h3 {font-size:25px;margin:8px 0 5px;}
+ .desktop-empty p {font-size:14px;}
+ .desktop-steps {margin-top:16px;}
+ .desktop-steps span {width:32px;height:32px;}
+ .desktop-steps:before {top:17px;}
+ .desktop-steps small {font-size:11px;}
+ .desktop-contacts {margin-top:10px;padding:12px 16px;}
+ .desktop-footnote {margin-top:8px;font-size:9px;}
+ #warehouseWork .work-signature {margin:6px 0 0;}
+ #agentDesktop .receipt-draft {padding:18px;}
+ .receipt-material {min-height:90px;}
+ #agentDesktop .receipt-material h3 {font-size:32px;}
+ .material-illustration {max-height:90px;}
+ .receipt-draft .desktop-fields>div {padding:12px;}
+ .receipt-draft .desktop-fields dd {font-size:23px;}
+ .receipt-draft .desktop-notice {padding:12px;margin-top:12px;font-size:13px;}
+}
