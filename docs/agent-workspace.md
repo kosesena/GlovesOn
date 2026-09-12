@@ -49,6 +49,17 @@ live voice evaluation remains required.
 
 ## Practice and evidence
 
+**The work screen is a drawing, transcribed.** On 12 September 2026 the
+screen was drawn first (the sheet on the left, the action's timeline and the
+voice card on the right) and then built from the drawing's own values:
+`web/work-screen.css` carries them, loads last, and says where each one comes
+from. `web/agent-desktop.js` renders the live values into that structure. The
+one thing the drawing does not have is the transcript; it folds under the reach
+line and opens as a card when asked for. Three things are shown only when they
+are true: "Stock after posting" appears only when this session looked the same
+material up, the idle timeline shows documents the ledger already holds, and
+"Listening for your yes" is written only while a read-back is actually waiting.
+
 **Practice** is collapsed below the guided tasks. Its optional scenario builder
 saves a brief in this browser; it does not create an ERP document or mark a task
 complete. The workspace reports individual tool outcomes, not a full task score.

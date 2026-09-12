@@ -1,0 +1,185 @@
+/* The work screen, as drawn.
+
+   Every value in this file is copied from the drawing (DeskAndStream,
+   12 September 2026): the 1440-wide frame becomes the viewport, the numbers
+   written into the picture become the live values, and nothing else changes.
+   The sheet loads last, after agent-desktop.css, so that the drawing wins over
+   the studio passes that came before it; those passes are not repeated here.
+   Nothing in this file changes what the tools do. */
+
+/* ---- the ground and the frame: cream, 32px sides, the bar, two columns ---- */
+.warehouse-shell:has(#warehouseWork:not([hidden])) {background:#f7f3ea;color:#253b2c;padding:0 32px 10px;}
+#warehouseWork:not([hidden]) {display:flex;flex-direction:column;align-items:stretch;}
+#warehouseWork .console-wrap {flex:1;min-height:0;max-width:none;width:auto;margin:22px 0 0;background:transparent;border:0;border-radius:0;box-shadow:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,.34fr);gap:0 26px;align-items:stretch;overflow:visible;}
+@media(min-width:1150px) {#warehouseWork .console-wrap {grid-template-columns:minmax(0,1fr) 420px;}}
+#warehouseWork .console-wrap>main {order:1;min-width:0;min-height:0;display:flex;flex-direction:column;background:transparent;border:0;box-shadow:none;overflow:visible;}
+#warehouseWork .console-wrap main>.right {background:transparent;border:0;box-shadow:none;min-height:0;overflow:visible;}
+#warehouseWork .voice-column {order:2;display:flex;flex-direction:column;gap:14px;min-height:0;min-width:0;overflow:auto;background:transparent;border:0;padding:0;}
+#warehouseWork .voice-heading,#warehouseWork .console-wrap .write-progress,#warehouseWork #talkBtn,#warehouseWork #meter,#warehouseWork .console-wrap .logo,#warehouseWork .console-wrap .plant,#warehouseWork .console-wrap .spacer {display:none;}
+
+/* ---- the bar: the mark, the way out, the place; the tasks as pills ---- */
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar {position:relative;top:auto;height:64px;min-height:64px;margin:0;padding:0;gap:16px;justify-content:flex-start;align-items:center;flex-wrap:nowrap;background:transparent;box-shadow:none;border-radius:0;border-bottom:1px solid #e3dfd2;flex-shrink:0;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar a.work-brand {display:inline-flex;align-items:center;gap:9px;margin:0;font-size:20px;font-weight:780;letter-spacing:-.8px;color:#253b2c;text-decoration:none;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .work-brand .brand-mark {width:30px;height:30px;font-size:19px;border-radius:8px 8px 3px 8px;color:#fff;background:#e96935;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) #warehouseBack {display:inline-flex;align-items:center;min-height:38px;margin:0;padding:0 14px;border:1px solid #d9d5c8;border-radius:999px;background:#fffdf7;color:#343b34;font:600 13px/1 system-ui;white-space:nowrap;box-shadow:none;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) #warehouseCrumb {margin:0;font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#71806f;white-space:nowrap;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar #taskStrip {display:flex;gap:6px;margin:0 0 0 auto;padding:0;flex-wrap:nowrap;justify-content:flex-end;grid-column:auto;grid-row:auto;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar .task-strip-item {display:inline-flex;align-items:center;min-height:0;margin:0;padding:9px 14px;border:1px solid #d9d5c8;border-radius:999px;background:#fffdf7;color:#4a5a49;font:12px/1.2 system-ui;box-shadow:none;white-space:nowrap;cursor:pointer;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar .task-strip-item[aria-current="true"] {background:#244b35;border-color:#244b35;color:#fff;font-weight:600;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar .task-strip-new {border:1px dashed #c9d0c3;background:transparent;color:#7c8a79;}
+
+/* ---- the sheet: the record on the left, whatever state it is in ---- */
+#warehouseWork #agentDesktop {position:relative;height:100%;min-height:0;overflow:auto;margin:0;padding:30px 36px 24px;background:#fffdf7;border:1px solid #e3dfd2;border-radius:6px;box-shadow:0 30px 60px #3a3a2a14;}
+#agentDesktop .desk-sheet {position:relative;display:flex;flex-direction:column;gap:18px;min-height:100%;}
+#agentDesktop .desk-stamp {position:absolute;right:-4px;top:0;padding:8px 14px;border:3px solid #e96935;border-radius:6px;color:#e96935;font:800 15px/1 var(--mono);letter-spacing:.16em;transform:rotate(-9deg);opacity:.9;pointer-events:none;}
+#agentDesktop .desk-stamp.is-saved {border-color:#3f8a5a;color:#3f8a5a;}
+#agentDesktop .desk-stamp.is-refused {border-color:#c9553f;color:#c9553f;}
+#agentDesktop .desk-head {display:flex;flex-direction:column;gap:6px;}
+#agentDesktop .desk-kicker {font:10px var(--mono);letter-spacing:.14em;color:#71806f;}
+#agentDesktop .desk-number {display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
+#agentDesktop .desk-number-label {font-size:13px;color:#7a8274;}
+#agentDesktop .desk-number-blank {font:28px var(--mono);letter-spacing:.08em;color:#c4c9bb;}
+#agentDesktop .desk-number-value {font:600 28px var(--mono);letter-spacing:.06em;color:#253b2c;}
+#agentDesktop .desk-number-note {font-size:12px;color:#8b927f;}
+/* the band: the moment the sheet is in */
+#agentDesktop .desk-band {display:flex;flex-direction:column;gap:8px;padding:18px 20px;border:2px solid #e96935;border-radius:12px;background:#fff8ef;}
+#agentDesktop .desk-band.is-saved {border-color:#3f8a5a;background:#e9f1e4;}
+#agentDesktop .desk-band.is-refused {border-color:#c9553f;background:#faece7;}
+#agentDesktop .desk-band.is-idle {border:1px solid #dfe5d6;background:#f3f6ef;}
+#agentDesktop .desk-band-head {display:flex;align-items:center;justify-content:space-between;gap:12px;}
+#agentDesktop .desk-band-eyebrow {display:flex;align-items:center;gap:9px;font:10px var(--mono);letter-spacing:.14em;color:#a54b16;}
+#agentDesktop .desk-band.is-saved .desk-band-eyebrow {color:#2f5e44;}
+#agentDesktop .desk-band.is-refused .desk-band-eyebrow {color:#9b5140;}
+#agentDesktop .desk-band.is-idle .desk-band-eyebrow {color:#71806f;}
+#agentDesktop .desk-band-time {font:12px var(--mono);color:#a54b16;}
+#agentDesktop .desk-band.is-saved .desk-band-time {color:#2f5e44;}
+#agentDesktop .desk-band-big {margin:0;font:650 clamp(22px,2.1vw,30px)/1.2 system-ui;letter-spacing:-.03em;color:#253b2c;overflow-wrap:anywhere;}
+#agentDesktop .desk-band-ask {color:#a54b16;}
+#agentDesktop .desk-band-hint {font-size:13px;color:#6e7869;}
+.desk-dot {width:9px;height:9px;border-radius:50%;background:#b9c4b4;display:inline-block;flex-shrink:0;}
+.desk-dot.is-pulse {background:#e96935;animation:deskpulse 1.6s ease-out infinite;}
+.desk-dot.is-done {background:#3f8a5a;}
+.desk-dot.is-refused {background:#c9553f;}
+@keyframes deskpulse {0% {box-shadow:0 0 0 0 #e9693566;} 70% {box-shadow:0 0 0 14px #e9693500;} 100% {box-shadow:0 0 0 0 #e9693500;}}
+/* the fields: three across, the description twice as wide, the quantity warm while it waits */
+#agentDesktop .desk-fields {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+#agentDesktop .desk-field {display:flex;flex-direction:column;gap:4px;padding:12px 14px;border:1px solid #dfe5d6;border-radius:10px;min-width:0;}
+#agentDesktop .desk-field.is-wide {grid-column:span 2;}
+#agentDesktop .desk-field.is-confirming {border-color:#f0d9bd;background:#fffaf1;}
+#agentDesktop .desk-field-label {display:flex;gap:6px;align-items:center;font-size:11px;color:#7a8274;}
+#agentDesktop .desk-field-hint {color:#3f8a5a;}
+#agentDesktop .desk-field.is-confirming .desk-field-label {color:#a54b16;}
+#agentDesktop .desk-field.is-confirming .desk-field-hint {color:#a54b16;}
+#agentDesktop .desk-field.is-confirming .desk-field-label:before {content:'';width:7px;height:7px;border-radius:50%;background:#e96935;display:inline-block;flex-shrink:0;animation:deskpulse 1.6s ease-out infinite;}
+#agentDesktop .desk-field-value {font:650 18px/1.2 system-ui;letter-spacing:-.03em;color:#253b2c;overflow-wrap:anywhere;}
+#agentDesktop .desk-field.is-confirming .desk-field-value {font-size:22px;font-weight:700;letter-spacing:-.035em;}
+#agentDesktop .desk-field-unit {font-size:14px;font-weight:600;color:#52634e;letter-spacing:0;}
+#agentDesktop .desk-why {display:flex;flex-direction:column;gap:4px;padding:12px 16px;background:#f3f6ef;border-radius:10px;border-left:3px solid #244b35;}
+#agentDesktop .desk-why small {font:9px var(--mono);letter-spacing:.14em;color:#71806f;}
+#agentDesktop .desk-why p {margin:0;font-size:15px;color:#253b2c;overflow-wrap:anywhere;}
+#agentDesktop .desk-quiet {margin:0;font-size:13px;color:#8b927f;}
+/* the ledger: today's documents as four stubs along the foot of the sheet */
+#agentDesktop .desk-ledger {margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:14px;border-top:1px solid #e8ebe3;}
+#agentDesktop .desk-ledger-head {display:flex;align-items:center;justify-content:space-between;}
+#agentDesktop .desk-ledger-head small {font:10px var(--mono);letter-spacing:.14em;color:#71806f;}
+#agentDesktop .desk-ledger-note {border:0;background:none;padding:0;font:600 12px system-ui;color:#244b35;cursor:pointer;}
+#agentDesktop .desk-ledger-note:disabled {color:#9aa697;cursor:default;}
+#agentDesktop .desk-ledger-row {display:flex;gap:10px;}
+#agentDesktop .desk-stub {flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:9px 12px;background:#f3f6ef;border-radius:10px;}
+#agentDesktop .desk-stub-number {font:12px var(--mono);color:#253b2c;}
+#agentDesktop .desk-stub-what {font-size:11px;color:#52634e;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#agentDesktop .desk-stub-reason {margin:0;font-size:11px;color:#2f5e44;overflow-wrap:anywhere;}
+#agentDesktop .desk-stub-reason-label {font:9px var(--mono);letter-spacing:.12em;color:#71806f;text-transform:uppercase;margin-right:6px;}
+#agentDesktop .desktop-device {margin:0;}
+
+/* ---- the stream: everything this action did, with the time it did it ---- */
+#warehouseWork .action-stream {display:flex;flex-direction:column;gap:0;margin:0;padding:20px 22px 8px;background:#fffdf7;border:1px solid #e3dfd2;border-radius:20px;flex:1 1 auto;min-height:150px;overflow:auto;overscroll-behavior:contain;}
+#warehouseWork .action-stream:empty {display:none;}
+.stream-head {display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0;}
+.stream-head small {font:10px var(--mono);letter-spacing:.14em;color:#71806f;}
+.stream-live {display:flex;align-items:center;gap:7px;font:10px var(--mono);letter-spacing:.12em;color:#3f8a5a;}
+.stream-live .desk-dot {width:7px;height:7px;}
+.stream-live.is-ready {color:#8b927f;}
+.stream-live.is-ready .desk-dot {background:#b9c4b4;}
+.stream-list {display:flex;flex-direction:column;position:relative;padding-left:84px;}
+.stream-list:before {content:'';position:absolute;left:63px;top:8px;bottom:30px;width:2px;background:#dfe5d6;}
+.stream-item {position:relative;padding-bottom:18px;}
+.stream-item:last-child {padding-bottom:6px;}
+.stream-item.is-link {cursor:pointer;}
+.stream-time {position:absolute;left:-84px;top:1px;width:52px;font:11px var(--mono);color:#8b927f;}
+.stream-item.is-wait .stream-time {color:#a54b16;}
+.stream-item.is-next .stream-time {color:#b9c4b4;}
+.stream-dot {position:absolute;left:-27px;top:3px;width:12px;height:12px;border-radius:50%;background:#3f8a5a;border:2px solid #fffdf7;box-sizing:content-box;}
+.stream-item.is-wait .stream-dot {background:#e96935;animation:deskpulse 1.6s ease-out infinite;}
+.stream-item.is-refused .stream-dot {background:#c9553f;}
+.stream-item.is-next .stream-dot,.stream-item.is-past .stream-dot {background:#fffdf7;border-color:#c9d0c3;}
+.stream-title {font:600 13px/1.4 system-ui;color:#253b2c;}
+.stream-item.is-wait .stream-title {color:#a54b16;}
+.stream-item.is-next .stream-title,.stream-item.is-next .stream-text,.stream-item.is-past .stream-title,.stream-item.is-past .stream-text {color:#8b927f;}
+.stream-text {font:13px/1.4 system-ui;color:#52634e;overflow-wrap:anywhere;}
+
+/* ---- the voice card: the orb, what it is doing, the three answers ---- */
+#warehouseWork .voice-card {display:flex;flex-direction:column;gap:12px;padding:18px 22px;background:#fffdf7;border:1px solid #e3dfd2;border-radius:20px;flex-shrink:0;}
+#warehouseWork .console-wrap header,#warehouseWork header:has(#talkBtn.live) {display:flex;flex-wrap:nowrap;align-items:center;gap:14px;margin:0;padding:0;background:transparent;border:0;min-height:0;}
+#warehouseWork #voiceOrbButton,#warehouseWork header:has(#talkBtn.live) #voiceOrbButton {width:56px;height:56px;flex-shrink:0;display:grid;place-items:center;margin:0;padding:0;border:0;border-radius:50%;background:transparent;box-shadow:none;cursor:pointer;}
+#warehouseWork .console-wrap header #voiceOrbButton #orb,#warehouseWork header:has(#talkBtn.live) #voiceOrbButton #orb {width:56px;height:56px;margin:0;pointer-events:none;}
+#warehouseWork .voice-state {display:flex;flex-direction:column;gap:3px;min-width:0;}
+#warehouseWork .voice-state-line {display:flex;align-items:center;gap:7px;font:14px/1.3 system-ui;color:#253b2c;}
+#warehouseWork #dot {width:8px;height:8px;margin:0;background:#3f8a5a;box-shadow:none;flex-shrink:0;}
+#warehouseWork #dot.on {background:#3f8a5a;box-shadow:none;}
+#warehouseWork #status {margin:0;font:14px/1.3 system-ui;letter-spacing:0;color:#253b2c;}
+#warehouseWork .voice-state-hint {display:flex;align-items:center;gap:4px;font:12px/1.3 system-ui;color:#6e7869;white-space:nowrap;}
+#warehouseWork #orbHint {display:inline;margin:0;font:12px/1.3 system-ui;color:#6e7869;}
+#warehouseWork .voice-credit {display:inline-flex;align-items:center;gap:4px;margin:0;font:12px/1.3 system-ui;letter-spacing:0;color:#6e7869;opacity:1;}
+#warehouseWork .voice-credit svg {height:11px;width:auto;opacity:.7;}
+/* the answers: what can be said now, and what each one does */
+#warehouseWork #voiceSuggestions {display:flex;flex-direction:column;flex-wrap:nowrap;gap:6px;margin:0;padding:0;border:0;background:transparent;}
+#warehouseWork #voiceSuggestions>span,#warehouseWork #voiceSuggestions>small,#warehouseWork #voiceSuggestions .suggestion-dots {display:none;}
+#warehouseWork #voiceSuggestions q {display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-height:0;margin:0;padding:11px 14px;border:1px solid #d9d5c8;border-radius:12px;background:transparent;font:15px/1.3 system-ui;color:#253b2c;quotes:none;}
+#warehouseWork #voiceSuggestions q::before,#warehouseWork #voiceSuggestions q::after {content:none;}
+#warehouseWork #voiceSuggestions q:first-of-type {background:#244b35;border-color:#244b35;color:#fff;font-weight:600;}
+#warehouseWork #voiceSuggestions q small {font-size:12px;font-weight:400;color:#6e7869;white-space:nowrap;}
+#warehouseWork #voiceSuggestions q:first-of-type small {color:#cfe8d5;}
+
+/* ---- the foot: reach and the note, then the line that is not in the drawing ---- */
+#warehouseWork .work-aside {display:flex;flex-direction:column;gap:0;margin:0;padding:0;flex-shrink:0;font:9px/1.8 var(--mono);letter-spacing:.1em;color:#8b927f;}
+#warehouseWork .work-aside .desktop-reach,#warehouseWork .work-aside .desktop-footnote {margin:0;padding:0;border:0;text-align:left;font:inherit;letter-spacing:inherit;color:inherit;overflow-wrap:anywhere;}
+#warehouseWork .work-links {display:flex;align-items:center;gap:12px;margin-top:6px;font:11px/1.4 system-ui;letter-spacing:0;}
+#warehouseWork .work-links #replayAreaIntro,#warehouseWork .work-links #transcriptToggle,#warehouseWork .work-links .workspace-utilities button {margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;font:inherit;color:#244b35;text-decoration:underline;text-underline-offset:3px;cursor:pointer;white-space:nowrap;}
+#warehouseWork .work-links .workspace-utilities {display:contents;}
+#warehouseWork .work-links #transcriptToggle[aria-expanded="true"] {text-decoration:none;color:#8b927f;}
+/* the transcript folds under the reach line and opens as a card of its own */
+#warehouseWork .console-wrap #conversationDetails {display:none;order:-1;flex:0 0 auto;min-height:0;margin:0;padding:14px 22px!important;background:#fffdf7;border:1px solid #e3dfd2;border-radius:20px;max-height:220px;overflow:auto;}
+#warehouseWork .voice-column.show-transcript #conversationDetails {display:block;}
+#warehouseWork #conversationDetails:before {content:none;}
+#warehouseWork #log,#warehouseWork #log:has(.conversation-empty) {height:auto;min-height:0;max-height:none;max-width:none;margin:0;padding:0;gap:12px;display:flex;flex-direction:column;overflow:visible;}
+#warehouseWork #log .msg.user,#warehouseWork #log .msg.agent {margin:0;padding:0;background:none;border:0;font:13px/1.45 system-ui;color:#253b2c;letter-spacing:0;}
+#warehouseWork #log .msg.user:before,#warehouseWork #log .msg.agent:before {display:none;}
+#warehouseWork #log .msg .who {font:9px var(--mono);letter-spacing:.12em;color:#8b927f;text-transform:uppercase;margin-bottom:3px;}
+#warehouseWork #log .conversation-empty {font-size:12px;color:#8b927f;margin:0;}
+
+/* ---- narrower than the drawing ---- */
+@media(max-width:1150px) {
+ .warehouse-shell:has(#warehouseWork:not([hidden])) {padding:0 20px 10px;}
+}
+@media(max-width:900px) {
+ .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar {height:auto;min-height:0;flex-wrap:wrap;padding:10px 0;gap:10px 12px;}
+ .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar #taskStrip {flex-basis:100%;margin:0;justify-content:flex-start;flex-wrap:wrap;}
+}
+@media(max-width:760px) {
+ #warehouseWork .console-wrap {grid-template-columns:1fr;gap:14px;margin-top:14px;}
+ #warehouseWork .console-wrap>main {order:1;}
+ #warehouseWork .voice-column {order:2;overflow:visible;}
+ #warehouseWork #agentDesktop {height:auto;min-height:0;overflow:visible;padding:20px 16px 16px;}
+ #agentDesktop .desk-fields {grid-template-columns:repeat(2,minmax(0,1fr));}
+ #agentDesktop .desk-field-label {flex-wrap:wrap;}
+ #agentDesktop .desk-field-label>span:first-child {white-space:nowrap;}
+ /* On a phone the stamp has no corner to sit in without covering the kicker,
+    so it takes its own line, right-aligned, and keeps only a little tilt. */
+ #agentDesktop .desk-stamp {position:static;align-self:flex-end;font-size:11px;padding:6px 10px;transform:rotate(-4deg);margin:-4px 4px -6px 0;}
+ #agentDesktop .desk-number-blank {font-size:16px;letter-spacing:.04em;}
+ #agentDesktop .desk-ledger-row {flex-direction:column;}
+ #agentDesktop .desk-stub-what {white-space:normal;}
+ #warehouseWork .action-stream {flex:0 0 auto;min-height:0;max-height:320px;}
+ #warehouseWork .work-links {flex-wrap:wrap;}
+}

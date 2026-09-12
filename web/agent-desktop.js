@@ -179,6 +179,8 @@
     }
     const stateText={pending:'Working…',draft:'Your confirmation needed',saved:'Saved',read:'Checked',rejected:'Needs attention',error:'Could not finish',uncertain:'Result uncertain',expired:'Draft expired',superseded:'Draft replaced',submitted:'Draft used',stopped:'Stopped'};
     const clock=ms=>{const d=new Date(ms);return [d.getHours(),d.getMinutes(),d.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');};
+    // Today's documents carry the clock, older ones the day, as drawn.
+    const dayOrClock=ms=>{const d=new Date(ms),now=new Date();return d.toDateString()===now.toDateString()?clock(ms).slice(0,5):d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];};
     const countdown=at=>{const s=Math.max(0,Math.round((at-Date.now())/1000));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;};
     const isWrite=e=>writes.has(e.name), isPrepare=e=>/^prepare_/.test(e.name);
     const stockBefore=r=>{if(r.new_stock_level===undefined||r.MENGE===undefined)return null;const after=Number(r.new_stock_level),qty=Number(r.MENGE);return {before:r.reversed?after+qty:after-qty,after};};
@@ -211,16 +213,19 @@
       const stamp=stampFor(entry);
       if(stamp) add(sheet,node('div','desk-stamp is-'+stamp.tone,stamp.text));
       const kicker=entry?(entry.name==='prepare_reversal'||entry.result?.reversed?kickers.reversal:kickers[c]||kickers.erp):'MATERIAL DOCUMENT · MOCK S/4HANA';
-      add(sheet,node('small','desk-kicker',kicker));
+      // The head as drawn: the kicker and the number line close together, the
+      // pair spaced from the band like everything else on the sheet.
+      const top=add(node('div','desk-head'),node('small','desk-kicker',kicker));
+      add(sheet,top);
       // The number line: dashes until the system assigns one.
       if(!entry||c==='erp'&&!/^(get_|search_)/.test(entry.name)) {
         const r=entry?.result||{};
         const line=node('div','desk-number');
         if(entry?.state==='saved'&&r.MBLNR) add(line,node('span','desk-number-label','Document'),node('span','desk-number-value',r.MBLNR),node('span','desk-number-note','✓ assigned '+clock(entry.doneAt||Date.now())));
         else add(line,node('span','desk-number-label','Document'),node('span','desk-number-blank','— — — — — — — — — —'),node('span','desk-number-note','assigned when you say yes'));
-        add(sheet,line);
+        add(top,line);
       } else if(entry.state==='saved'&&entry.result?.record?.id) {
-        add(sheet,add(node('div','desk-number'),node('span','desk-number-label','Record'),node('span','desk-number-value',entry.result.record.id),node('span','desk-number-note','✓ saved '+clock(entry.doneAt||Date.now()))));
+        add(top,add(node('div','desk-number'),node('span','desk-number-label','Record'),node('span','desk-number-value',entry.result.record.id),node('span','desk-number-note','✓ saved '+clock(entry.doneAt||Date.now()))));
       }
       // The band: the moment the sheet is in.
       if(entry&&entry.state==='draft') {
@@ -247,12 +252,18 @@
       if(entry&&c==='erp'&&(entry.state==='draft'&&isPrepare(entry)||entry.state==='saved'&&isWrite(entry)||['rejected','uncertain'].includes(entry.state)&&isWrite(entry))) {
         const d=entry.state==='draft'?(entry.result?.details||{}):(entry.result||{});
         const grid=node('div','desk-fields');
-        const cell=(label,value,hint,cls)=>add(grid,add(node('div','desk-field'+(cls?' '+cls:'')),add(node('span','desk-field-label'),node('span','',label),hint?node('span','desk-field-hint',hint):null),node('span','desk-field-value',words(value))));
+        const cell=(label,value,hint,cls,unit)=>add(grid,add(node('div','desk-field'+(cls?' '+cls:'')),add(node('span','desk-field-label'),node('span','',label),hint?node('span','desk-field-hint',hint):null),add(node('span','desk-field-value',words(value)),unit?node('span','desk-field-unit',' '+unit):null)));
         cell('Material',d.MATNR,entry.state==='saved'?'✓':'✓ looked up');
         cell('Description',d.MAKTX,'✓ material master','is-wide');
-        cell('Quantity',d.MENGE!==undefined?`${d.MENGE} ${d.MEINS||''}`:undefined,entry.state==='draft'?'being confirmed':(entry.state==='saved'?'✓ confirmed':'not posted'),entry.state==='draft'?'is-confirming':'');
+        cell('Quantity',d.MENGE,entry.state==='draft'?'being confirmed':(entry.state==='saved'?'✓ confirmed':'not posted'),entry.state==='draft'?'is-confirming':'',d.MENGE!==undefined?(d.MEINS||''):'');
         cell('Storage bin',d.LGPLA,'✓ the material’s own');
-        cell('Plant / location',d.WERKS?`${d.WERKS} / ${d.LGORT||'—'}`:undefined,'✓ default');
+        // As drawn: while the draft waits, the last field says what the stock
+        // will be. The draft itself does not carry the stock; the lookup that
+        // preceded it does, so the figure is shown only when this session
+        // looked the same material up, and says so.
+        const lookup=entry.state==='draft'?state.entries.slice().reverse().find(e=>e.name==='get_stock'&&e.state==='read'&&e.result?.found&&e.result.MATNR===d.MATNR&&e.result.total_unrestricted!==undefined):null;
+        if(lookup&&d.MENGE!==undefined) { const before=Number(lookup.result.total_unrestricted), delta=Number(d.MENGE)*(entry.name==='prepare_reversal'?-1:1); cell('Stock after posting',`${before} → ${before+delta} ${d.MEINS||''}`,'✓ from the lookup at '+clock(lookup.doneAt||lookup.at).slice(0,5)); }
+        else cell('Plant / location',d.WERKS?`${d.WERKS} / ${d.LGORT||'—'}`:undefined,'✓ default');
         if(d.document||d.reverses) cell('Reverses',d.document||d.reverses,'✓ the original stays');
         if(entry.state==='saved'){const sb=stockBefore(entry.result||{});if(sb)cell('Stock',`${sb.before} → ${sb.after} ${d.MEINS||''}`,'✓ from the same result');}
         add(sheet,grid);
@@ -282,7 +293,7 @@
         const kinds={'101':'receipt','501':'receipt','102':'reversal','502':'reversal'};
         const stubs=[];
         for(const d of recent.slice(0,4)) {
-          const when=d.created_at?clock(Number(d.created_at)*1000).slice(0,5):(d.BUDAT||'');
+          const when=d.created_at?dayOrClock(Number(d.created_at)*1000):(d.BUDAT||'');
           const stub=add(node('div','desk-stub'),node('span','desk-stub-number',d.MBLNR),node('span','desk-stub-what',`${when} · ${d.BWART} ${kinds[String(d.BWART)]||'movement'} · ${words(d.MENGE)} ${d.MEINS||''} ${d.MATNR}`));
           stubs.push([stub,d]);add(row,stub);
         }
@@ -300,9 +311,14 @@
       add(sheet,ledger);
       add(host,sheet);
       if(aside) {
-        aside.replaceChildren();
-        if(directory.length) add(aside,node('p','desktop-reach','REACH · '+directory.map(person=>person.name).join(' · ')));
-        add(aside,node('p','desktop-footnote','Demo records only. No real SAP, email or phone.'));
+        // The aside also holds a row of links the page owns. Only our two
+        // lines are replaced; wiping the whole aside took the links with it
+        // on the first tool call.
+        for(const old of aside.querySelectorAll('.desktop-reach,.desktop-footnote')) old.remove();
+        const lines=[];
+        if(directory.length) lines.push(node('p','desktop-reach','REACH · '+directory.map(person=>person.name).join(' · ')));
+        lines.push(node('p','desktop-footnote','Demo records only. No real SAP, email or phone.'));
+        aside.prepend(...lines);
       }
       renderStream();
       host.dispatchEvent(new CustomEvent('gloveson:desktop'));
@@ -343,7 +359,14 @@
       const status=draft||busy?'LIVE':(last&&last.state==='saved'?'DONE':'READY');
       add(stream,add(node('div','stream-head'),node('small','','THIS ACTION'),add(node('span','stream-live is-'+status.toLowerCase()),node('i','desk-dot '+(status==='LIVE'?'is-pulse':'is-done')),node('span','',status+' · '+clock(Date.now()).slice(0,5)))));
       const list=node('div','stream-list');
-      if(!items.length) add(list,add(node('div','stream-item is-next'),node('span','stream-time','now'),node('i','stream-dot'),node('div','stream-title','You said'),node('div','stream-text','Say what arrived; it appears here with the time.')));
+      // Before anything has happened this session, the stream shows what the
+      // ledger already holds, faded: the screen is never a blank card, and the
+      // times are real ones from the mock ERP rather than a promise.
+      if(!items.length) {
+        const kinds={'101':'Posted earlier','501':'Posted earlier','102':'Reversed earlier','502':'Reversed earlier'};
+        for(const d of recent.slice(0,3).reverse()) add(list,add(node('div','stream-item is-past'),node('span','stream-time',d.created_at?dayOrClock(Number(d.created_at)*1000):''),node('i','stream-dot'),node('div','stream-title',kinds[String(d.BWART)]||'Earlier'),node('div','stream-text',`Material document ${d.MBLNR} · ${words(d.MENGE)} ${d.MEINS||''} ${d.MATNR}`)));
+        add(list,add(node('div','stream-item is-next'),node('span','stream-time','now'),node('i','stream-dot'),node('div','stream-title','You said'),node('div','stream-text','Say what arrived; it appears here with the time.')));
+      }
       for(const it of items) {
         const row=add(node('div','stream-item is-'+it.tone),node('span','stream-time',clock(it.at)),node('i','stream-dot'),node('div','stream-title',it.title),node('div','stream-text',it.text));
         if(it.entry){row.classList.add('is-link');row.onclick=()=>{state.current=it.entry;render();};}

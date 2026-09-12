@@ -1327,6 +1327,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 .voice-reference {display:block;font:12px/1.6 system-ui;margin-top:8px;}
 </style>
 <link rel="stylesheet" href="/agent-desktop.css">
+<link rel="stylesheet" href="/work-screen.css">
 </head>
 <body>
 
@@ -1424,24 +1425,30 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 </ol>
 
 
+<!-- The voice card as drawn: the orb, then two lines beside it (the state,
+     then the hint and the credit), then the three answers, all in one card.
+     The logo, plant, meter and the old button stay for the session code and
+     are hidden on this screen. -->
+<div class="voice-card">
 <header>
+  <button id="voiceOrbButton" type="button" aria-label="Start voice conversation" aria-pressed="false"><span id="orb" class="voice-orb" aria-hidden="true"></span></button>
+  <div class="voice-state">
+    <div class="voice-state-line"><div class="dot" id="dot"></div><div class="status" id="status">idle</div></div>
+    <!-- Stamped from the shared #aai-light symbol defined at the top of body. -->
+    <div class="voice-state-hint"><span id="orbHint">Tap to talk</span><span class="voice-credit">· voice by <svg class="aai-mark" role="img" aria-label="AssemblyAI"><use href="#aai-light"/></svg></span></div>
+  </div>
   <div class="logo">GLOVES<span>ON</span></div>
   <div class="plant">PLANT 1000 / RECEIVING · MOCK ERP</div>
-  <!-- Stamped from the shared #aai-light symbol defined at the top of body. -->
-  <div class="voice-credit">VOICE BY <svg class="aai-mark" role="img" aria-label="AssemblyAI"><use href="#aai-light"/></svg></div>
   <div class="spacer"></div>
   <span id="meter" class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-  <button id="voiceOrbButton" type="button" aria-label="Start voice conversation" aria-pressed="false"><span id="orb" class="voice-orb" aria-hidden="true"></span></button><span id="orbHint">Tap to talk</span>
-  <div class="dot" id="dot"></div>
-  <div class="status" id="status">idle</div>
-
   <button id="talkBtn" class="primary">Start talking</button>
 </header>
 <div id="voiceSuggestions" aria-label="Things you can ask"><span>Try saying</span><q>Check stock for material 4711</q><q>Receive twenty pieces of 4711</q><q>Call the warehouse supervisor</q><q>Email Alex about the delivery</q><small>Speak. Review. Confirm.</small></div>
+</div>
 <section id="conversationDetails" class="live-conversation" aria-label="Live conversation">
   <div id="log" role="log" aria-live="polite" aria-relevant="additions text"><p class="conversation-empty">Your conversation will appear here as you speak<span class="conversation-vibration" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></p></div>
 </section>
-<footer id="workAside" class="work-aside"></footer>
+<footer id="workAside" class="work-aside"><div class="work-links"><button type="button" id="transcriptToggle" aria-expanded="false" aria-controls="conversationDetails">Transcript</button></div></footer>
 
 </div>
 <main>
@@ -1994,11 +2001,13 @@ function drawFrame(now) {
   orbButton.disabled = talkBtn.disabled;
   orbButton.setAttribute('aria-label', live ? 'End voice conversation' : 'Start voice conversation');
   orbButton.setAttribute('aria-pressed', String(live));
-  document.getElementById('orbHint').textContent = talkBtn.disabled ? 'Connecting…' : live ? 'Tap to end conversation' : 'Tap to talk';
+  document.getElementById('orbHint').textContent = talkBtn.disabled ? 'Connecting…' : live ? 'Tap to end' : 'Tap to talk';
 
   // the status line
+  // While a read-back waits, the line says what it is listening for.
+  const awaitingYes = statusLabel === 'listening' && globalThis.agentDesktop?.state?.entries?.some(entry => entry.state === 'draft');
   if (now > holdUntil) {
-    statusEl.textContent = statusTimed
+    statusEl.textContent = awaitingYes ? 'Listening for your yes' : statusTimed
       ? `${statusLabel} · ${((now - statusSince) / 1000).toFixed(1)}s`
       : statusLabel;
   } else {
@@ -2731,6 +2740,12 @@ window.addEventListener('resize', alignWarehouseTargets);
 const warehouseToolbar = document.querySelector('.warehouse-toolbar');
 const workUtilities = document.querySelector('.workspace-utilities');
 warehouseToolbar.append(workUtilities);
+// The transcript is not in the drawing. It folds under the reach line and
+// opens as a card of its own when asked for.
+document.getElementById('transcriptToggle').onclick = e => {
+  const open = document.querySelector('.voice-column').classList.toggle('show-transcript');
+  e.currentTarget.setAttribute('aria-expanded', String(open));
+};
 window.addEventListener('scroll',
   () => warehouseToolbar.classList.toggle('is-stuck', window.scrollY > 24),
   { passive: true });
@@ -2779,7 +2794,7 @@ function renderVoiceSuggestions() {
   const d = draft?.result?.details || {};
   const hints = draft ? (comms
     ? ['→ saves it, nowhere real', '→ drafted again', '→ nothing is saved']
-    : [`→ posts ${d.MENGE !== undefined ? d.MENGE + ' ' + (d.MEINS || '') : 'it'}`, '→ new read-back', '→ nothing is posted']) : null;
+    : [`→ posts ${d.MENGE !== undefined ? d.MENGE + ' ' + (d.MEINS || '') : 'it'}`, '→ new read-back', '→ nothing is recorded']) : null;
   lines.forEach((line, i) => {
     // The quotes are written into the text: the browser's own <q> marks became
     // separate flex items once the line and its hint sat side by side.
@@ -2849,15 +2864,21 @@ function showWarehouseStage(stage) {
   // the walkthrough link waits under the voice card. On every other stage the
   // pieces go back where the markup keeps them.
   const toolbar = document.querySelector('.warehouse-toolbar');
-  const strip = document.getElementById('taskStrip'), replay = document.getElementById('replayAreaIntro'), aside = document.getElementById('workAside');
+  const strip = document.getElementById('taskStrip'), replay = document.getElementById('replayAreaIntro');
+  const links = document.querySelector('#workAside .work-links'), utilities = document.querySelector('.workspace-utilities');
   if (stage === 'work') {
     document.getElementById('warehouseBrief').hidden = true;
-    if (strip.parentElement !== toolbar) toolbar.insertBefore(strip, toolbar.querySelector('.workspace-utilities'));
-    if (aside && replay.parentElement !== aside) aside.prepend(replay);
+    // The drawing's bar ends with the pills and its column ends with the reach
+    // line. The walkthrough, the records and the transcript are not in the
+    // drawing, so they share one quiet line under the reach rather than a
+    // place of their own.
+    if (strip.parentElement !== toolbar) toolbar.append(strip);
+    if (links) { if (utilities) links.prepend(utilities); links.prepend(replay); }
   } else {
     document.getElementById('warehouseBrief').hidden = false;
     if (strip.parentElement === toolbar) document.getElementById('warehouseWork').insertBefore(strip, document.getElementById('warehouseBrief'));
     if (replay.parentElement !== toolbar) toolbar.insertBefore(replay, document.getElementById('warehouseCreate'));
+    if (utilities && utilities.parentElement !== toolbar) toolbar.append(utilities);
   }
   // One step back from anywhere: the task chooser is no longer on the way in,
   // so returning through it would be a screen nobody asked to see.

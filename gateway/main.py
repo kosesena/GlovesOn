@@ -1111,6 +1111,11 @@ def agent_desktop_styles():
     return FileResponse(WEB_DIR / 'agent-desktop.css', media_type='text/css', headers={'Cache-Control': 'no-cache'})
 
 
+@app.get('/work-screen.css', include_in_schema=False)
+def work_screen_styles():
+    return FileResponse(WEB_DIR / 'work-screen.css', media_type='text/css', headers={'Cache-Control': 'no-cache'})
+
+
 @app.get('/voice-policy.js', include_in_schema=False)
 def voice_policy_script() -> FileResponse:
     return FileResponse(WEB_DIR / 'voice-policy.js', media_type='text/javascript',
