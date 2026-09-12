@@ -53,10 +53,11 @@ live voice evaluation remains required.
 screen was drawn first (the sheet on the left, the action's timeline and the
 voice card on the right) and then built from the drawing's own values:
 `web/work-screen.css` carries them, loads last, and says where each one comes
-from. `web/agent-desktop.js` renders the live values into that structure. The
-one thing the drawing does not have is the transcript; it folds under the reach
-line and opens as a card when asked for. Three things are shown only when they
-are true: "Stock after posting" appears only when this session looked the same
+from. `web/agent-desktop.js` renders the live values into that structure. What
+the drawing does not have is not on the screen: the transcript, the walkthrough
+replay and the microphone and download settings wait in the Records & help
+panel, which the "Demo records only" line at the foot of the column opens.
+Three things are shown only when they are true: "Stock after posting" appears only when this session looked the same
 material up, the idle timeline shows documents the ledger already holds, and
 "Listening for your yes" is written only while a read-back is actually waiting.
 

@@ -68,6 +68,8 @@
     const stream=options?.stream||null;
     const provenance=typeof options?.provenance==='function'?options.provenance:null;
     const aside=options?.aside||null;
+    // The id of the records panel; when given, the note in the aside opens it.
+    const records=typeof options?.records==='string'?options.records:null;
     let saidLog=[], recent=[];
     // Who exists, for the empty screen. Fetched by the page, never invented here.
     let directory=[];
@@ -320,7 +322,12 @@
         for(const old of aside.querySelectorAll('.desktop-reach,.desktop-footnote')) old.remove();
         const lines=[];
         if(directory.length) lines.push(node('p','desktop-reach','REACH · '+directory.map(person=>person.name).join(' · ')));
-        lines.push(node('p','desktop-footnote','Demo records only. No real SAP, email or phone.'));
+        // The note is also the way to the records: the drawing has no button
+        // for them, and a line about demo records is the honest place to
+        // open the demo records from.
+        const note=node(records?'button':'p','desktop-footnote','Demo records only. No real SAP, email or phone.');
+        if(records){note.type='button';note.setAttribute('popovertarget',records);note.setAttribute('aria-label','Demo records only. No real SAP, email or phone. Open records, transcript and help');}
+        lines.push(note);
         aside.prepend(...lines);
       }
       renderStream();

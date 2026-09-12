@@ -141,22 +141,23 @@
 #warehouseWork #voiceSuggestions q small {font-size:12px;font-weight:400;color:#6e7869;white-space:nowrap;}
 #warehouseWork #voiceSuggestions q:first-of-type small {color:#cfe8d5;}
 
-/* ---- the foot: reach and the note, then the line that is not in the drawing ---- */
+/* ---- the foot: reach and the note, exactly as drawn ---- */
 #warehouseWork .work-aside {display:flex;flex-direction:column;gap:0;margin:0;padding:0;flex-shrink:0;font:9px/1.8 var(--mono);letter-spacing:.1em;color:#8b927f;}
 #warehouseWork .work-aside .desktop-reach,#warehouseWork .work-aside .desktop-footnote {margin:0;padding:0;border:0;text-align:left;font:inherit;letter-spacing:inherit;color:inherit;overflow-wrap:anywhere;}
-#warehouseWork .work-links {display:flex;align-items:center;gap:12px;margin-top:6px;font:11px/1.4 system-ui;letter-spacing:0;}
-#warehouseWork .work-links #replayAreaIntro,#warehouseWork .work-links #transcriptToggle,#warehouseWork .work-links .workspace-utilities button {margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;font:inherit;color:#244b35;text-decoration:underline;text-underline-offset:3px;cursor:pointer;white-space:nowrap;}
-#warehouseWork .work-links .workspace-utilities {display:contents;}
-#warehouseWork .work-links #transcriptToggle[aria-expanded="true"] {text-decoration:none;color:#8b927f;}
-/* the transcript folds under the reach line and opens as a card of its own */
-#warehouseWork .console-wrap #conversationDetails {display:none;order:-1;flex:0 0 auto;min-height:0;margin:0;padding:14px 22px!important;background:#fffdf7;border:1px solid #e3dfd2;border-radius:20px;max-height:220px;overflow:auto;}
-#warehouseWork .voice-column.show-transcript #conversationDetails {display:block;}
+/* The note is a button that opens the records panel; it looks like the
+   drawing's line and only says so when the pointer is on it. */
+#warehouseWork .work-aside button.desktop-footnote {display:block;width:100%;background:none;border-radius:0;box-shadow:none;cursor:pointer;text-transform:none;}
+#warehouseWork .work-aside button.desktop-footnote:hover,#warehouseWork .work-aside button.desktop-footnote:focus-visible {color:#244b35;text-decoration:underline;text-underline-offset:3px;outline:none;}
+/* the transcript and the walkthrough live in the records panel, not on the screen */
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar .workspace-utilities {display:none;}
+#warehouseWork #workspaceExtras #conversationDetails {margin:0;padding:0!important;border:0;background:none;}
 #warehouseWork #conversationDetails:before {content:none;}
-#warehouseWork #log,#warehouseWork #log:has(.conversation-empty) {height:auto;min-height:0;max-height:none;max-width:none;margin:0;padding:0;gap:12px;display:flex;flex-direction:column;overflow:visible;}
-#warehouseWork #log .msg.user,#warehouseWork #log .msg.agent {margin:0;padding:0;background:none;border:0;font:13px/1.45 system-ui;color:#253b2c;letter-spacing:0;}
+#warehouseWork #workspaceExtras #replayAreaIntro {display:block;margin:16px 0 0;padding:0;font:500 14px system-ui;color:#244b35;text-decoration:underline;text-underline-offset:4px;background:none;border:0;white-space:normal;}
+#warehouseWork #log,#warehouseWork #log:has(.conversation-empty) {height:auto;min-height:0;max-height:260px;max-width:none;margin:0;padding:0 0 12px;gap:12px;display:flex;flex-direction:column;overflow:auto;}
+#warehouseWork #log .msg.user,#warehouseWork #log .msg.agent {margin:0;padding:0;background:none;border:0;font:14px/1.5 system-ui;color:#253b2c;letter-spacing:0;}
 #warehouseWork #log .msg.user:before,#warehouseWork #log .msg.agent:before {display:none;}
 #warehouseWork #log .msg .who {font:9px var(--mono);letter-spacing:.12em;color:#8b927f;text-transform:uppercase;margin-bottom:3px;}
-#warehouseWork #log .conversation-empty {font-size:12px;color:#8b927f;margin:0;}
+#warehouseWork #log .conversation-empty {font-size:13px;color:#8b927f;margin:0;}
 
 /* ---- narrower than the drawing ---- */
 @media(max-width:1150px) {
@@ -181,5 +182,4 @@
  #agentDesktop .desk-ledger-row {flex-direction:column;}
  #agentDesktop .desk-stub-what {white-space:normal;}
  #warehouseWork .action-stream {flex:0 0 auto;min-height:0;max-height:320px;}
- #warehouseWork .work-links {flex-wrap:wrap;}
 }
