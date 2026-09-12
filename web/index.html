@@ -1362,7 +1362,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <div class="warehouse-toolbar"><a class="brand work-brand" href="#top" aria-label="GlovesOn home"><span class="brand-mark" aria-hidden="true">↗</span>GlovesOn</a><button id="warehouseBack">← Back to site</button><span id="warehouseCrumb">PLANT 1000 / WAREHOUSE</span><button id="replayAreaIntro" hidden>Watch a walkthrough ↗</button><button id="warehouseCreate">+ Create a task</button></div>
 <div id="warehouseLobby"><div class="warehouse-title"><div class="eyebrow">YOUR SHIFT / PLANT 1000</div><h1>Where are you working today?</h1><p>Step into an area to pick up your next task.</p></div><div class="warehouse-room" id="warehouseRoom"><div id="avatarStage" class="avatar-stage"></div><button class="warehouse-entry" data-enter="receiving"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><b>Receiving bay</b><small>Deliveries & quantity checks</small><em>3 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="storage"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><b>Storage aisles</b><small>Materials, stock & incidents</small><em>2 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="review"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><b>Review desk</b><small>Check receipts & reverse entries</small><em>1 guided task ↗</em></button><span class="room-brand" aria-hidden="true"><span class="brand-mark">↗</span>GlovesOn</span></div></div>
 <div id="warehouseArea" hidden><div class="warehouse-title"><h1 id="warehouseAreaTitle"></h1><p>Take the next guided task, or open the task folder.</p></div><div class="warehouse-choice"><article><small>01 / TAKE A TASK</small><h2>Next on your shift</h2><p id="nextTaskDescription"></p><button id="takeNextTask">Take this task ↗</button></article><article><small>02 / TASK FOLDER</small><h2>Choose your task</h2><p>Browse the guided scenarios and the tasks you have created for this area.</p><button id="browseTasks">Open task folder ↗</button></article></div></div>
-<div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><p class="work-signature">Built for the <strong>AssemblyAI Voice Agent Hackathon</strong> · September 2026</p><nav id="taskStrip" class="task-strip" aria-label="Tasks in this area" hidden></nav><div id="warehouseBrief"><span id="warehouseBriefImage" class="warehouse-art" aria-hidden="true" ></span><div class="brief-copy"><small class="brief-eyebrow">YOUR NEXT TASK</small><h2 id="warehouseBriefTitle"></h2><p id="warehouseBriefText"></p><blockquote id="warehouseGuideQuote" hidden><small>YOUR WAREHOUSE GUIDE</small><p>“A delivery just arrived. Let’s check it in.”</p></blockquote></div></div><section id="actionRail" class="action-rail" aria-label="What was said, what was read back, what was recorded"><div class="rail-cell" data-cell="said"><div class="rail-eyebrow"><i></i><span>01 · SAID</span></div><p class="rail-text">Your words, as heard.</p><small class="rail-meta"></small></div><div class="rail-cell" data-cell="readback"><div class="rail-eyebrow"><i></i><span>02 · READ BACK</span></div><p class="rail-text">Every write is read back: quantity, unit, description, bin.</p><div class="rail-chips"></div></div><div class="rail-cell" data-cell="recorded"><div class="rail-eyebrow"><i></i><span>03 · RECORDED</span></div><p class="rail-text">Nothing yet. Only a spoken yes posts the document.</p><small class="rail-meta"></small></div></section></div>
+<div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><p class="work-signature">Built for the <strong>AssemblyAI Voice Agent Hackathon</strong> · September 2026</p><nav id="taskStrip" class="task-strip" aria-label="Tasks in this area" hidden></nav><div id="warehouseBrief"><span id="warehouseBriefImage" class="warehouse-art" aria-hidden="true" ></span><div class="brief-copy"><small class="brief-eyebrow">YOUR NEXT TASK</small><h2 id="warehouseBriefTitle"></h2><p id="warehouseBriefText"></p><blockquote id="warehouseGuideQuote" hidden><small>YOUR WAREHOUSE GUIDE</small><p>“A delivery just arrived. Let’s check it in.”</p></blockquote></div></div></div>
 </section>
 <section class="shift" aria-label="Warehouse shift">
   <div class="shift-heading"><div><h3>Your shift starts here.</h3><p>Choose an area. Pick a task. Work by voice.</p></div></div>
@@ -1407,6 +1407,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 </div>
 <div class="console-wrap">
 <div class="voice-column">
+<section id="actionStream" class="action-stream" aria-label="This action"></section>
 <div class="voice-heading"><small>VOICE ASSISTANT</small><h2>Talk to GlovesOn</h2><p>Speak naturally to get things done.</p></div>
 <div class="workspace-utilities"><button type="button" popovertarget="workspaceExtras">Records &amp; help <span aria-hidden="true">↗</span></button></div>
 <div id="workspaceExtras" popover="auto" aria-label="Records and help">
@@ -1569,7 +1570,10 @@ const stripEl    = document.getElementById('stockStrip');
 const F = id => document.getElementById(id);
 globalThis.agentDesktop = GlovesOnDesktop.mount(F('agentDesktop'), key => {
   if (!globalThis.requestWorkspaceAction?.(key)) append('sys', '', 'Start a conversation, or let Lena finish speaking, then choose a next step.');
-}, {rail: F('actionRail'), provenance: mblnr => fetch('/api/provenance/' + encodeURIComponent(mblnr)).then(r => r.ok ? r.json() : null)});
+}, {stream: F('actionStream'), provenance: mblnr => fetch('/api/provenance/' + encodeURIComponent(mblnr)).then(r => r.ok ? r.json() : null)});
+// The spoken menu follows the sheet: while a draft waits, the three lines are
+// the three answers; otherwise they are the task's own openers.
+F('agentDesktop').addEventListener('gloveson:desktop', () => { if (typeof renderVoiceSuggestions === 'function') renderVoiceSuggestions(); });
 // The last documents in the mock ERP, so the workspace is never "no operation
 // yet" on a quiet day. Refreshed after every write this session makes.
 // On globalThis, and called through it, for the same reason agentDesktop is:
@@ -2089,10 +2093,9 @@ function showToolCard(name, result) {
 
 function append(kind, who, text) {
   if (/^(user|agent)/.test(kind)) {
-    document.getElementById('voiceSuggestions').hidden = true;
     logEl.querySelectorAll('.msg.is-latest').forEach(x => x.classList.remove('is-latest'));
   }
-  // The rail's first cell is the worker's own sentence, as the transcript heard it.
+  // The stream's "You said" lines are the worker's own sentences, as heard.
   if (kind === 'user') globalThis.agentDesktop?.said(text);
   primerEl.hidden = true;
   // The transcript opens itself the moment there is something in it. It stays
@@ -2762,11 +2765,15 @@ function renderVoiceSuggestions() {
   const pressed = document.querySelector('[data-scenario][aria-pressed="true"]');
   // A custom task carries the action it rehearses, so it inherits that set.
   const key = pressed ? pressed.dataset.scenario : activeScenario?.action;
-  const lines = TASK_SUGGESTIONS[key] || TASK_SUGGESTIONS.receive;
+  const draft = globalThis.agentDesktop?.state?.entries?.slice().reverse().find(e => e.state === 'draft');
+  const comms = draft && /email|call|note/.test(draft.name);
+  const lines = draft
+    ? ['Yes, confirm', comms ? 'Change it' : 'Make that twelve', 'Cancel that']
+    : (TASK_SUGGESTIONS[key] || TASK_SUGGESTIONS.receive);
   // All three at once, as chips. A single line that rotates every five
   // seconds asks the worker to wait for the one they wanted.
   box.replaceChildren();
-  const label = document.createElement('span'); label.textContent = 'Try saying';
+  const label = document.createElement('span'); label.textContent = draft ? 'You can say' : 'Try saying';
   box.append(label);
   for (const line of lines) { const quote = document.createElement('q'); quote.textContent = line; box.append(quote); }
   clearInterval(suggestionTimer);

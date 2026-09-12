@@ -40,13 +40,13 @@
       // A new preparation replaces the only pending draft, across every device.
       if (name.startsWith('prepare_') || writes.has(name)) for (const entry of this.entries) if(entry.state==='draft') entry.state=writes.has(name)?'submitted':'superseded';
       if (/^prepare_(email|call|note)$/.test(name)) this.suggestions=null;
-      const entry={name,id,state:'pending',result:null,args:parsed};
+      const entry={name,id,state:'pending',result:null,args:parsed,at:Date.now(),doneAt:null};
       this.entries.push(entry); this.entries=this.entries.slice(-20); this.current=entry;
     }
     finish(name,result,failed,id) {
       const entry=this.entries.find(e=>e.id===id);
       if(!entry) return; // Ignore old-session results after a reset.
-      entry.result=result || {}; entry.state=outcome(name,result,failed);
+      entry.result=result || {}; entry.state=outcome(name,result,failed); entry.doneAt=Date.now();
       if(entry.state==='draft') entry.expires=Date.now()+Math.min(120,Number(result.expires_in)||120)*1000;
       if(name==='suggest_follow_up' && result?.suggested && !failed) this.suggestions=result;
     }
@@ -65,9 +65,9 @@
     const state=new DesktopState();
     // The rail above the workspace: what the worker said, what was read back,
     // what was recorded. Optional, so the module still mounts without it.
-    const rail=options?.rail||null;
+    const stream=options?.stream||null;
     const provenance=typeof options?.provenance==='function'?options.provenance:null;
-    let said=null, recent=[];
+    let saidLog=[], recent=[];
     // Who exists, for the empty screen. Fetched by the page, never invented here.
     let directory=[];
     const node=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e;};
@@ -177,128 +177,184 @@
       return screen;
     }
     const stateText={pending:'Working…',draft:'Your confirmation needed',saved:'Saved',read:'Checked',rejected:'Needs attention',error:'Could not finish',uncertain:'Result uncertain',expired:'Draft expired',superseded:'Draft replaced',submitted:'Draft used',stopped:'Stopped'};
+    const clock=ms=>{const d=new Date(ms);return [d.getHours(),d.getMinutes(),d.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');};
+    const countdown=at=>{const s=Math.max(0,Math.round((at-Date.now())/1000));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;};
+    const isWrite=e=>writes.has(e.name), isPrepare=e=>/^prepare_/.test(e.name);
+    const stockBefore=r=>{if(r.new_stock_level===undefined||r.MENGE===undefined)return null;const after=Number(r.new_stock_level),qty=Number(r.MENGE);return {before:r.reversed?after+qty:after-qty,after};};
+    // What the agent is required to read aloud, from the tool's own details.
+    function readback(entry) {
+      const d=entry.result?.details||{}, who=d.recipient?.name;
+      if(entry.name==='prepare_reversal') return {big:`Reverse ${d.document||d.reverses||'—'}: ${words(d.MENGE)} ${d.MEINS||''} of ${d.MAKTX||'—'} out of bin ${d.LGPLA||'—'}.`,chips:[d.MENGE!==undefined?`${d.MENGE} ${d.MEINS||''}`:'',d.MAKTX,d.LGPLA?'Bin '+d.LGPLA:'']};
+      if(entry.name==='prepare_goods_receipt') return {big:`${words(d.MENGE)} ${d.MEINS||''} of ${d.MAKTX||'—'} into bin ${d.LGPLA||'—'}.`,chips:[d.MENGE!==undefined?`${d.MENGE} ${d.MEINS||''}`:'',d.MAKTX,d.LGPLA?'Bin '+d.LGPLA:'']};
+      if(entry.name==='prepare_email') return {big:`Email ${who||'—'}: “${d.subject||''}”`,chips:[who?'To '+who:'',d.subject]};
+      if(entry.name==='prepare_call') return {big:`Call ${who||'—'}${d.purpose?' about '+d.purpose:''}.`,chips:[who?'Call '+who:'',d.purpose]};
+      if(entry.name==='prepare_note') return {big:`Save the note “${d.title||''}”.`,chips:[d.title]};
+      return {big:'Read back before anything is written.',chips:[]};
+    }
+    const kickers={erp:'GOODS RECEIPT · MATERIAL DOCUMENT · MOCK S/4HANA',reversal:'REVERSAL · MATERIAL DOCUMENT · MOCK S/4HANA',email:'DEMO MAIL · LENA’S WORK LAPTOP · NO REAL DELIVERY',phone:'DEMO CALL · LENA’S WORK PHONE · NO REAL CALL',note:'DEMO NOTE · LENA’S WORK LAPTOP',history:'THIS SESSION · DEMO COMMUNICATIONS'};
+    function stampFor(entry) {
+      if(!entry) return null;
+      const c=category(entry.name), st=entry.state;
+      const draftWords={erp:'NOT YET POSTED',email:'NOT YET SENT',phone:'NOT YET PLACED',note:'NOT YET SAVED'};
+      const savedWords={email:'SAVED TO OUTBOX',phone:'CALL LOGGED',note:'NOTE SAVED'};
+      if(st==='draft'||st==='pending'&&isWrite(entry)) return {text:draftWords[c]||'NOT YET POSTED',tone:'wait'};
+      if(st==='saved') return {text:c==='erp'?`POSTED · ${entry.result?.BWART||''}`.trim():savedWords[c],tone:'saved'};
+      if(st==='rejected'||st==='uncertain'||st==='error'&&isWrite(entry)) return {text:c==='erp'?'NOT POSTED':'NOT SAVED',tone:'refused'};
+      return null;
+    }
+    // --- The sheet: the record, whatever state it is in --------------------
     function render() {
       state.expire(); host.replaceChildren();
-      // A kicker, not a title: the card below is the thing, this only names the surface.
-      add(host,add(node('div','desktop-heading'),node('small','',"LENA’S WORKSPACE"),badge('Mock S/4HANA')));
-      // No device tabs: the worker never chooses a device, the tool does. The
-      // card shows whatever the current action is, and earlier ones are reached
-      // through the session activity list below.
-      if(!state.current) {
-        const empty=add(node('div','desktop-empty'),node('small','document-kicker','MATERIAL DOCUMENT · NONE YET'),node('h3','','No document yet'),node('p','','What you confirm becomes the record here.'));
-        add(host,empty);
-        // Evidence that the system has done things, even on a quiet day: the
-        // last documents in the mock ERP, each with the sentence behind it one
-        // click away. This is the receipts idea, on the screen itself.
-        if(recent.length) {
-          const list=add(node('section','desktop-recent'),node('small','','RECENT DOCUMENTS · WHY EACH ONE EXISTS'));
-          for(const d of recent.slice(0,4)) {
-            const row=node('div','recent-row');
-            // The movement type in words as well as the code: 501 means nothing to
-            // a reader who has not lived in MM, and "receipt" is what it means.
-            const kind={'101':'receipt','501':'receipt','102':'reversal','502':'reversal'}[String(d.BWART)]||'movement';
-            add(row,node('span','recent-number',d.MBLNR),node('span','recent-type',`${d.BWART} · ${kind}`),node('span','recent-what',`${words(d.MENGE)} ${d.MEINS||''} · material ${d.MATNR}${d.LGPLA?' · bin '+d.LGPLA:''}`));
-            if(provenance) {
-              const why=node('button','recent-why','why ↗');why.type='button';
-              why.onclick=async()=>{why.disabled=true;let row_=null;try{row_=await provenance(d.MBLNR);}catch{row_=null;}
-                const said=row_?.voice?.utterance;const line=add(node('p','recent-reason'),node('span','recent-reason-label','Confirmed with'),node('span','',said?('“'+said+'”'):'No provenance row for this document.'));
-                row.after(line);why.remove();};
-              add(row,why);
-            }
-            add(list,row);
-          }
-          add(host,list);
-        }
-      } else {
-        const entry=state.current;
-        add(host,add(node('div','desktop-status '+entry.state),node('span','',labels[entry.name]||'Workspace'),node('strong','',stateText[entry.state])));
-        const device=node('div','desktop-device');
-        add(device,category(entry.name)==='phone'?phone(entry):['email','note'].includes(category(entry.name))?laptop(entry):erp(entry));add(host,device);
-        if(entry.state==='submitted')add(host,notice('This draft was already used. Check the result in session activity.'));
-        if(entry.state==='uncertain')add(host,notice('The result could not be verified. Ask GlovesOn to check records before trying again.','error'));
-        if(['expired','superseded','stopped'].includes(entry.state))add(host,notice('This draft or request is no longer active. Ask GlovesOn to prepare it again.'));
-        if(['error','rejected'].includes(entry.state) && ['phone','email','note'].includes(category(entry.name)))add(host,notice(entry.result?.message||'The request could not be completed.','error'));
+      const entry=state.current, c=entry?category(entry.name):'erp';
+      const sheet=node('div','desk-sheet');
+      const stamp=stampFor(entry);
+      if(stamp) add(sheet,node('div','desk-stamp is-'+stamp.tone,stamp.text));
+      const kicker=entry?(entry.name==='prepare_reversal'||entry.result?.reversed?kickers.reversal:kickers[c]||kickers.erp):'MATERIAL DOCUMENT · MOCK S/4HANA';
+      add(sheet,node('small','desk-kicker',kicker));
+      // The number line: dashes until the system assigns one.
+      if(!entry||c==='erp'&&!/^(get_|search_)/.test(entry.name)) {
+        const r=entry?.result||{};
+        const line=node('div','desk-number');
+        if(entry?.state==='saved'&&r.MBLNR) add(line,node('span','desk-number-label','Document'),node('span','desk-number-value',r.MBLNR),node('span','desk-number-note','✓ assigned '+clock(entry.doneAt||Date.now())));
+        else add(line,node('span','desk-number-label','Document'),node('span','desk-number-blank','— — — — — — — — — —'),node('span','desk-number-note','assigned when you say yes'));
+        add(sheet,line);
+      } else if(entry.state==='saved'&&entry.result?.record?.id) {
+        add(sheet,add(node('div','desk-number'),node('span','desk-number-label','Record'),node('span','desk-number-value',entry.result.record.id),node('span','desk-number-note','✓ saved '+clock(entry.doneAt||Date.now()))));
       }
+      // The band: the moment the sheet is in.
+      if(entry&&entry.state==='draft') {
+        const rb=readback(entry);
+        const band=add(node('div','desk-band is-wait'),add(node('div','desk-band-head'),add(node('span','desk-band-eyebrow'),node('i','desk-dot is-pulse'),node('span','','READ BACK · WAITING FOR YOUR YES')),node('span','desk-band-time',clock(entry.doneAt||entry.at)+(entry.expires?' · expires in '+countdown(entry.expires):''))));
+        add(band,add(node('p','desk-band-big'),node('span','',rb.big+' '),node('span','desk-band-ask','Confirm?')),node('span','desk-band-hint',c==='erp'?'Say yes to post. Say a number to change it. Anything else posts nothing.':'Say yes to save it. Say a change and it is drafted again. Nothing reaches a real person.'));
+        add(sheet,band);
+      } else if(entry&&entry.state==='pending'&&isWrite(entry)) {
+        add(sheet,add(node('div','desk-band is-wait'),add(node('div','desk-band-head'),add(node('span','desk-band-eyebrow'),node('i','desk-dot is-pulse'),node('span','',c==='erp'?'POSTING':'SAVING')),node('span','desk-band-time',clock(entry.at))),node('p','desk-band-big','Waiting for the system to answer.')));
+      } else if(entry&&entry.state==='saved'&&isWrite(entry)) {
+        const r=entry.result||{}, sb=stockBefore(r);
+        const band=add(node('div','desk-band is-saved'),add(node('div','desk-band-head'),add(node('span','desk-band-eyebrow'),node('i','desk-dot is-done'),node('span','','RECORDED · '+clock(entry.doneAt||Date.now()))),node('span','desk-band-time',sb?`stock ${sb.before} → ${sb.after} ${r.MEINS||''}`:'')));
+        add(band,node('p','desk-band-big',c==='erp'?(r.reversed?`${words(r.MENGE)} ${r.MEINS||''} of ${r.MAKTX||''} are back out of bin ${r.LGPLA||''}.`:`${words(r.MENGE)} ${r.MEINS||''} of ${r.MAKTX||''} are in bin ${r.LGPLA||''}.`):(c==='email'?'Saved to the demo outbox. No email was delivered to a real person.':c==='phone'?'Demo call logged. No phone rang anywhere.':'Note saved for this session.')));
+        add(band,node('span','desk-band-hint',c==='erp'?(r.reversed?'Both documents stay in the record.':'Wrong? Say “reverse it”. A reversal takes them back out and both documents stay.'):'Check it under session activity any time.'));
+        add(sheet,band);
+      } else if(entry&&['rejected','uncertain','error'].includes(entry.state)&&isWrite(entry)) {
+        const r=entry.result||{};
+        const text=entry.state==='uncertain'?'The result could not be verified. Records are checked before anything is tried again.':(r.duplicate?`This exact posting already went through as ${r.MBLNR}. Nothing was posted twice.`:(typeof r.message==='string'?r.message:'Nothing was recorded.'));
+        add(sheet,add(node('div','desk-band is-refused'),add(node('div','desk-band-head'),add(node('span','desk-band-eyebrow'),node('i','desk-dot is-refused'),node('span','',entry.state==='uncertain'?'RESULT UNCERTAIN':'REFUSED · '+clock(entry.doneAt||Date.now())))),node('p','desk-band-big',text),node('span','desk-band-hint','Nothing is recorded. A new read-back starts from what you say next.')));
+      } else if(!entry) {
+        add(sheet,add(node('div','desk-band is-idle'),add(node('div','desk-band-head'),add(node('span','desk-band-eyebrow'),node('i','desk-dot'),node('span','','NOTHING ON THE TABLE'))),node('p','desk-band-big','Say what arrived.'),node('span','desk-band-hint','Lena looks the material up, reads the receipt back, and writes nothing until you say yes.')));
+      }
+      // The body: the document's fields, or the device the action lives on.
+      if(entry&&c==='erp'&&(entry.state==='draft'&&isPrepare(entry)||entry.state==='saved'&&isWrite(entry)||['rejected','uncertain'].includes(entry.state)&&isWrite(entry))) {
+        const d=entry.state==='draft'?(entry.result?.details||{}):(entry.result||{});
+        const grid=node('div','desk-fields');
+        const cell=(label,value,hint,cls)=>add(grid,add(node('div','desk-field'+(cls?' '+cls:'')),add(node('span','desk-field-label'),node('span','',label),hint?node('span','desk-field-hint',hint):null),node('span','desk-field-value',words(value))));
+        cell('Material',d.MATNR,entry.state==='saved'?'✓':'✓ looked up');
+        cell('Description',d.MAKTX,'✓ material master','is-wide');
+        cell('Quantity',d.MENGE!==undefined?`${d.MENGE} ${d.MEINS||''}`:undefined,entry.state==='draft'?'being confirmed':(entry.state==='saved'?'✓ confirmed':'not posted'),entry.state==='draft'?'is-confirming':'');
+        cell('Storage bin',d.LGPLA,'✓ the material’s own');
+        cell('Plant / location',d.WERKS?`${d.WERKS} / ${d.LGORT||'—'}`:undefined,'✓ default');
+        if(d.document||d.reverses) cell('Reverses',d.document||d.reverses,'✓ the original stays');
+        if(entry.state==='saved'){const sb=stockBefore(entry.result||{});if(sb)cell('Stock',`${sb.before} → ${sb.after} ${d.MEINS||''}`,'✓ from the same result');}
+        add(sheet,grid);
+        const why=entry.args?.confirmed_utterance;
+        if(entry.state==='saved'&&why) add(sheet,add(node('div','desk-why'),node('small','','WHY THIS DOCUMENT EXISTS'),node('p','','“'+String(why)+'” — as the agent reported it, '+clock(entry.doneAt||Date.now())+'.')));
+      } else if(entry&&entry.state==='pending'&&!isWrite(entry)) {
+        add(sheet,node('p','desk-quiet',(labels[entry.name]||'Working')+'…'));
+      } else if(entry&&c==='phone') add(sheet,add(node('div','desktop-device'),phone(entry)));
+      else if(entry&&['email','note'].includes(c)) add(sheet,add(node('div','desktop-device'),laptop(entry)));
+      else if(entry&&entry.state!=='draft') add(sheet,add(node('div','desktop-device'),erp(entry)));
       if(state.suggestions) {
         const box=node('section','desktop-suggestions');
         add(box,node('h3','','What would you like to do?'),node('p','',state.suggestions.reason));
-        // The gateway decides who this belongs to; the buttons say the name so
-        // the worker can disagree with it before anything is drafted.
         const to=state.suggestions.recipient;
         if(to) add(box,node('p','follow-up-recipient',to.name+' · '+to.role+' — '+state.suggestions.because));
         const options=node('div','follow-up-options');
-        const labels=[['call_colleague',to?'Call '+to.name:'Call a colleague'],['draft_email',to?'Email '+to.name:'Draft email'],['save_note','Save a note']];
-        for(const [key,label] of labels) {
+        for(const [key,label] of [['call_colleague',to?'Call '+to.name:'Call a colleague'],['draft_email',to?'Email '+to.name:'Draft email'],['save_note','Save a note']]) {
           const button=node('button','',label);button.type='button';button.onclick=()=>onChoice(key);add(options,button);
         }
-        add(box,options,node('small','','Choose here or tell GlovesOn. Nothing happens until you confirm.'));add(host,box);
+        add(box,options,node('small','','Choose here or tell Lena. Nothing happens until you confirm.'));add(sheet,box);
       }
-      if(state.entries.length) {
-        const history=node('details','desktop-activity');add(history,node('summary','','Session activity · '+state.entries.length));
-        const list=node('ol');
-        for(const e of state.entries.slice().reverse()) {
-          const button=node('button','',`${labels[e.name]||e.name} · ${stateText[e.state]}`);button.type='button';button.onclick=()=>{state.current=e;render();};add(list,add(node('li'),button));
-        }add(history,list);add(host,history);
+      // The ledger: what the mock ERP holds today, each with its sentence a click away.
+      const ledger=add(node('div','desk-ledger'),add(node('div','desk-ledger-head'),node('small','','TODAY IN THE LEDGER'),node('span','desk-ledger-note','why each one exists ↗')));
+      if(recent.length) {
+        const kinds={'101':'receipt','501':'receipt','102':'reversal','502':'reversal'};
+        for(const d of recent.slice(0,4)) {
+          const stub=add(node('div','desk-stub'),node('span','desk-stub-number',d.MBLNR),node('span','desk-stub-what',`${d.BWART} · ${kinds[String(d.BWART)]||'movement'} · ${words(d.MENGE)} ${d.MEINS||''} ${d.MATNR}`));
+          if(provenance) {
+            const why=node('button','desk-stub-why','why');why.type='button';
+            why.onclick=async()=>{why.disabled=true;let row=null;try{row=await provenance(d.MBLNR);}catch{row=null;}
+              const said=row?.voice?.utterance;add(stub,add(node('p','desk-stub-reason'),node('span','desk-stub-reason-label','Confirmed with'),node('span','',said?('“'+said+'”'):'No provenance row for this document.')));why.remove();};
+            add(stub,why);
+          }
+          add(ledger,stub);
+        }
+      } else add(ledger,node('p','desk-quiet','No documents in the ledger yet.'));
+      add(sheet,ledger);
+      if(directory.length) add(sheet,node('p','desktop-reach','REACH · '+directory.map(person=>person.name+' ('+person.role.toLowerCase()+')').join(' · ')));
+      add(sheet,node('p','desktop-footnote','Live tool results · demo records only. No real SAP, email delivery or phone connection.'));
+      add(host,sheet);
+      renderStream();
+      host.dispatchEvent(new CustomEvent('gloveson:desktop'));
+    }
+    // --- The stream: everything this action did, in order, with the time ---
+    function streamItems() {
+      const items=[];
+      for(const s of saidLog) items.push({at:s.at,title:'You said',text:'“'+s.text+'”',tone:'done'});
+      for(const e of state.entries) {
+        const r=e.result||{}, c=category(e.name), d=r.details||{};
+        if(e.state==='pending') { items.push({at:e.at,title:labels[e.name]||e.name,text:'Waiting for the system…',tone:'wait',entry:e}); continue; }
+        if(isPrepare(e)) {
+          const waiting=e.state==='draft';
+          const after={superseded:'Draft replaced by a new read-back.',expired:'Draft expired. Nothing was recorded.',submitted:'Confirmed.'}[e.state];
+          items.push({at:e.doneAt||e.at,title:'Read back',text:waiting?(c==='erp'?'Four facts, aloud. Waiting for your yes.':c==='email'?'Recipient, subject and body, aloud. Waiting for your yes.':c==='phone'?'Who and why, aloud. Waiting for your yes.':'Title and text, aloud. Waiting for your yes.'):(after||readback(e).big),tone:waiting?'wait':(e.state==='rejected'?'refused':'done'),entry:e});
+          continue;
+        }
+        if(isWrite(e)) {
+          if(e.state==='saved') { const sb=stockBefore(r); items.push({at:e.doneAt||e.at,title:c==='erp'?(r.reversed?'Reversed':'Posted'):c==='email'?'Saved to outbox':c==='phone'?'Call logged':'Note saved',text:c==='erp'?`Material document ${r.MBLNR}${sb?` · stock ${sb.before} → ${sb.after} ${r.MEINS||''}`:''}`:(r.record?.id||''),tone:'done',entry:e}); }
+          else items.push({at:e.doneAt||e.at,title:e.state==='uncertain'?'Result uncertain':'Refused',text:r.duplicate?`Already posted as ${r.MBLNR}. Nothing posted twice.`:(typeof r.message==='string'?r.message:'Nothing was recorded.'),tone:'refused',entry:e});
+          continue;
+        }
+        if(e.name==='get_stock') items.push({at:e.doneAt||e.at,title:r.found?'Looked up '+(r.MATNR||''):'Not found',text:r.found?`${r.MAKTX||''} · bin ${r.locations?.[0]?.LGPLA||'—'} · ${words(r.total_unrestricted)} ${r.MEINS||''} on hand`:(r.message||''),tone:r.found?'done':'refused',entry:e});
+        else if(e.name==='suggest_follow_up') items.push({at:e.doneAt||e.at,title:'Follow-up',text:r.recipient?`${r.because} → ${r.recipient.name}`:'Options offered.',tone:'done',entry:e});
+        else if(e.name==='find_colleague') items.push({at:e.doneAt||e.at,title:'Looked up a colleague',text:(r.matches||[]).map(m=>m.name).join(', ')||'No match; the whole directory offered.',tone:'done',entry:e});
+        else items.push({at:e.doneAt||e.at,title:labels[e.name]||e.name,text:stateText[e.state]||'',tone:e.state==='error'||e.state==='rejected'?'refused':'done',entry:e});
       }
-      // Who can be reached, in one line, instead of a drawer to open.
-      if(directory.length) add(host,node('p','desktop-reach','REACH · '+directory.map(person=>person.name+' ('+person.role.toLowerCase()+')').join(' · ')));
-      add(host,node('p','desktop-footnote','Live tool results · demo records only. No real SAP, email delivery or phone connection.'));
-      renderRail();
+      items.sort((a,b)=>a.at-b.at);
+      return items.slice(-7);
     }
-    // --- The rail --------------------------------------------------------
-    // Three cells, always present, so the discipline is visible before anyone
-    // speaks. The read-back cell draws from the tool's returned details, which
-    // are the facts the agent is required to read aloud; the exact spoken
-    // sentence stays in the transcript. Nothing here is invented from the
-    // model's reply.
-    function cell(key){return rail?rail.querySelector('[data-cell="'+key+'"]'):null;}
-    function setCell(key,cls,text,meta,chips) {
-      const el=cell(key); if(!el) return;
-      el.className='rail-cell'+(cls?' '+cls:'');
-      el.querySelector('.rail-text').textContent=text;
-      const m=el.querySelector('.rail-meta'); if(m) m.textContent=meta||'';
-      const c=el.querySelector('.rail-chips'); if(c){c.replaceChildren();for(const chip of chips||[]) if(chip) add(c,node('span','',chip));}
+    function renderStream() {
+      if(!stream) return;
+      stream.replaceChildren();
+      const items=streamItems();
+      const draft=state.entries.slice().reverse().find(e=>e.state==='draft');
+      const busy=state.entries.some(e=>e.state==='pending');
+      const last=state.entries[state.entries.length-1];
+      const status=draft||busy?'LIVE':(last&&last.state==='saved'?'DONE':'READY');
+      add(stream,add(node('div','stream-head'),node('small','','THIS ACTION'),add(node('span','stream-live is-'+status.toLowerCase()),node('i','desk-dot '+(status==='LIVE'?'is-pulse':'is-done')),node('span','',status+' · '+clock(Date.now()).slice(0,5)))));
+      const list=node('div','stream-list');
+      if(!items.length) add(list,add(node('div','stream-item is-next'),node('span','stream-time','now'),node('i','stream-dot'),node('div','stream-title','You said'),node('div','stream-text','Say what arrived; it appears here with the time.')));
+      for(const it of items) {
+        const row=add(node('div','stream-item is-'+it.tone),node('span','stream-time',clock(it.at)),node('i','stream-dot'),node('div','stream-title',it.title),node('div','stream-text',it.text));
+        if(it.entry){row.classList.add('is-link');row.onclick=()=>{state.current=it.entry;render();};}
+        add(list,row);
+      }
+      // The ghost: what the next line will be, and what it takes.
+      let next=null;
+      if(draft) next=['Posted',category(draft.name)==='erp'?'A document number, the moment you say yes. Anything else, and this line never exists.':'A record id, the moment you say yes. Nothing reaches a real person.'];
+      else if(last&&last.state==='saved'&&category(last.name)==='erp'&&!last.result?.reversed) next=['Reversal','Only if you ask. A reversal against this document; both stay.'];
+      else if(items.length) next=['Next','Say what arrived, or ask for stock.'];
+      if(next) add(list,add(node('div','stream-item is-next'),node('span','stream-time','next'),node('i','stream-dot'),node('div','stream-title',next[0]),node('div','stream-text',next[1])));
+      add(stream,list);
+      // Newest at the bottom, and the bottom in view.
+      stream.scrollTop=stream.scrollHeight;
     }
-    function readback(entry) {
-      const d=entry.result?.details||{}, who=d.recipient?.name;
-      if(entry.name==='prepare_reversal') return {text:`Reverse document ${d.document||d.reverses||'—'}: ${words(d.MENGE)} ${d.MEINS||''} of ${d.MAKTX||'—'} back out of bin ${d.LGPLA||'—'}. Confirm?`,chips:[d.MENGE!==undefined?`${d.MENGE} ${d.MEINS||''}`:'',d.MAKTX,d.LGPLA?'Bin '+d.LGPLA:'']};
-      if(entry.name==='prepare_goods_receipt') return {text:`${words(d.MENGE)} ${d.MEINS||''} of ${d.MAKTX||'—'} into bin ${d.LGPLA||'—'}. Confirm?`,chips:[d.MENGE!==undefined?`${d.MENGE} ${d.MEINS||''}`:'',d.MAKTX,d.LGPLA?'Bin '+d.LGPLA:'']};
-      if(entry.name==='prepare_email') return {text:`Email ${who||'—'}: “${d.subject||''}”. Confirm?`,chips:[who?'To '+who:'',d.subject]};
-      if(entry.name==='prepare_call') return {text:`Call ${who||'—'}${d.purpose?' about '+d.purpose:''}. Confirm?`,chips:[who?'Call '+who:'',d.purpose]};
-      if(entry.name==='prepare_note') return {text:`Save the note “${d.title||''}”. Confirm?`,chips:[d.title]};
-      return {text:'Read back before anything is written.',chips:[]};
-    }
-    function countdown(at){const s=Math.max(0,Math.round((at-Date.now())/1000));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
-    function renderRail() {
-      if(!rail) return;
-      const latest=state.entries.slice().reverse();
-      const draft=latest.find(e=>e.state==='draft');
-      const used=latest.find(e=>e.state==='submitted');
-      const write=latest.find(e=>writes.has(e.name)&&['saved','rejected','uncertain','pending'].includes(e.state));
-      if(said) setCell('said','is-live','“'+said+'”',''); else setCell('said','','Your words, as heard.','');
-      const source=draft||used;
-      if(source){const r=readback(source);setCell('readback',draft?'is-waiting':'is-live',r.text,'',r.chips);}
-      else setCell('readback','','Every write is read back: quantity, unit, description, bin.','',[]);
-      if(write&&write.state==='saved') {
-        const r=write.result||{};
-        const what=r.MBLNR?('Material document '+r.MBLNR+(r.reverses?' reverses '+r.reverses:'')):('Saved · '+(r.record?.id||''));
-        setCell('recorded','is-saved',what,r.new_stock_level!==undefined?`Stock now ${r.new_stock_level} ${r.MEINS||''}`:'');
-      } else if(write&&write.state==='rejected') {
-        const r=write.result||{};
-        setCell('recorded','is-refused','Refused. '+(r.duplicate?`This exact posting already went through as ${r.MBLNR}. Nothing was posted twice.`:(r.message||'Nothing was recorded.')),'');
-      } else if(write&&write.state==='uncertain') setCell('recorded','is-refused','Result uncertain. Records are checked before anything is tried again.','');
-      else if(write&&write.state==='pending') setCell('recorded','is-waiting','Posting…','');
-      else if(draft) setCell('recorded','','Nothing yet. Say yes to post it. Anything else posts nothing.',draft.expires?'Draft expires in '+countdown(draft.expires):'');
-      else setCell('recorded','','Nothing yet. Only a spoken yes posts the document.','');
-    }
-    const interval=setInterval(()=>{const was=state.entries.map(e=>e.state).join();state.expire();if(was!==state.entries.map(e=>e.state).join())render();else if(state.entries.some(e=>e.state==='draft'))renderRail();},1000);
+    const interval=setInterval(()=>{const was=state.entries.map(e=>e.state).join();state.expire();if(was!==state.entries.map(e=>e.state).join())render();else if(state.entries.some(e=>e.state==='draft'))render();},1000);
     render();
     return {
       state,render,
       begin(name,id,args){state.begin(name,id,args);render();},
       finish(name,result,failed,id){state.finish(name,result,failed,id);render();},
-      reset(){state.reset();said=null;render();},
-      said(text){said=typeof text==='string'&&text.trim()?text.trim():null;renderRail();},
+      reset(){state.reset();saidLog=[];render();},
+      said(text){if(typeof text==='string'&&text.trim()){saidLog.push({text:text.trim(),at:Date.now()});saidLog=saidLog.slice(-8);}renderStream();},
       invalidateDraft(){state.invalidateDraft();render();},
       dismissSuggestions(){state.suggestions=null;render();},
       setDirectory(list){directory=Array.isArray(list)?list:[];render();},

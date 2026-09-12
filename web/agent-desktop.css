@@ -263,9 +263,8 @@
  #warehouseWork:not([hidden]) {display:flex;flex-direction:column;align-items:stretch;}
  #warehouseWork #warehouseBrief {order:0;padding:20px 0 8px;}
  #warehouseWork #taskStrip {order:1;justify-content:flex-start;flex-wrap:wrap;padding:0 0 18px;}
- #warehouseWork .action-rail {order:2;}
- #warehouseWork .console-wrap {order:3;grid-template-columns:1fr;}
- #warehouseWork .work-signature {order:4;}
+ #warehouseWork .console-wrap {order:2;grid-template-columns:1fr;}
+ #warehouseWork .work-signature {order:3;}
  .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar {height:auto;min-height:65px;flex-wrap:wrap;padding:12px 0;gap:12px;}
  .warehouse-shell:has(#warehouseWork:not([hidden])) .work-brand {font-size:19px;}
  .warehouse-shell:has(#warehouseWork:not([hidden])) #warehouseBack {font-size:11px;}
@@ -328,7 +327,7 @@
 @media(min-width:761px) and (min-height:600px) {
  .warehouse-shell:has(#warehouseWork:not([hidden])) {height:100dvh;min-height:0;padding:0 24px 10px;display:flex;flex-direction:column;overflow:hidden;}
  .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar {height:54px;min-height:54px;margin:0;flex-shrink:0;}
- #warehouseWork:not([hidden]) {flex:1;min-height:0;grid-template-rows:92px auto minmax(0,1fr) 24px;}
+ #warehouseWork:not([hidden]) {flex:1;min-height:0;grid-template-rows:92px minmax(0,1fr) 24px;}
  #warehouseWork #warehouseBrief {padding:12px 12px;}
  #warehouseWork #warehouseBriefTitle {font-size:clamp(25px,2.5vw,36px);}
  #warehouseWork #warehouseBriefText {font-size:14px;}
@@ -407,40 +406,6 @@
 #warehouseWork #talkBtn {display:none;}
 #warehouseWork #orbHint {display:block;color:#49758f;font-size:12px;}
 
-/* The rail: said, read back, recorded. It is the product's argument made
-   visible before anyone speaks, in the place a judge looks first. Each cell
-   carries one state; the colours are the ones the workspace already uses for
-   waiting, saved and refused. */
-#warehouseWork .action-rail {grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid #dedfd9;border-radius:16px;background:#fff;overflow:hidden;margin:0 0 12px;box-shadow:0 12px 35px #23382b06;}
-.rail-cell {display:flex;flex-direction:column;gap:6px;padding:12px 18px;border-right:1px solid #e6e9e2;min-width:0;}
-.rail-cell:last-child {border-right:0;}
-.rail-eyebrow {display:flex;align-items:center;gap:8px;font:10px var(--mono);letter-spacing:.14em;color:#71806f;}
-.rail-eyebrow i {width:8px;height:8px;border-radius:50%;border:1.5px solid #b9c4b4;box-sizing:border-box;flex-shrink:0;}
-.rail-text {margin:0;font:14px/1.4 system-ui;color:#8b927f;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;}
-.rail-chips {display:flex;flex-wrap:wrap;gap:6px;min-height:0;}
-.rail-chips span {font-size:11px;padding:3px 8px;border-radius:999px;background:#edf1e8;color:#4d674f;}
-.rail-meta {font-size:11px;color:#8b927f;min-height:0;}
-.rail-cell.is-live .rail-text {color:#253b2c;}
-.rail-cell.is-live .rail-eyebrow i {background:#466642;border-color:#466642;}
-.rail-cell.is-waiting {background:#fffaf1;}
-.rail-cell.is-waiting .rail-text {color:#253b2c;}
-.rail-cell.is-waiting .rail-eyebrow {color:#a54b16;}
-.rail-cell.is-waiting .rail-eyebrow i {background:#e96935;border-color:#e96935;}
-.rail-cell.is-saved {background:#e9f1e4;}
-.rail-cell.is-saved .rail-text {color:#2f5e44;font-weight:600;}
-.rail-cell.is-saved .rail-eyebrow {color:#466642;}
-.rail-cell.is-saved .rail-eyebrow i {background:#3f8a5a;border-color:#3f8a5a;}
-.rail-cell.is-refused {background:#faece7;}
-.rail-cell.is-refused .rail-text {color:#9b5140;}
-.rail-cell.is-refused .rail-eyebrow {color:#9b5140;}
-.rail-cell.is-refused .rail-eyebrow i {background:#c9553f;border-color:#c9553f;}
-@media(max-width:760px) {
- #warehouseWork .action-rail {grid-template-columns:1fr;margin:0 0 14px;}
- .rail-cell {border-right:0;border-bottom:1px solid #e6e9e2;padding:10px 14px;}
- .rail-cell:last-child {border-bottom:0;}
- .rail-text {font-size:13px;-webkit-line-clamp:2;}
-}
-
 /* Record first. The empty workspace lists the last documents with the sentence
    behind each one a click away; the saved card says what the stock was and
    what it is now, and why the document exists. */
@@ -500,3 +465,119 @@
 .desktop-recent {margin-top:14px;}
 .recent-reason {display:flex;gap:10px;align-items:baseline;}
 .recent-reason-label {font:9px var(--mono);letter-spacing:.12em;color:#71806f;text-transform:uppercase;flex-shrink:0;}
+
+/* The desk and the stream. The record is a sheet on the left, whatever state
+   it is in; on the right, everything this action did with the time it did
+   it, then the orb and the three things that can be said. */
+@media(min-width:761px) {#warehouseWork .console-wrap {grid-template-columns:minmax(0,1fr) minmax(360px,.34fr);}}
+@media(min-width:1150px) {#warehouseWork .console-wrap {grid-template-columns:minmax(0,1fr) 420px;}}
+#warehouseWork .console-wrap>main {order:1;}
+#warehouseWork .voice-column {order:2;border-right:0;border-left:1px solid #e1e5df;background:#fafbf8;}
+#warehouseWork #agentDesktop {background:#fffdf7;border:1px solid #e3dfd2;border-radius:6px;box-shadow:0 30px 60px #3a3a2a10;padding:30px 36px 22px;}
+#agentDesktop .desk-sheet {position:relative;display:flex;flex-direction:column;gap:16px;min-height:100%;}
+#agentDesktop .desk-stamp {position:absolute;right:0;top:-6px;padding:8px 14px;border:3px solid #e96935;border-radius:6px;color:#e96935;font:800 14px/1 var(--mono);letter-spacing:.16em;transform:rotate(-9deg);opacity:.9;}
+#agentDesktop .desk-stamp.is-saved {border-color:#3f8a5a;color:#3f8a5a;}
+#agentDesktop .desk-stamp.is-refused {border-color:#c9553f;color:#c9553f;}
+#agentDesktop .desk-kicker {font:10px var(--mono);letter-spacing:.14em;color:#71806f;}
+#agentDesktop .desk-number {display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
+#agentDesktop .desk-number-label {font-size:13px;color:#7a8274;}
+#agentDesktop .desk-number-blank {font:28px var(--mono);letter-spacing:.08em;color:#c4c9bb;}
+#agentDesktop .desk-number-value {font:600 28px var(--mono);letter-spacing:.06em;color:#253b2c;}
+#agentDesktop .desk-number-note {font-size:12px;color:#8b927f;}
+#agentDesktop .desk-band {display:flex;flex-direction:column;gap:8px;padding:16px 18px;border:2px solid #e96935;border-radius:12px;background:#fff8ef;}
+#agentDesktop .desk-band.is-saved {border-color:#3f8a5a;background:#e9f1e4;}
+#agentDesktop .desk-band.is-refused {border-color:#c9553f;background:#faece7;}
+#agentDesktop .desk-band.is-idle {border:1px solid #dfe5d6;background:#f3f6ef;}
+#agentDesktop .desk-band-head {display:flex;align-items:center;justify-content:space-between;gap:12px;}
+#agentDesktop .desk-band-eyebrow {display:flex;align-items:center;gap:9px;font:10px var(--mono);letter-spacing:.14em;color:#a54b16;}
+#agentDesktop .desk-band.is-saved .desk-band-eyebrow {color:#2f5e44;}
+#agentDesktop .desk-band.is-refused .desk-band-eyebrow {color:#9b5140;}
+#agentDesktop .desk-band.is-idle .desk-band-eyebrow {color:#71806f;}
+#agentDesktop .desk-band-time {font:12px var(--mono);color:#a54b16;}
+#agentDesktop .desk-band.is-saved .desk-band-time {color:#2f5e44;}
+#agentDesktop .desk-band-big {margin:0;font:650 clamp(20px,2vw,30px)/1.2 system-ui;letter-spacing:-.03em;color:#253b2c;overflow-wrap:anywhere;}
+#agentDesktop .desk-band-ask {color:#a54b16;}
+#agentDesktop .desk-band-hint {font-size:13px;color:#6e7869;}
+.desk-dot {width:9px;height:9px;border-radius:50%;background:#b9c4b4;display:inline-block;flex-shrink:0;}
+.desk-dot.is-pulse {background:#e96935;animation:deskpulse 1.6s ease-out infinite;}
+.desk-dot.is-done {background:#3f8a5a;}
+.desk-dot.is-refused {background:#c9553f;}
+@keyframes deskpulse {0% {box-shadow:0 0 0 0 #e9693566;} 70% {box-shadow:0 0 0 12px #e9693500;} 100% {box-shadow:0 0 0 0 #e9693500;}}
+#agentDesktop .desk-fields {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+#agentDesktop .desk-field {display:flex;flex-direction:column;gap:4px;padding:12px 14px;border:1px solid #dfe5d6;border-radius:10px;min-width:0;}
+#agentDesktop .desk-field.is-wide {grid-column:span 2;}
+#agentDesktop .desk-field.is-confirming {border-color:#e96935;background:#fffaf1;}
+#agentDesktop .desk-field-label {display:flex;gap:8px;align-items:baseline;font-size:11px;color:#7a8274;}
+#agentDesktop .desk-field-hint {color:#3f8a5a;}
+#agentDesktop .desk-field.is-confirming .desk-field-hint {color:#a54b16;}
+#agentDesktop .desk-field-value {font:650 18px/1.2 system-ui;letter-spacing:-.03em;color:#253b2c;overflow-wrap:anywhere;}
+#agentDesktop .desk-why {display:flex;flex-direction:column;gap:4px;padding:12px 16px;background:#f3f6ef;border-radius:10px;border-left:3px solid #244b35;}
+#agentDesktop .desk-why small {font:9px var(--mono);letter-spacing:.14em;color:#71806f;}
+#agentDesktop .desk-why p {margin:0;font-size:15px;color:#253b2c;overflow-wrap:anywhere;}
+#agentDesktop .desk-quiet {margin:0;font-size:13px;color:#8b927f;}
+#agentDesktop .desk-ledger {margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:14px;border-top:1px solid #e8ebe3;}
+#agentDesktop .desk-ledger-head {display:flex;align-items:center;justify-content:space-between;}
+#agentDesktop .desk-ledger-head small {font:10px var(--mono);letter-spacing:.14em;color:#71806f;}
+#agentDesktop .desk-ledger-note {font-size:12px;font-weight:600;color:#244b35;}
+#agentDesktop .desk-stub {display:flex;align-items:center;gap:12px;padding:8px 12px;background:#f3f6ef;border-radius:10px;font-size:12px;flex-wrap:wrap;}
+#agentDesktop .desk-stub-number {font:12px var(--mono);color:#253b2c;}
+#agentDesktop .desk-stub-what {color:#52634e;flex:1;min-width:0;}
+#agentDesktop .desk-stub-why {border:0;background:none;padding:0;font:600 12px system-ui;color:#244b35;cursor:pointer;}
+#agentDesktop .desk-stub-why:disabled {color:#9aa697;}
+#agentDesktop .desk-stub-reason {flex-basis:100%;margin:0;display:flex;gap:10px;align-items:baseline;font-size:12px;color:#2f5e44;overflow-wrap:anywhere;}
+#agentDesktop .desk-stub-reason-label {font:9px var(--mono);letter-spacing:.12em;color:#71806f;text-transform:uppercase;flex-shrink:0;}
+#agentDesktop .desktop-reach {margin:6px 0 0;padding:0;border:0;}
+#agentDesktop .desktop-footnote {margin:6px 0 0;text-align:left;border:0;padding:0;}
+#agentDesktop .desktop-device {margin:0;}
+/* the stream */
+/* The stream scrolls inside its own box, newest at the bottom, so the orb
+   and the three answers under it never leave the screen however long the
+   action runs. Shrinking the box instead let the items spill over the orb. */
+#warehouseWork .action-stream {display:flex;flex-direction:column;gap:0;margin:18px 22px 0;padding:18px 20px 6px;background:#fffdf7;border:1px solid #e3dfd2;border-radius:18px;flex:1 1 auto;min-height:150px;overflow:auto;overscroll-behavior:contain;}
+#warehouseWork #voiceSuggestions,#warehouseWork .console-wrap header {flex-shrink:0;}
+#warehouseWork .action-stream:empty {display:none;}
+.stream-head {display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.stream-head small {font:10px var(--mono);letter-spacing:.14em;color:#71806f;}
+.stream-live {display:flex;align-items:center;gap:7px;font:10px var(--mono);letter-spacing:.12em;color:#3f8a5a;}
+.stream-live.is-ready {color:#8b927f;}
+.stream-list {display:flex;flex-direction:column;position:relative;padding-left:78px;}
+.stream-list:before {content:'';position:absolute;left:59px;top:8px;bottom:26px;width:2px;background:#dfe5d6;}
+.stream-item {position:relative;padding-bottom:14px;}
+.stream-item.is-link {cursor:pointer;}
+.stream-time {position:absolute;left:-78px;top:1px;width:50px;font:11px var(--mono);color:#8b927f;}
+.stream-item.is-wait .stream-time {color:#a54b16;}
+.stream-item.is-next .stream-time {color:#b9c4b4;}
+.stream-dot {position:absolute;left:-25px;top:3px;width:12px;height:12px;border-radius:50%;background:#3f8a5a;border:2px solid #fffdf7;box-sizing:content-box;}
+.stream-item.is-wait .stream-dot {background:#e96935;animation:deskpulse 1.6s ease-out infinite;}
+.stream-item.is-refused .stream-dot {background:#c9553f;}
+.stream-item.is-next .stream-dot {background:#fffdf7;border-color:#c9d0c3;}
+.stream-title {font:600 13px system-ui;color:#253b2c;}
+.stream-item.is-wait .stream-title {color:#a54b16;}
+.stream-item.is-next .stream-title,.stream-item.is-next .stream-text {color:#8b927f;}
+.stream-text {font-size:13px;color:#52634e;overflow-wrap:anywhere;}
+/* the voice card under the stream */
+#warehouseWork .console-wrap header,#warehouseWork header:has(#talkBtn.live) {margin:14px 22px 0;padding:16px 18px 12px;background:#fffdf7;border:1px solid #e3dfd2;border-radius:18px;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:14px;row-gap:2px;align-items:center;justify-items:start;}
+#warehouseWork .console-wrap header #voiceOrbButton,#warehouseWork header:has(#talkBtn.live) #voiceOrbButton {grid-column:1;grid-row:1/3;width:64px;height:64px;margin:0;}
+#warehouseWork .console-wrap header #voiceOrbButton #orb {width:56px;height:56px;}
+#warehouseWork #dot {grid-column:2;grid-row:1;}
+#warehouseWork #status {grid-column:2;grid-row:1;margin-left:16px;font-size:14px;}
+#warehouseWork #orbHint {grid-column:2;grid-row:2;margin:0;}
+#warehouseWork .voice-credit {grid-column:2;grid-row:2;justify-self:end;margin:0;}
+#warehouseWork #voiceSuggestions {margin:0 22px;padding:12px 18px 14px;border:1px solid #e3dfd2;border-top:0;border-radius:0 0 18px 18px;background:#fffdf7;display:flex;flex-direction:column;gap:6px;}
+#warehouseWork #voiceSuggestions>span {margin:0 0 2px;}
+#warehouseWork #voiceSuggestions q {display:block;padding:10px 14px;border:1px solid #d9d5c8;border-radius:12px;background:#fffdf7;font:15px/1.3 system-ui;color:#253b2c;}
+#warehouseWork #voiceSuggestions q:first-of-type {background:#244b35;border-color:#244b35;color:#fff;font-weight:600;}
+#warehouseWork .console-wrap header {margin-top:14px;border-radius:18px 18px 0 0;}
+#warehouseWork .console-wrap #conversationDetails {margin:12px 22px 0;border:0;padding:0!important;}
+#warehouseWork #log {height:auto;max-height:180px;}
+@media(max-width:760px) {
+ #warehouseWork .console-wrap>main {order:1;}
+ #warehouseWork .voice-column {order:2;border-left:0;border-top:1px solid #e1e5df;}
+ #warehouseWork #agentDesktop {padding:20px 16px 16px;}
+ #agentDesktop .desk-fields {grid-template-columns:repeat(2,minmax(0,1fr));}
+ /* On a phone the stamp has no corner to sit in without covering the kicker,
+    so it takes its own line, right-aligned, and keeps only a little tilt. */
+ #agentDesktop .desk-stamp {position:static;align-self:flex-end;font-size:11px;padding:6px 10px;transform:rotate(-4deg);margin:-4px 4px -6px 0;}
+ #agentDesktop .desk-number-blank {font-size:16px;letter-spacing:.04em;}
+ #warehouseWork .action-stream,#warehouseWork .console-wrap header,#warehouseWork #voiceSuggestions,#warehouseWork .console-wrap #conversationDetails {margin-left:14px;margin-right:14px;}
+}
