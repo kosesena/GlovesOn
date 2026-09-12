@@ -1147,7 +1147,7 @@ def og_card() -> FileResponse:
 
 @app.get("/assets/{scene}.png", include_in_schema=False)
 def scenario_image(scene: str) -> FileResponse:
-    if scene not in {"warehouse-3d", "warehouse-interior", "hero-scene"}:
+    if scene not in {"warehouse-3d", "warehouse-interior", "hero-scene", "workspace-parcel-studio", "hex-bolts-studio"}:
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(WEB_DIR / "assets" / f"{scene}.png",
                         headers={"Cache-Control": "public, max-age=86400"})
