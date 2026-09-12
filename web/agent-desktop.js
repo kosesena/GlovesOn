@@ -55,8 +55,12 @@
       }
     }
   }
-  function mount(host,onChoice) {
+  function mount(host,onChoice,options) {
     const state=new DesktopState();
+    // The rail above the workspace: what the worker said, what was read back,
+    // what was recorded. Optional, so the module still mounts without it.
+    const rail=options?.rail||null;
+    let said=null;
     // Who exists, for the empty screen. Fetched by the page, never invented here.
     let directory=[];
     let selectedView="erp";
@@ -213,14 +217,62 @@
         add(host,contacts);
       }
       add(host,node('p','desktop-footnote','Live tool results · demo records only. No real SAP, email delivery or phone connection.'));
+      renderRail();
     }
-    const interval=setInterval(()=>{const was=state.entries.map(e=>e.state).join();state.expire();if(was!==state.entries.map(e=>e.state).join())render();},1000);
+    // --- The rail --------------------------------------------------------
+    // Three cells, always present, so the discipline is visible before anyone
+    // speaks. The read-back cell draws from the tool's returned details, which
+    // are the facts the agent is required to read aloud; the exact spoken
+    // sentence stays in the transcript. Nothing here is invented from the
+    // model's reply.
+    function cell(key){return rail?rail.querySelector('[data-cell="'+key+'"]'):null;}
+    function setCell(key,cls,text,meta,chips) {
+      const el=cell(key); if(!el) return;
+      el.className='rail-cell'+(cls?' '+cls:'');
+      el.querySelector('.rail-text').textContent=text;
+      const m=el.querySelector('.rail-meta'); if(m) m.textContent=meta||'';
+      const c=el.querySelector('.rail-chips'); if(c){c.replaceChildren();for(const chip of chips||[]) if(chip) add(c,node('span','',chip));}
+    }
+    function readback(entry) {
+      const d=entry.result?.details||{}, who=d.recipient?.name;
+      if(entry.name==='prepare_reversal') return {text:`Reverse document ${d.document||d.reverses||'—'}: ${words(d.MENGE)} ${d.MEINS||''} of ${d.MAKTX||'—'} back out of bin ${d.LGPLA||'—'}. Confirm?`,chips:[d.MENGE!==undefined?`${d.MENGE} ${d.MEINS||''}`:'',d.MAKTX,d.LGPLA?'Bin '+d.LGPLA:'']};
+      if(entry.name==='prepare_goods_receipt') return {text:`${words(d.MENGE)} ${d.MEINS||''} of ${d.MAKTX||'—'} into bin ${d.LGPLA||'—'}. Confirm?`,chips:[d.MENGE!==undefined?`${d.MENGE} ${d.MEINS||''}`:'',d.MAKTX,d.LGPLA?'Bin '+d.LGPLA:'']};
+      if(entry.name==='prepare_email') return {text:`Email ${who||'—'}: “${d.subject||''}”. Confirm?`,chips:[who?'To '+who:'',d.subject]};
+      if(entry.name==='prepare_call') return {text:`Call ${who||'—'}${d.purpose?' about '+d.purpose:''}. Confirm?`,chips:[who?'Call '+who:'',d.purpose]};
+      if(entry.name==='prepare_note') return {text:`Save the note “${d.title||''}”. Confirm?`,chips:[d.title]};
+      return {text:'Read back before anything is written.',chips:[]};
+    }
+    function countdown(at){const s=Math.max(0,Math.round((at-Date.now())/1000));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
+    function renderRail() {
+      if(!rail) return;
+      const latest=state.entries.slice().reverse();
+      const draft=latest.find(e=>e.state==='draft');
+      const used=latest.find(e=>e.state==='submitted');
+      const write=latest.find(e=>writes.has(e.name)&&['saved','rejected','uncertain','pending'].includes(e.state));
+      if(said) setCell('said','is-live','“'+said+'”',''); else setCell('said','','Your words, as heard.','');
+      const source=draft||used;
+      if(source){const r=readback(source);setCell('readback',draft?'is-waiting':'is-live',r.text,'',r.chips);}
+      else setCell('readback','','Every write is read back first: quantity, unit, description, bin.','',[]);
+      if(write&&write.state==='saved') {
+        const r=write.result||{};
+        const what=r.MBLNR?('Material document '+r.MBLNR+(r.reverses?' reverses '+r.reverses:'')):('Saved · '+(r.record?.id||''));
+        setCell('recorded','is-saved',what,r.new_stock_level!==undefined?`Stock now ${r.new_stock_level} ${r.MEINS||''}`:'');
+      } else if(write&&write.state==='rejected') {
+        const r=write.result||{};
+        setCell('recorded','is-refused','Refused. '+(r.duplicate?`This exact posting already went through as ${r.MBLNR}. Nothing was posted twice.`:(r.message||'Nothing was recorded.')),'');
+      } else if(write&&write.state==='uncertain') setCell('recorded','is-refused','Result uncertain. Records are checked before anything is tried again.','');
+      else if(write&&write.state==='pending') setCell('recorded','is-waiting','Posting…','');
+      else if(draft) setCell('recorded','','Nothing yet. Say yes to post it. Anything else posts nothing.',draft.expires?'Draft expires in '+countdown(draft.expires):'');
+      else setCell('recorded','','Nothing yet. A spoken yes posts the document. Anything else posts nothing.','');
+    }
+    const interval=setInterval(()=>{const was=state.entries.map(e=>e.state).join();state.expire();if(was!==state.entries.map(e=>e.state).join())render();else if(state.entries.some(e=>e.state==='draft'))renderRail();},1000);
     render();
     return {
       state,render,
       begin(name,id){state.begin(name,id);render();},
       finish(name,result,failed,id){state.finish(name,result,failed,id);render();},
-      reset(){state.reset();selectedView="erp";render();},
+      reset(){state.reset();said=null;selectedView="erp";render();},
+      said(text){said=typeof text==='string'&&text.trim()?text.trim():null;renderRail();},
       invalidateDraft(){state.invalidateDraft();render();},
       dismissSuggestions(){state.suggestions=null;render();},
       setDirectory(list){directory=Array.isArray(list)?list:[];render();},

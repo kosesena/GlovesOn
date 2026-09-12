@@ -263,8 +263,9 @@
  #warehouseWork:not([hidden]) {display:flex;flex-direction:column;align-items:stretch;}
  #warehouseWork #warehouseBrief {order:0;padding:20px 0 8px;}
  #warehouseWork #taskStrip {order:1;justify-content:flex-start;flex-wrap:wrap;padding:0 0 18px;}
- #warehouseWork .console-wrap {order:2;grid-template-columns:1fr;}
- #warehouseWork .work-signature {order:3;}
+ #warehouseWork .action-rail {order:2;}
+ #warehouseWork .console-wrap {order:3;grid-template-columns:1fr;}
+ #warehouseWork .work-signature {order:4;}
  .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar {height:auto;min-height:65px;flex-wrap:wrap;padding:12px 0;gap:12px;}
  .warehouse-shell:has(#warehouseWork:not([hidden])) .work-brand {font-size:19px;}
  .warehouse-shell:has(#warehouseWork:not([hidden])) #warehouseBack {font-size:11px;}
@@ -327,7 +328,7 @@
 @media(min-width:761px) and (min-height:600px) {
  .warehouse-shell:has(#warehouseWork:not([hidden])) {height:100dvh;min-height:0;padding:0 24px 10px;display:flex;flex-direction:column;overflow:hidden;}
  .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar {height:54px;min-height:54px;margin:0;flex-shrink:0;}
- #warehouseWork:not([hidden]) {flex:1;min-height:0;grid-template-rows:92px minmax(0,1fr) 24px;}
+ #warehouseWork:not([hidden]) {flex:1;min-height:0;grid-template-rows:92px auto minmax(0,1fr) 24px;}
  #warehouseWork #warehouseBrief {padding:12px 12px;}
  #warehouseWork #warehouseBriefTitle {font-size:clamp(25px,2.5vw,36px);}
  #warehouseWork #warehouseBriefText {font-size:14px;}
@@ -405,3 +406,37 @@
 /* The orb is the single visible session control. */
 #warehouseWork #talkBtn {display:none;}
 #warehouseWork #orbHint {display:block;color:#49758f;font-size:12px;}
+
+/* The rail: said, read back, recorded. It is the product's argument made
+   visible before anyone speaks, in the place a judge looks first. Each cell
+   carries one state; the colours are the ones the workspace already uses for
+   waiting, saved and refused. */
+#warehouseWork .action-rail {grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid #dedfd9;border-radius:16px;background:#fff;overflow:hidden;margin:0 0 12px;box-shadow:0 12px 35px #23382b06;}
+.rail-cell {display:flex;flex-direction:column;gap:6px;padding:12px 18px;border-right:1px solid #e6e9e2;min-width:0;}
+.rail-cell:last-child {border-right:0;}
+.rail-eyebrow {display:flex;align-items:center;gap:8px;font:10px var(--mono);letter-spacing:.14em;color:#71806f;}
+.rail-eyebrow i {width:8px;height:8px;border-radius:50%;border:1.5px solid #b9c4b4;box-sizing:border-box;flex-shrink:0;}
+.rail-text {margin:0;font:14px/1.4 system-ui;color:#8b927f;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;}
+.rail-chips {display:flex;flex-wrap:wrap;gap:6px;min-height:0;}
+.rail-chips span {font-size:11px;padding:3px 8px;border-radius:999px;background:#edf1e8;color:#4d674f;}
+.rail-meta {font-size:11px;color:#8b927f;min-height:0;}
+.rail-cell.is-live .rail-text {color:#253b2c;}
+.rail-cell.is-live .rail-eyebrow i {background:#466642;border-color:#466642;}
+.rail-cell.is-waiting {background:#fffaf1;}
+.rail-cell.is-waiting .rail-text {color:#253b2c;}
+.rail-cell.is-waiting .rail-eyebrow {color:#a54b16;}
+.rail-cell.is-waiting .rail-eyebrow i {background:#e96935;border-color:#e96935;}
+.rail-cell.is-saved {background:#e9f1e4;}
+.rail-cell.is-saved .rail-text {color:#2f5e44;font-weight:600;}
+.rail-cell.is-saved .rail-eyebrow {color:#466642;}
+.rail-cell.is-saved .rail-eyebrow i {background:#3f8a5a;border-color:#3f8a5a;}
+.rail-cell.is-refused {background:#faece7;}
+.rail-cell.is-refused .rail-text {color:#9b5140;}
+.rail-cell.is-refused .rail-eyebrow {color:#9b5140;}
+.rail-cell.is-refused .rail-eyebrow i {background:#c9553f;border-color:#c9553f;}
+@media(max-width:760px) {
+ #warehouseWork .action-rail {grid-template-columns:1fr;margin:0 0 14px;}
+ .rail-cell {border-right:0;border-bottom:1px solid #e6e9e2;padding:10px 14px;}
+ .rail-cell:last-child {border-bottom:0;}
+ .rail-text {font-size:13px;-webkit-line-clamp:2;}
+}
