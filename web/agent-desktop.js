@@ -160,7 +160,7 @@
     const stateText={pending:'Working…',draft:'Your confirmation needed',saved:'Saved',read:'Checked',rejected:'Needs attention',error:'Could not finish',uncertain:'Result uncertain',expired:'Draft expired',superseded:'Draft replaced',submitted:'Draft used',stopped:'Stopped'};
     function render() {
       state.expire(); host.replaceChildren();
-      add(host,add(node('div','desktop-heading'),add(node('div'),node('h2','',"Lena’s workspace"),node('p','','Your systems, ready when you are.')),badge('Demo')));
+      add(host,add(node('div','desktop-heading'),add(node('div'),node('h2','',"Lena’s workspace"),node('p','','Tool results and records')),badge('Demo')));
       const devices=add(node('div','desktop-tabs'));
       const icons={erp:'M4 4h16v5H4z M4 10h16v5H4z M4 16h16v5H4z M7 6.5h.1 M7 12.5h.1 M7 18.5h.1',phone:'M5 3l4 4-2 3c2 3 4 5 7 6l3-2 4 4-2 3C10 22 2 14 2 6z',email:'M3 5h18v14H3z M3 6l9 7 9-7',note:'M5 3h14v18H5z M8 7h8 M8 11h8 M8 15h5'};
       devices.setAttribute('aria-label','Workspace views');
@@ -173,8 +173,7 @@
       }
       add(host,devices);
       if(!state.current) {
-        const empty=add(node('div','desktop-empty'),node('div','desktop-empty-symbol',''),node('h3','',selectedView==='erp'?'Ready for your first delivery':({phone:'Your work phone',email:'Your demo outbox',note:'Your incident notes'})[selectedView]),node('p','',selectedView==='erp'?'Stock checks and receipt details appear here.':'Ask GlovesOn to prepare a '+({phone:'demo call',email:'message',note:'note'})[selectedView]+'. Review the details before confirming.'));
-        const steps=node('div','desktop-steps');for(const [i,label] of ['Speak','Review','Confirm'].entries())add(steps,add(node('div'),node('span','',String(i+1).padStart(2,'0')),node('small','',label)));add(empty,steps);
+        const empty=add(node('div','desktop-empty'),node('h3','',selectedView==='erp'?'No operation yet':({phone:'Your work phone',email:'Your demo outbox',note:'Your incident notes'})[selectedView]),node('p','',selectedView==='erp'?'Stock checks and receipt details appear here.':'Ask GlovesOn to prepare a '+({phone:'demo call',email:'message',note:'note'})[selectedView]+'. Review the details before confirming.'));
         add(host,empty);
       } else {
         const entry=state.current;

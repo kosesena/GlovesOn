@@ -372,3 +372,26 @@
  .receipt-draft .desktop-fields dd {font-size:23px;}
  .receipt-draft .desktop-notice {padding:12px;margin-top:12px;font-size:13px;}
 }
+
+/* Distinct roles: a blue conversation surface beside a white work canvas. */
+#warehouseWork .voice-column {background:linear-gradient(155deg,#eaf5fb 0%,#f1f7fa 60%,#f7fafc 100%);border-right-color:#dce7eb;}
+#warehouseWork .voice-heading h2 {font-size:24px;letter-spacing:-.035em;}
+#warehouseWork .voice-heading small {color:#6f8998;}
+#warehouseWork #voiceSuggestions q,.suggestion-dots {background:#ffffffa6;}
+#warehouseWork .console-wrap #conversationDetails,#warehouseWork #voiceSuggestions {border-top-color:#dce8ee;}
+#warehouseWork #agentDesktop {background:#fff;}
+#agentDesktop .desktop-heading {align-items:center;margin-bottom:8px;padding-bottom:12px;border-bottom:1px solid #edf0eb;}
+#agentDesktop .desktop-heading h2 {font-size:19px;font-weight:600;letter-spacing:-.025em;}
+#agentDesktop .desktop-heading p {font-size:11px;margin-top:4px;color:#869187;}
+#agentDesktop .desktop-heading .desktop-badge {font-size:10px;padding:4px 10px;border-radius:8px;}
+#agentDesktop .desktop-tabs {background:#fafbf9;border:1px solid #edf0eb;border-radius:10px;padding:0 6px;flex-shrink:0;}
+#agentDesktop .desktop-tabs button {font-size:12px;padding:12px 6px;}
+#agentDesktop .device-tab-icon svg {width:18px;height:18px;}
+#agentDesktop .desktop-empty {align-items:flex-start;justify-content:flex-start;text-align:left;padding:32px 12px;min-height:120px;flex:1;}
+#agentDesktop .desktop-empty h3 {font:500 17px/1.4 system-ui;letter-spacing:-.015em;margin:0 0 7px;color:#6a786e;}
+#agentDesktop .desktop-empty p {font-size:13px;max-width:370px;color:#8a958d;}
+#agentDesktop .desktop-device {margin-top:18px;}
+#agentDesktop .desktop-contacts {background:#fff;}
+@media(max-width:760px) {
+ #warehouseWork .voice-column {border-right:0;border-bottom:1px solid #dce7eb;}
+}
