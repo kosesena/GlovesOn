@@ -396,9 +396,9 @@
  #warehouseWork .voice-column {border-right:0;border-bottom:1px solid #dce7eb;}
 }
 
-/* Suggestions share the voice orb's soft blue palette. */
+/* Let the voice panel's blue background continue through suggestions. */
 #warehouseWork #voiceSuggestions>span {color:#49758f;}
-#warehouseWork #voiceSuggestions q {background:linear-gradient(120deg,#d6effb,#c5e3fa);color:#294f68;}
+#warehouseWork #voiceSuggestions q {background:transparent;color:#294f68;}
 #warehouseWork #voiceSuggestions .suggestion-dots {display:none;}
 #warehouseWork #voiceSuggestions q {border-radius:15px;padding:15px 12px;}
 
