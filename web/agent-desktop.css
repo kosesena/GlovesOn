@@ -401,3 +401,7 @@
 #warehouseWork #voiceSuggestions q {background:linear-gradient(120deg,#d6effb,#c5e3fa);color:#294f68;}
 #warehouseWork #voiceSuggestions .suggestion-dots {display:none;}
 #warehouseWork #voiceSuggestions q {border-radius:15px;padding:15px 12px;}
+
+/* The orb is the single visible session control. */
+#warehouseWork #talkBtn {display:none;}
+#warehouseWork #orbHint {display:block;color:#49758f;font-size:12px;}
