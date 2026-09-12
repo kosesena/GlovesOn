@@ -246,7 +246,7 @@
         const text=entry.state==='uncertain'?'The result could not be verified. Records are checked before anything is tried again.':(r.duplicate?`This exact posting already went through as ${r.MBLNR}. Nothing was posted twice.`:(typeof r.message==='string'?r.message:'Nothing was recorded.'));
         add(sheet,add(node('div','desk-band is-refused'),add(node('div','desk-band-head'),add(node('span','desk-band-eyebrow'),node('i','desk-dot is-refused'),node('span','',entry.state==='uncertain'?'RESULT UNCERTAIN':'REFUSED · '+clock(entry.doneAt||Date.now())))),node('p','desk-band-big',text),node('span','desk-band-hint','Nothing is recorded. A new read-back starts from what you say next.')));
       } else if(!entry) {
-        add(sheet,add(node('div','desk-band is-idle'),add(node('div','desk-band-head'),add(node('span','desk-band-eyebrow'),node('i','desk-dot'),node('span','','NOTHING ON THE TABLE'))),node('p','desk-band-big','Say what arrived.'),node('span','desk-band-hint','Lena looks the material up, reads the receipt back, and writes nothing until you say yes.')));
+        add(sheet,add(node('div','desk-band is-idle'),add(node('div','desk-band-head'),add(node('span','desk-band-eyebrow'),node('i','desk-dot is-pulse'),node('span','','NOTHING ON THE TABLE'))),node('p','desk-band-big','Say what arrived.'),node('span','desk-band-hint','Lena looks the material up, reads the receipt back, and writes nothing until you say yes.')));
       }
       // The body: the document's fields, or the device the action lives on.
       if(entry&&c==='erp'&&(entry.state==='draft'&&isPrepare(entry)||entry.state==='saved'&&isWrite(entry)||['rejected','uncertain'].includes(entry.state)&&isWrite(entry))) {
@@ -365,7 +365,7 @@
       if(!items.length) {
         const kinds={'101':'Posted earlier','501':'Posted earlier','102':'Reversed earlier','502':'Reversed earlier'};
         for(const d of recent.slice(0,3).reverse()) add(list,add(node('div','stream-item is-past'),node('span','stream-time',d.created_at?dayOrClock(Number(d.created_at)*1000):''),node('i','stream-dot'),node('div','stream-title',kinds[String(d.BWART)]||'Earlier'),node('div','stream-text',`Material document ${d.MBLNR} · ${words(d.MENGE)} ${d.MEINS||''} ${d.MATNR}`)));
-        add(list,add(node('div','stream-item is-next'),node('span','stream-time','now'),node('i','stream-dot'),node('div','stream-title','You said'),node('div','stream-text','Say what arrived; it appears here with the time.')));
+        add(list,add(node('div','stream-item is-wait'),node('span','stream-time','now'),node('i','stream-dot'),node('div','stream-title','You said'),node('div','stream-text','Say what arrived; it appears here with the time.')));
       }
       for(const it of items) {
         const row=add(node('div','stream-item is-'+it.tone),node('span','stream-time',clock(it.at)),node('i','stream-dot'),node('div','stream-title',it.title),node('div','stream-text',it.text));
