@@ -29,12 +29,18 @@
   class DesktopState {
     constructor() { this.reset(); }
     reset() { this.entries=[]; this.current=null; this.suggestions=null; }
-    begin(name,id) {
+    begin(name,id,args) {
       if (this.entries.some(e=>e.id===id)) return;
+      // The arguments carry the sentence the agent reports as confirmed; the
+      // saved card shows it as the reason the document exists. Reported, not
+      // proven — the judge guide says so — but it is what the audit row holds.
+      let parsed=args;
+      if(typeof args==='string'){try{parsed=JSON.parse(args);}catch{parsed=null;}}
+      if(!parsed||typeof parsed!=='object') parsed=null;
       // A new preparation replaces the only pending draft, across every device.
       if (name.startsWith('prepare_') || writes.has(name)) for (const entry of this.entries) if(entry.state==='draft') entry.state=writes.has(name)?'submitted':'superseded';
       if (/^prepare_(email|call|note)$/.test(name)) this.suggestions=null;
-      const entry={name,id,state:'pending',result:null};
+      const entry={name,id,state:'pending',result:null,args:parsed};
       this.entries.push(entry); this.entries=this.entries.slice(-20); this.current=entry;
     }
     finish(name,result,failed,id) {
@@ -60,10 +66,10 @@
     // The rail above the workspace: what the worker said, what was read back,
     // what was recorded. Optional, so the module still mounts without it.
     const rail=options?.rail||null;
-    let said=null;
+    const provenance=typeof options?.provenance==='function'?options.provenance:null;
+    let said=null, recent=[];
     // Who exists, for the empty screen. Fetched by the page, never invented here.
     let directory=[];
-    let selectedView="erp";
     const node=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e;};
     const add=(parent,...children)=>{parent.append(...children.filter(Boolean));return parent;};
     const words=value=>value === undefined || value === null || value === '' ? '—' : String(value);
@@ -152,6 +158,15 @@
         add(screen,steps);
       } else if(entry.state==='saved' && result.MBLNR) {
         add(screen,node('small','document-kicker','MATERIAL DOCUMENT'),node('h3','',result.reversed?'Reversal recorded':'Receipt recorded'),badge('SAVED IN MOCK ERP'),recordFields(result));
+        // Before is derived from after and the quantity: a receipt adds, a
+        // reversal takes back out. Both numbers come from the same tool result.
+        if(result.new_stock_level!==undefined && result.MENGE!==undefined) {
+          const after=Number(result.new_stock_level), qty=Number(result.MENGE);
+          const before=result.reversed?after+qty:after-qty;
+          add(screen,node('p','record-stock',`Stock ${before} → ${after} ${result.MEINS||''}`));
+        }
+        const why=entry.args?.confirmed_utterance;
+        if(why) add(screen,add(node('div','record-why'),node('small','','WHY THIS DOCUMENT EXISTS'),node('p','','“'+String(why)+'”')));
       } else if(entry.name==='suggest_follow_up') {
         add(screen,node('h3','','A next step for this delivery'),notice('Choose how you would like to follow up. No action has been taken.'));
       } else if(entry.name==='search_mm_knowledge') {
@@ -165,20 +180,31 @@
     function render() {
       state.expire(); host.replaceChildren();
       add(host,add(node('div','desktop-heading'),add(node('div'),node('h2','',"Lena’s workspace"),node('p','','Tool results and records')),badge('Demo')));
-      const devices=add(node('div','desktop-tabs'));
-      const icons={erp:'M4 4h16v5H4z M4 10h16v5H4z M4 16h16v5H4z M7 6.5h.1 M7 12.5h.1 M7 18.5h.1',phone:'M5 3l4 4-2 3c2 3 4 5 7 6l3-2 4 4-2 3C10 22 2 14 2 6z',email:'M3 5h18v14H3z M3 6l9 7 9-7',note:'M5 3h14v18H5z M8 7h8 M8 11h8 M8 15h5'};
-      devices.setAttribute('aria-label','Workspace views');
-      for(const [key,label] of [['erp','ERP'],['phone','Phone'],['email','Email'],['note','Notes']]) {
-        const button=node('button',''); const icon=node('span','device-tab-icon');icon.setAttribute('aria-hidden','true');icon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="'+icons[key]+'"/></svg>';add(button,icon,node('span','',label));button.type='button';button.dataset.view=key;
-        const current=state.current?category(state.current.name):selectedView;
-        button.setAttribute('aria-pressed',String(current===key));
-        button.onclick=()=>{selectedView=key;state.current=state.entries.slice().reverse().find(e=>category(e.name)===key)||null;render();host.querySelector('[data-view="'+key+'"]')?.focus({preventScroll:true});};
-        add(devices,button);
-      }
-      add(host,devices);
+      // No device tabs: the worker never chooses a device, the tool does. The
+      // card shows whatever the current action is, and earlier ones are reached
+      // through the session activity list below.
       if(!state.current) {
-        const empty=add(node('div','desktop-empty'),node('h3','',selectedView==='erp'?'No operation yet':({phone:'Your work phone',email:'Your demo outbox',note:'Your incident notes'})[selectedView]),node('p','',selectedView==='erp'?'Stock checks and receipt details appear here.':'Ask GlovesOn to prepare a '+({phone:'demo call',email:'message',note:'note'})[selectedView]+'. Review the details before confirming.'));
+        const empty=add(node('div','desktop-empty'),node('h3','','No document yet'),node('p','','What you confirm appears here as the record it becomes: a material document, a demo call, a message or a note.'));
         add(host,empty);
+        // Evidence that the system has done things, even on a quiet day: the
+        // last documents in the mock ERP, each with the sentence behind it one
+        // click away. This is the receipts idea, on the screen itself.
+        if(recent.length) {
+          const list=add(node('section','desktop-recent'),node('small','','RECENT DOCUMENTS · WHY EACH ONE EXISTS'));
+          for(const d of recent.slice(0,4)) {
+            const row=node('div','recent-row');
+            add(row,node('span','recent-number',d.MBLNR),node('span','recent-type',d.BWART),node('span','recent-what',`${words(d.MENGE)} ${d.MEINS||''} · material ${d.MATNR}${d.LGPLA?' · bin '+d.LGPLA:''}`));
+            if(provenance) {
+              const why=node('button','recent-why','why ↗');why.type='button';
+              why.onclick=async()=>{why.disabled=true;let row_=null;try{row_=await provenance(d.MBLNR);}catch{row_=null;}
+                const said=row_?.voice?.utterance;const line=node('p','recent-reason',said?('“'+said+'”'):'No provenance row for this document.');
+                row.after(line);why.remove();};
+              add(row,why);
+            }
+            add(list,row);
+          }
+          add(host,list);
+        }
       } else {
         const entry=state.current;
         add(host,add(node('div','desktop-status '+entry.state),node('span','',labels[entry.name]||'Workspace'),node('strong','',stateText[entry.state])));
@@ -207,15 +233,11 @@
         const history=node('details','desktop-activity');add(history,node('summary','','Session activity · '+state.entries.length));
         const list=node('ol');
         for(const e of state.entries.slice().reverse()) {
-          const button=node('button','',`${labels[e.name]||e.name} · ${stateText[e.state]}`);button.type='button';button.onclick=()=>{selectedView=key;state.current=e;render();};add(list,add(node('li'),button));
+          const button=node('button','',`${labels[e.name]||e.name} · ${stateText[e.state]}`);button.type='button';button.onclick=()=>{state.current=e;render();};add(list,add(node('li'),button));
         }add(history,list);add(host,history);
       }
-      {
-        const contacts=add(node('details','desktop-contacts'),node('summary','','Work contacts'));
-        if(!directory.length)add(contacts,node('p','','Start a conversation to load your demo work directory.'));
-        for(const person of directory) add(contacts,node('p','',person.name+' · '+person.role+' · Ext. '+person.extension));
-        add(host,contacts);
-      }
+      // Who can be reached, in one line, instead of a drawer to open.
+      if(directory.length) add(host,node('p','desktop-reach','REACH · '+directory.map(person=>person.name+' ('+person.role.toLowerCase()+')').join(' · ')));
       add(host,node('p','desktop-footnote','Live tool results · demo records only. No real SAP, email delivery or phone connection.'));
       renderRail();
     }
@@ -269,13 +291,14 @@
     render();
     return {
       state,render,
-      begin(name,id){state.begin(name,id);render();},
+      begin(name,id,args){state.begin(name,id,args);render();},
       finish(name,result,failed,id){state.finish(name,result,failed,id);render();},
-      reset(){state.reset();said=null;selectedView="erp";render();},
+      reset(){state.reset();said=null;render();},
       said(text){said=typeof text==='string'&&text.trim()?text.trim():null;renderRail();},
       invalidateDraft(){state.invalidateDraft();render();},
       dismissSuggestions(){state.suggestions=null;render();},
       setDirectory(list){directory=Array.isArray(list)?list:[];render();},
+      setRecent(list){recent=Array.isArray(list)?list:[];render();},
       end(){state.end();render();},
       destroy(){clearInterval(interval);}
     };

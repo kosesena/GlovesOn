@@ -1569,7 +1569,17 @@ const stripEl    = document.getElementById('stockStrip');
 const F = id => document.getElementById(id);
 globalThis.agentDesktop = GlovesOnDesktop.mount(F('agentDesktop'), key => {
   if (!globalThis.requestWorkspaceAction?.(key)) append('sys', '', 'Start a conversation, or let Lena finish speaking, then choose a next step.');
-}, {rail: F('actionRail')});
+}, {rail: F('actionRail'), provenance: mblnr => fetch('/api/provenance/' + encodeURIComponent(mblnr)).then(r => r.ok ? r.json() : null)});
+// The last documents in the mock ERP, so the workspace is never "no operation
+// yet" on a quiet day. Refreshed after every write this session makes.
+// On globalThis, and called through it, for the same reason agentDesktop is:
+// the session code is also run on its own by checks/voice_lifecycle.cjs.
+globalThis.refreshRecentDocuments = function () {
+  fetch('/api/inventory').then(r => r.ok ? r.json() : null)
+    .then(data => data && globalThis.agentDesktop?.setRecent(data.documents))
+    .catch(() => {});
+};
+globalThis.refreshRecentDocuments();
 // The names come from the gateway, not from a copy in this file: a directory
 // that drifts from the one the tools accept sends the worker to a colleague
 // the agent cannot find. If the fetch fails the panel keeps its old line.
@@ -2296,7 +2306,7 @@ async function start() {
       return;
     }
     handledCalls.set(message.call_id, null);
-    globalThis.agentDesktop?.begin(message.name, message.call_id);
+    globalThis.agentDesktop?.begin(message.name, message.call_id, message.arguments);
     const epoch = toolEpoch;
     let result, failed = false;
     const allowed = policy.allows(message.name);
@@ -2322,6 +2332,7 @@ async function start() {
     handledCalls.set(message.call_id, reply);
     if (activeScopeToken !== scopeToken) return;
     globalThis.agentDesktop?.finish(message.name, result, failed, message.call_id);
+    if (/^(post_goods_receipt|reverse_goods_receipt)$/.test(message.name)) globalThis.refreshRecentDocuments?.();
     noteVoice('tool', {call_id:message.call_id,name:message.name,arguments:message.arguments,result,failed});
     policy.result(message.name,result,failed); policyDirty=true;
     clearTimeout(expiryTimer);

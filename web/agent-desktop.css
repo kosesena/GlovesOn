@@ -440,3 +440,22 @@
  .rail-cell:last-child {border-bottom:0;}
  .rail-text {font-size:13px;-webkit-line-clamp:2;}
 }
+
+/* Record first. The empty workspace lists the last documents with the sentence
+   behind each one a click away; the saved card says what the stock was and
+   what it is now, and why the document exists. */
+.desktop-recent {display:flex;flex-direction:column;gap:0;margin:6px 0 0;}
+.desktop-recent>small {font:10px var(--mono);letter-spacing:.12em;color:#71806f;margin-bottom:6px;}
+.recent-row {display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #e8ebe3;font-size:13px;min-width:0;}
+.recent-number {font:13px var(--mono);color:#253b2c;flex-shrink:0;}
+.recent-type {font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px;background:#edf1e8;color:#4d674f;flex-shrink:0;}
+.recent-what {color:#52634e;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.recent-why {border:0;background:none;padding:0;font:600 12px system-ui;color:#244b35;cursor:pointer;flex-shrink:0;}
+.recent-why:disabled {color:#9aa697;cursor:default;}
+.recent-reason {margin:0;padding:8px 0 10px 12px;border-bottom:1px solid #e8ebe3;font-size:12px;color:#2f5e44;overflow-wrap:anywhere;}
+.record-stock {margin:12px 0 0;font-size:14px;font-weight:600;color:#253b2c;}
+.record-why {margin:12px 0 0;padding:10px 12px;background:#e9f1e4;border:1px solid #cdddc4;border-radius:12px;display:flex;flex-direction:column;gap:4px;}
+.record-why small {font:9px var(--mono);letter-spacing:.12em;color:#466642;}
+.record-why p {margin:0;font-size:12px;color:#2f5e44;overflow-wrap:anywhere;}
+.desktop-reach {margin:14px 0 0;padding-top:12px;border-top:1px solid #e0e5da;font:10px/1.7 var(--mono);letter-spacing:.06em;color:#8b927f;overflow-wrap:anywhere;}
+#agentDesktop .desktop-empty {min-height:0;padding:20px 0 6px;flex:0 0 auto;}
