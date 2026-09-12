@@ -367,7 +367,7 @@
       const busy=state.entries.some(e=>e.state==='pending');
       const last=state.entries[state.entries.length-1];
       const status=draft||busy?'LIVE':(last&&last.state==='saved'?'DONE':'READY');
-      add(stream,add(node('div','stream-head'),node('small','','THIS ACTION'),add(node('span','stream-live is-'+status.toLowerCase()),node('i','desk-dot '+(status==='LIVE'?'is-pulse':'is-done')),node('span','',status+' · '+clock(Date.now()).slice(0,5)))));
+      add(stream,add(node('div','stream-head'),node('small','','THIS ACTION'),add(node('span','stream-live is-'+status.toLowerCase()),node('i','desk-dot '+(status==='LIVE'?'is-pulse':'is-done')),add(node('span',''),node('span','',status+' · '),node('span','stream-clock',clock(Date.now()).slice(0,5))))));
       const list=node('div','stream-list');
       // Before anything has happened this session, the stream shows what the
       // ledger already holds, faded: the screen is never a blank card, and the
@@ -392,7 +392,10 @@
       // Newest at the bottom, and the bottom in view.
       list.scrollTop=list.scrollHeight;
     }
-    const interval=setInterval(()=>{const was=state.entries.map(e=>e.state).join();state.expire();if(was!==state.entries.map(e=>e.state).join())render();else if(state.entries.some(e=>e.state==='draft'))render();},1000);
+    // Once a second: expire what has expired, keep a waiting draft's countdown
+    // moving, and move the clock in the stream's head; a clock that only
+    // changed when something happened read as a stopped clock.
+    const interval=setInterval(()=>{const was=state.entries.map(e=>e.state).join();state.expire();if(was!==state.entries.map(e=>e.state).join())render();else if(state.entries.some(e=>e.state==='draft'))render();else for(const el of (stream?.querySelectorAll?.('.stream-clock')||[])) el.textContent=clock(Date.now()).slice(0,5);},1000);
     render();
     return {
       state,render,

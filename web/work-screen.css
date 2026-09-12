@@ -132,14 +132,27 @@
 #warehouseWork #orbHint {display:inline;margin:0;font:12px/1.3 system-ui;color:#6e7869;}
 #warehouseWork .voice-credit {display:inline-flex;align-items:center;gap:4px;margin:0;font:12px/1.3 system-ui;letter-spacing:0;color:#6e7869;opacity:1;}
 #warehouseWork .voice-credit svg {height:11px;width:auto;opacity:.7;}
+/* The orb breathes as drawn: a ring leaves it and fades, slower while it
+   waits and at the drawing's pace while it listens; the cloud inside moves
+   faster than it did at full size, where the same drift was visible. */
+#warehouseWork #voiceOrbButton {position:relative;overflow:visible;}
+#warehouseWork #voiceOrbButton::before {content:'';position:absolute;inset:-2px;border-radius:50%;border:2px solid #9fcbec;animation:listen 2.6s ease-out infinite;pointer-events:none;}
+#warehouseWork #voiceOrbButton[aria-pressed="true"]::before {animation-duration:1.8s;}
+#warehouseWork #voiceOrbButton:disabled::before {animation:none;opacity:0;}
+#warehouseWork .console-wrap header #voiceOrbButton #orb:before {animation-duration:4s;}
+#warehouseWork .console-wrap header #voiceOrbButton #orb:after {animation-duration:5.5s;}
+@keyframes listen {0% {transform:scale(1);opacity:.5;} 100% {transform:scale(1.5);opacity:0;}}
 /* the answers: what can be said now, and what each one does */
 #warehouseWork #voiceSuggestions {display:flex;flex-direction:column;flex-wrap:nowrap;gap:6px;margin:0;padding:0;border:0;background:transparent;}
 #warehouseWork #voiceSuggestions>span,#warehouseWork #voiceSuggestions>small,#warehouseWork #voiceSuggestions .suggestion-dots {display:none;}
 #warehouseWork #voiceSuggestions q {display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-height:0;margin:0;padding:11px 14px;border:1px solid #d9d5c8;border-radius:12px;background:transparent;font:15px/1.3 system-ui;color:#253b2c;quotes:none;}
 #warehouseWork #voiceSuggestions q::before,#warehouseWork #voiceSuggestions q::after {content:none;}
-#warehouseWork #voiceSuggestions q:first-of-type {background:#244b35;border-color:#244b35;color:#fff;font-weight:600;}
+#warehouseWork #voiceSuggestions q {cursor:pointer;user-select:none;transition:border-color .15s,background .15s;}
+#warehouseWork #voiceSuggestions q:hover {border-color:#244b35;}
+#warehouseWork #voiceSuggestions q:focus-visible {outline:2px solid #244b35;outline-offset:2px;}
+#warehouseWork #voiceSuggestions q[aria-pressed="true"] {background:#244b35;border-color:#244b35;color:#fff;font-weight:600;}
 #warehouseWork #voiceSuggestions q small {font-size:12px;font-weight:400;color:#6e7869;white-space:nowrap;}
-#warehouseWork #voiceSuggestions q:first-of-type small {color:#cfe8d5;}
+#warehouseWork #voiceSuggestions q[aria-pressed="true"] small {color:#cfe8d5;}
 
 /* ---- the foot: reach and the note, exactly as drawn ---- */
 #warehouseWork .work-aside {display:flex;flex-direction:column;gap:0;margin:0;padding:0;flex-shrink:0;font:9px/1.8 var(--mono);letter-spacing:.1em;color:#8b927f;}

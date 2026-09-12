@@ -2109,7 +2109,7 @@ function append(kind, who, text) {
     logEl.querySelectorAll('.msg.is-latest').forEach(x => x.classList.remove('is-latest'));
   }
   // The stream's "You said" lines are the worker's own sentences, as heard.
-  if (kind === 'user') globalThis.agentDesktop?.said(text);
+  if (kind === 'user') { forgetSuggestionChoice(); globalThis.agentDesktop?.said(text); }
   primerEl.hidden = true;
   // The transcript opens itself the moment there is something in it. It stays
   // collapsed on an empty screen because an empty box is clutter — but a
@@ -2772,6 +2772,10 @@ const TASK_SUGGESTIONS = {
   reverse: ['Show me the recent documents', 'Reverse the last receipt', 'What did I post last?'],
 };
 let suggestionTimer;
+// The line the worker chose to say next; the first line until one is chosen.
+let selectedSuggestion = null;
+// Once the worker has spoken, the choice has been used: the first line is the green one again.
+function forgetSuggestionChoice() { selectedSuggestion = null; }
 function renderVoiceSuggestions() {
   const box = document.getElementById('voiceSuggestions');
   if (!box) return;
@@ -2792,12 +2796,24 @@ function renderVoiceSuggestions() {
   const hints = draft ? (comms
     ? ['→ saves it, nowhere real', '→ drafted again', '→ nothing is saved']
     : [`→ posts ${d.MENGE !== undefined ? d.MENGE + ' ' + (d.MEINS || '') : 'it'}`, '→ new read-back', '→ nothing is recorded']) : null;
+  // The lines can be chosen. The chosen one is the green one, and choosing it
+  // opens the microphone if it is not open, because the next thing to do with
+  // a line is to say it. Nothing is typed to the agent on the worker's behalf:
+  // a write still needs a spoken yes, and the chip never speaks for anyone.
+  const chosen = lines.includes(selectedSuggestion) ? selectedSuggestion : lines[0];
   lines.forEach((line, i) => {
     // The quotes are written into the text: the browser's own <q> marks became
     // separate flex items once the line and its hint sat side by side.
     const quote = document.createElement('q');
+    quote.setAttribute('role', 'button'); quote.tabIndex = 0;
+    quote.setAttribute('aria-pressed', String(line === chosen));
     const phrase = document.createElement('span'); phrase.textContent = '\u201c' + line + '\u201d'; quote.append(phrase);
     if (hints) { const hint = document.createElement('small'); hint.textContent = hints[i]; quote.append(hint); }
+    quote.onclick = () => {
+      selectedSuggestion = line; renderVoiceSuggestions();
+      if (!live && typeof talkBtn !== 'undefined' && !talkBtn.disabled) talkBtn.click();
+    };
+    quote.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); quote.onclick(); } };
     box.append(quote);
   });
   clearInterval(suggestionTimer);
