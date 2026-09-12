@@ -1441,6 +1441,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <section id="conversationDetails" class="live-conversation" aria-label="Live conversation">
   <div id="log" role="log" aria-live="polite" aria-relevant="additions text"><p class="conversation-empty">Your conversation will appear here as you speak<span class="conversation-vibration" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></p></div>
 </section>
+<footer id="workAside" class="work-aside"></footer>
 
 </div>
 <main>
@@ -1570,7 +1571,7 @@ const stripEl    = document.getElementById('stockStrip');
 const F = id => document.getElementById(id);
 globalThis.agentDesktop = GlovesOnDesktop.mount(F('agentDesktop'), key => {
   if (!globalThis.requestWorkspaceAction?.(key)) append('sys', '', 'Start a conversation, or let Lena finish speaking, then choose a next step.');
-}, {stream: F('actionStream'), provenance: mblnr => fetch('/api/provenance/' + encodeURIComponent(mblnr)).then(r => r.ok ? r.json() : null)});
+}, {stream: F('actionStream'), aside: F('workAside'), provenance: mblnr => fetch('/api/provenance/' + encodeURIComponent(mblnr)).then(r => r.ok ? r.json() : null)});
 // The spoken menu follows the sheet: while a draft waits, the three lines are
 // the three answers; otherwise they are the task's own openers.
 F('agentDesktop').addEventListener('gloveson:desktop', () => { if (typeof renderVoiceSuggestions === 'function') renderVoiceSuggestions(); });
@@ -2775,7 +2776,18 @@ function renderVoiceSuggestions() {
   box.replaceChildren();
   const label = document.createElement('span'); label.textContent = draft ? 'You can say' : 'Try saying';
   box.append(label);
-  for (const line of lines) { const quote = document.createElement('q'); quote.textContent = line; box.append(quote); }
+  const d = draft?.result?.details || {};
+  const hints = draft ? (comms
+    ? ['→ saves it, nowhere real', '→ drafted again', '→ nothing is saved']
+    : [`→ posts ${d.MENGE !== undefined ? d.MENGE + ' ' + (d.MEINS || '') : 'it'}`, '→ new read-back', '→ nothing is posted']) : null;
+  lines.forEach((line, i) => {
+    // The quotes are written into the text: the browser's own <q> marks became
+    // separate flex items once the line and its hint sat side by side.
+    const quote = document.createElement('q');
+    const phrase = document.createElement('span'); phrase.textContent = '\u201c' + line + '\u201d'; quote.append(phrase);
+    if (hints) { const hint = document.createElement('small'); hint.textContent = hints[i]; quote.append(hint); }
+    box.append(quote);
+  });
   clearInterval(suggestionTimer);
 }
 // Every task in this area on one line, with the running one marked. It is what
@@ -2832,6 +2844,21 @@ function showWarehouseStage(stage) {
   }
   for (const [id,key] of [['warehouseLobby','lobby'],['warehouseArea','area'],['warehouseTasks','tasks'],['warehouseWork','work']]) document.getElementById(id).hidden = stage !== key;
   if (stage === 'work') { renderTaskStrip(); renderVoiceSuggestions(); }
+  // As drawn: on the work screen the task pills sit in the bar and there is no
+  // title row — the active pill and the crumb already say where you are — and
+  // the walkthrough link waits under the voice card. On every other stage the
+  // pieces go back where the markup keeps them.
+  const toolbar = document.querySelector('.warehouse-toolbar');
+  const strip = document.getElementById('taskStrip'), replay = document.getElementById('replayAreaIntro'), aside = document.getElementById('workAside');
+  if (stage === 'work') {
+    document.getElementById('warehouseBrief').hidden = true;
+    if (strip.parentElement !== toolbar) toolbar.insertBefore(strip, toolbar.querySelector('.workspace-utilities'));
+    if (aside && replay.parentElement !== aside) aside.prepend(replay);
+  } else {
+    document.getElementById('warehouseBrief').hidden = false;
+    if (strip.parentElement === toolbar) document.getElementById('warehouseWork').insertBefore(strip, document.getElementById('warehouseBrief'));
+    if (replay.parentElement !== toolbar) toolbar.insertBefore(replay, document.getElementById('warehouseCreate'));
+  }
   // One step back from anywhere: the task chooser is no longer on the way in,
   // so returning through it would be a screen nobody asked to see.
   document.getElementById('warehouseBack').textContent = stage === 'lobby' ? '← Back to site' : '← Warehouse';

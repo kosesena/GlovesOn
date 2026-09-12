@@ -67,6 +67,7 @@
     // what was recorded. Optional, so the module still mounts without it.
     const stream=options?.stream||null;
     const provenance=typeof options?.provenance==='function'?options.provenance:null;
+    const aside=options?.aside||null;
     let saidLog=[], recent=[];
     // Who exists, for the empty screen. Fetched by the page, never invented here.
     let directory=[];
@@ -274,24 +275,35 @@
         add(box,options,node('small','','Choose here or tell Lena. Nothing happens until you confirm.'));add(sheet,box);
       }
       // The ledger: what the mock ERP holds today, each with its sentence a click away.
-      const ledger=add(node('div','desk-ledger'),add(node('div','desk-ledger-head'),node('small','','TODAY IN THE LEDGER'),node('span','desk-ledger-note','why each one exists ↗')));
+      const ledger=node('div','desk-ledger');
+      const head=add(node('div','desk-ledger-head'),node('small','','TODAY IN THE LEDGER'));
+      const row=node('div','desk-ledger-row');
       if(recent.length) {
         const kinds={'101':'receipt','501':'receipt','102':'reversal','502':'reversal'};
+        const stubs=[];
         for(const d of recent.slice(0,4)) {
-          const stub=add(node('div','desk-stub'),node('span','desk-stub-number',d.MBLNR),node('span','desk-stub-what',`${d.BWART} · ${kinds[String(d.BWART)]||'movement'} · ${words(d.MENGE)} ${d.MEINS||''} ${d.MATNR}`));
-          if(provenance) {
-            const why=node('button','desk-stub-why','why');why.type='button';
-            why.onclick=async()=>{why.disabled=true;let row=null;try{row=await provenance(d.MBLNR);}catch{row=null;}
-              const said=row?.voice?.utterance;add(stub,add(node('p','desk-stub-reason'),node('span','desk-stub-reason-label','Confirmed with'),node('span','',said?('“'+said+'”'):'No provenance row for this document.')));why.remove();};
-            add(stub,why);
-          }
-          add(ledger,stub);
+          const when=d.created_at?clock(Number(d.created_at)*1000).slice(0,5):(d.BUDAT||'');
+          const stub=add(node('div','desk-stub'),node('span','desk-stub-number',d.MBLNR),node('span','desk-stub-what',`${when} · ${d.BWART} ${kinds[String(d.BWART)]||'movement'} · ${words(d.MENGE)} ${d.MEINS||''} ${d.MATNR}`));
+          stubs.push([stub,d]);add(row,stub);
         }
-      } else add(ledger,node('p','desk-quiet','No documents in the ledger yet.'));
+        if(provenance) {
+          // One link opens every sentence: the ledger reads as a set of receipts,
+          // and the reader should not have to ask four times.
+          const link=node('button','desk-ledger-note','why each one exists ↗');link.type='button';
+          link.onclick=async()=>{link.disabled=true;link.textContent='fetching the sentences…';
+            for(const [stub,d] of stubs){let r=null;try{r=await provenance(d.MBLNR);}catch{r=null;}const said=r?.voice?.utterance;add(stub,node('p','desk-stub-reason',said?('“'+said+'”'):'No provenance row.'));}
+            link.remove();};
+          add(head,link);
+        }
+      } else add(row,node('p','desk-quiet','No documents in the ledger yet.'));
+      add(ledger,head,row);
       add(sheet,ledger);
-      if(directory.length) add(sheet,node('p','desktop-reach','REACH · '+directory.map(person=>person.name+' ('+person.role.toLowerCase()+')').join(' · ')));
-      add(sheet,node('p','desktop-footnote','Live tool results · demo records only. No real SAP, email delivery or phone connection.'));
       add(host,sheet);
+      if(aside) {
+        aside.replaceChildren();
+        if(directory.length) add(aside,node('p','desktop-reach','REACH · '+directory.map(person=>person.name).join(' · ')));
+        add(aside,node('p','desktop-footnote','Demo records only. No real SAP, email or phone.'));
+      }
       renderStream();
       host.dispatchEvent(new CustomEvent('gloveson:desktop'));
     }

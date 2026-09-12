@@ -611,3 +611,40 @@
 @media(max-width:760px) {
  .warehouse-shell:has(#warehouseWork:not([hidden])) #warehouseBack {margin-left:8px;min-height:34px;padding:0 12px;font-size:12px;}
 }
+
+/* The wordmark in the bar is the mark's own colour, not the bar's grey: the
+   toolbar paints every span grey for the crumb, and that reached the name. */
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar a.work-brand {color:#253b2c;font-size:20px;font-weight:780;letter-spacing:-.8px;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .work-brand .brand-mark {width:30px;height:30px;font-size:19px;border-radius:8px 8px 3px 8px;color:#fff;}
+
+/* As drawn, exactly: pills in the bar, no title row, the ledger as four stubs
+   in a row, the answers with what each one does, reach and the note under
+   the voice card, the transcript folded. */
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar #taskStrip {display:flex;gap:6px;padding:0;margin-left:auto;flex-wrap:nowrap;grid-column:auto;grid-row:auto;justify-content:flex-end;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar #warehouseCrumb {margin-right:16px;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar .task-strip-item {min-height:36px;padding:0 14px;font-size:12px;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar .workspace-utilities {margin-left:8px;}
+#warehouseWork:not([hidden]) {display:flex;flex-direction:column;}
+#warehouseWork .console-wrap {flex:1;min-height:0;margin-top:22px;}
+#agentDesktop .desk-ledger-row {display:flex;gap:10px;}
+#agentDesktop .desk-stub {flex:1;min-width:0;flex-direction:column;align-items:flex-start;gap:3px;padding:10px 12px;}
+#agentDesktop .desk-stub-what {font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+#agentDesktop .desk-stub-reason {flex-basis:auto;display:block;font-size:11px;white-space:normal;}
+#agentDesktop .desk-ledger-note {border:0;background:none;padding:0;cursor:pointer;}
+#warehouseWork #voiceSuggestions q {display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+#warehouseWork #voiceSuggestions q small {font-size:12px;font-weight:400;color:#6e7869;white-space:nowrap;}
+#warehouseWork #voiceSuggestions q:first-of-type small {color:#cfe8d5;}
+#warehouseWork .work-aside {margin:12px 0 0;display:flex;flex-direction:column;gap:6px;}
+#warehouseWork .work-aside #replayAreaIntro {align-self:flex-start;border:0;background:none;padding:0;font-size:12px;color:#244b35;text-decoration:underline;text-underline-offset:3px;}
+#warehouseWork .work-aside .desktop-reach,#warehouseWork .work-aside .desktop-footnote {margin:0;padding:0;border:0;text-align:left;font:9px/1.8 var(--mono);letter-spacing:.1em;color:#8b927f;}
+#warehouseWork .console-wrap #conversationDetails {margin-top:12px;}
+#warehouseWork #conversationDetails summary {font:10px var(--mono);letter-spacing:.14em;color:#71806f;text-transform:uppercase;cursor:pointer;}
+@media(max-width:900px) {
+ .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar #taskStrip {flex-basis:100%;margin-left:0;justify-content:flex-start;flex-wrap:wrap;padding-top:6px;}
+}
+@media(max-width:760px) {
+ #agentDesktop .desk-ledger-row {flex-direction:column;}
+ #agentDesktop .desk-stub-what {white-space:normal;}
+}
+#warehouseWork #voiceSuggestions q {quotes:none;}
+#warehouseWork #voiceSuggestions q::before,#warehouseWork #voiceSuggestions q::after {content:none;}
