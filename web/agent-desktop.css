@@ -468,7 +468,9 @@
 #warehouseWork .task-strip-item {display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border:1px solid #dedfd9;border-radius:999px;background:#fff;color:#4a5a49;font:500 13px/1.2 system-ui;box-shadow:none;white-space:nowrap;}
 #warehouseWork .task-strip-item[aria-current="true"] {background:#244b35;border-color:#244b35;color:#fff;}
 #warehouseWork .task-strip-new {border-style:dashed;color:#7c8a79;background:transparent;}
-#warehouseWork .console-wrap {grid-template-columns:minmax(300px,.32fr) minmax(0,.68fr);}
+/* Two columns only where two fit. Written unguarded, this rule sat after the
+   phone rule and put the record in a sliver beside the orb on a 390px screen. */
+@media(min-width:761px) {#warehouseWork .console-wrap {grid-template-columns:minmax(300px,.32fr) minmax(0,.68fr);}}
 @media(min-width:1150px) {#warehouseWork .console-wrap {grid-template-columns:400px minmax(0,1fr);}}
 #warehouseWork .voice-column {background:#fff;border-right:1px solid #e1e5df;}
 #warehouseWork .voice-heading {display:none;}
