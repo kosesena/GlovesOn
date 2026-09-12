@@ -59,6 +59,7 @@
     const state=new DesktopState();
     // Who exists, for the empty screen. Fetched by the page, never invented here.
     let directory=[];
+    let selectedView="erp";
     const node=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e;};
     const add=(parent,...children)=>{parent.append(...children.filter(Boolean));return parent;};
     const words=value=>value === undefined || value === null || value === '' ? '—' : String(value);
@@ -128,8 +129,23 @@
         for(const record of result.records||[]) add(screen,add(node('article','desktop-record'),node('strong','',record.id),node('p','',record.kind==='call'?'Demo call · '+record.details.recipient.name:record.details.subject||record.details.title),node('small','',record.status.replaceAll('_',' '))));
         if(!result.records?.length)add(screen,notice('No saved communications in this session.'));
       } else if(result.details && /prepare/.test(entry.name)) {
-        add(screen,node('small','document-kicker','DRAFT · NOT POSTED'),node('h3','',entry.name==='prepare_reversal'?'Reverse a receipt':'Receive a delivery'),recordFields(result.details));
-        if(entry.state==='draft')add(screen,notice('Check the details. Say “confirm” to record them.'));
+        const d=result.details;
+        screen.classList.add('receipt-draft');
+        const kicker=add(node('div','receipt-kicker'),node('small','document-kicker',entry.name==='prepare_reversal'?'REVERSAL DRAFT':'GOODS RECEIPT'),badge(stateText[entry.state]||'Not posted'));
+        add(screen,kicker);
+        const hero=add(node('div','receipt-material'),add(node('div'),node('h3','',d.MAKTX||'Material details'),node('p','','Material '+words(d.MATNR))));
+        if(/hex bolts/i.test(d.MAKTX||'')) {
+          const illustration=node('img','material-illustration');illustration.src='/assets/hex-bolts-studio.png';illustration.alt='';add(hero,illustration);
+        }
+        add(screen,hero,fields([['Quantity',d.MENGE===undefined?undefined:`${d.MENGE} ${d.MEINS||''}`],['Destination bin',d.LGPLA],['Plant',d.WERKS]]));
+        if(d.LGORT || d.document || d.reverses)add(screen,node('p','receipt-context', [d.LGORT?'Storage location '+d.LGORT:'',d.document||d.reverses?'Original document '+(d.document||d.reverses):''].filter(Boolean).join(' · ')));
+        if(entry.state==='draft')add(screen,notice('Review the details. Say “confirm” to '+(entry.name==='prepare_reversal'?'reverse.':'post.')));
+        const steps=node('div','desktop-steps receipt-steps');
+        for(const [i,label] of ['Speak','Review','Confirm'].entries()) {
+          const step=add(node('div',i===1 && entry.state==='draft'?'active':''),node('span','',String(i+1)),node('small','',label));
+          add(steps,step);
+        }
+        add(screen,steps);
       } else if(entry.state==='saved' && result.MBLNR) {
         add(screen,node('small','document-kicker','MATERIAL DOCUMENT'),node('h3','',result.reversed?'Reversal recorded':'Receipt recorded'),badge('SAVED IN MOCK ERP'),recordFields(result));
       } else if(entry.name==='suggest_follow_up') {
@@ -144,16 +160,21 @@
     const stateText={pending:'Working…',draft:'Your confirmation needed',saved:'Saved',read:'Checked',rejected:'Needs attention',error:'Could not finish',uncertain:'Result uncertain',expired:'Draft expired',superseded:'Draft replaced',submitted:'Draft used',stopped:'Stopped'};
     function render() {
       state.expire(); host.replaceChildren();
-      add(host,add(node('div','desktop-heading'),add(node('div'),node('small','',"LENA’S WORKSPACE"),node('h2','','See it happen')),badge('Mock environment')));
+      add(host,add(node('div','desktop-heading'),add(node('div'),node('h2','',"Lena’s workspace"),node('p','','Your systems, ready when you are.')),badge('Demo')));
+      const devices=add(node('div','desktop-tabs'));
+      const icons={erp:'M4 4h16v5H4z M4 10h16v5H4z M4 16h16v5H4z M7 6.5h.1 M7 12.5h.1 M7 18.5h.1',phone:'M5 3l4 4-2 3c2 3 4 5 7 6l3-2 4 4-2 3C10 22 2 14 2 6z',email:'M3 5h18v14H3z M3 6l9 7 9-7',note:'M5 3h14v18H5z M8 7h8 M8 11h8 M8 15h5'};
+      devices.setAttribute('aria-label','Workspace views');
+      for(const [key,label] of [['erp','ERP'],['phone','Phone'],['email','Email'],['note','Notes']]) {
+        const button=node('button',''); const icon=node('span','device-tab-icon');icon.setAttribute('aria-hidden','true');icon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="'+icons[key]+'"/></svg>';add(button,icon,node('span','',label));button.type='button';button.dataset.view=key;
+        const current=state.current?category(state.current.name):selectedView;
+        button.setAttribute('aria-pressed',String(current===key));
+        button.onclick=()=>{selectedView=key;state.current=state.entries.slice().reverse().find(e=>category(e.name)===key)||null;render();host.querySelector('[data-view="'+key+'"]')?.focus({preventScroll:true});};
+        add(devices,button);
+      }
+      add(host,devices);
       if(!state.current) {
-        const empty=add(node('div','desktop-empty'),node('div','desktop-empty-symbol','↗'),node('h3','','Your words. Work in motion.'),node('p','','Ask Lena to receive a delivery, email a colleague or make a work call.'));
-        // A worker who does not know a name cannot ask for one. The list is
-        // short and fictional, so it can simply be on the screen.
-        if(directory.length) {
-          const list=add(node('div','desktop-directory'),node('small','','WHO YOU CAN REACH · FICTIONAL DEMO DIRECTORY'));
-          for(const person of directory) add(list,node('p','',person.name+' · '+person.role+' · Ext. '+person.extension));
-          add(empty,list);
-        } else add(empty,node('div','desktop-device-list','ERP records  /  Work phone  /  Mail'));
+        const empty=add(node('div','desktop-empty'),node('div','desktop-empty-symbol',''),node('h3','',selectedView==='erp'?'Ready for your first delivery':({phone:'Your work phone',email:'Your demo outbox',note:'Your incident notes'})[selectedView]),node('p','',selectedView==='erp'?'Stock checks and receipt details appear here.':'Ask GlovesOn to prepare a '+({phone:'demo call',email:'message',note:'note'})[selectedView]+'. Review the details before confirming.'));
+        const steps=node('div','desktop-steps');for(const [i,label] of ['Speak','Review','Confirm'].entries())add(steps,add(node('div'),node('span','',String(i+1).padStart(2,'0')),node('small','',label)));add(empty,steps);
         add(host,empty);
       } else {
         const entry=state.current;
@@ -161,8 +182,8 @@
         const device=node('div','desktop-device');
         add(device,category(entry.name)==='phone'?phone(entry):['email','note'].includes(category(entry.name))?laptop(entry):erp(entry));add(host,device);
         if(entry.state==='submitted')add(host,notice('This draft was already used. Check the result in session activity.'));
-        if(entry.state==='uncertain')add(host,notice('The result could not be verified. Ask Lena to check records before trying again.','error'));
-        if(['expired','superseded','stopped'].includes(entry.state))add(host,notice('This draft or request is no longer active. Ask Lena to prepare it again.'));
+        if(entry.state==='uncertain')add(host,notice('The result could not be verified. Ask GlovesOn to check records before trying again.','error'));
+        if(['expired','superseded','stopped'].includes(entry.state))add(host,notice('This draft or request is no longer active. Ask GlovesOn to prepare it again.'));
         if(['error','rejected'].includes(entry.state) && ['phone','email','note'].includes(category(entry.name)))add(host,notice(entry.result?.message||'The request could not be completed.','error'));
       }
       if(state.suggestions) {
@@ -177,14 +198,20 @@
         for(const [key,label] of labels) {
           const button=node('button','',label);button.type='button';button.onclick=()=>onChoice(key);add(options,button);
         }
-        add(box,options,node('small','','Choose here or tell Lena. Nothing happens until you confirm.'));add(host,box);
+        add(box,options,node('small','','Choose here or tell GlovesOn. Nothing happens until you confirm.'));add(host,box);
       }
       if(state.entries.length) {
         const history=node('details','desktop-activity');add(history,node('summary','','Session activity · '+state.entries.length));
         const list=node('ol');
         for(const e of state.entries.slice().reverse()) {
-          const button=node('button','',`${labels[e.name]||e.name} · ${stateText[e.state]}`);button.type='button';button.onclick=()=>{state.current=e;render();};add(list,add(node('li'),button));
+          const button=node('button','',`${labels[e.name]||e.name} · ${stateText[e.state]}`);button.type='button';button.onclick=()=>{selectedView=key;state.current=e;render();};add(list,add(node('li'),button));
         }add(history,list);add(host,history);
+      }
+      {
+        const contacts=add(node('details','desktop-contacts'),node('summary','','Work contacts'));
+        if(!directory.length)add(contacts,node('p','','Start a conversation to load your demo work directory.'));
+        for(const person of directory) add(contacts,node('p','',person.name+' · '+person.role+' · Ext. '+person.extension));
+        add(host,contacts);
       }
       add(host,node('p','desktop-footnote','Live tool results · demo records only. No real SAP, email delivery or phone connection.'));
     }
@@ -194,7 +221,7 @@
       state,render,
       begin(name,id){state.begin(name,id);render();},
       finish(name,result,failed,id){state.finish(name,result,failed,id);render();},
-      reset(){state.reset();render();},
+      reset(){state.reset();selectedView="erp";render();},
       invalidateDraft(){state.invalidateDraft();render();},
       dismissSuggestions(){state.suggestions=null;render();},
       setDirectory(list){directory=Array.isArray(list)?list:[];render();},

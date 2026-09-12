@@ -1327,6 +1327,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 .voice-reference {display:block;font:12px/1.6 system-ui;margin-top:8px;}
 </style>
 <link rel="stylesheet" href="/agent-desktop.css">
+<link rel="stylesheet" href="/workspace-polish.css">
 </head>
 <body>
 
@@ -1359,7 +1360,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <div class="trust-line"><span>VOICE POWERED BY <strong>AssemblyAI</strong></span><span>GOODS RECEIPT · STOCK · REVERSAL</span><span><strong>SAP OData</strong> · Demo environment</span></div>
 <div class="demo-intro" id="demo"><div><div class="eyebrow">Step onto the receiving floor</div><h2>Your voice. A recorded result.</h2></div><p>Choose a scenario, then start talking. Follow your conversation through to the material document.</p></div>
 <section class="warehouse-shell" id="warehouseShell" hidden aria-label="Interactive warehouse">
-<div class="warehouse-toolbar"><button id="warehouseBack">← Back to site</button><span id="warehouseCrumb">PLANT 1000 / WAREHOUSE</span><button id="replayAreaIntro" hidden>Watch a walkthrough ↗</button><button id="warehouseCreate">+ Create a task</button></div>
+<div class="warehouse-toolbar"><a class="brand work-brand" href="#top" aria-label="GlovesOn home"><span class="brand-mark" aria-hidden="true">↗</span>GlovesOn</a><button id="warehouseBack">← Back to site</button><span id="warehouseCrumb">PLANT 1000 / WAREHOUSE</span><button id="replayAreaIntro" hidden>Watch a walkthrough ↗</button><button id="warehouseCreate">+ Create a task</button></div>
 <div id="warehouseLobby"><div class="warehouse-title"><div class="eyebrow">YOUR SHIFT / PLANT 1000</div><h1>Where are you working today?</h1><p>Step into an area to pick up your next task.</p></div><div class="warehouse-room" id="warehouseRoom"><div id="avatarStage" class="avatar-stage"></div><button class="warehouse-entry" data-enter="receiving"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><b>Receiving bay</b><small>Deliveries & quantity checks</small><em>3 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="storage"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><b>Storage aisles</b><small>Materials, stock & incidents</small><em>2 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="review"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><b>Review desk</b><small>Check receipts & reverse entries</small><em>1 guided task ↗</em></button><span class="room-brand" aria-hidden="true"><span class="brand-mark">↗</span>GlovesOn</span></div></div>
 <div id="warehouseArea" hidden><div class="warehouse-title"><h1 id="warehouseAreaTitle"></h1><p>Take the next guided task, or open the task folder.</p></div><div class="warehouse-choice"><article><small>01 / TAKE A TASK</small><h2>Next on your shift</h2><p id="nextTaskDescription"></p><button id="takeNextTask">Take this task ↗</button></article><article><small>02 / TASK FOLDER</small><h2>Choose your task</h2><p>Browse the guided scenarios and the tasks you have created for this area.</p><button id="browseTasks">Open task folder ↗</button></article></div></div>
 <div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><p class="work-signature">Built for the <strong>AssemblyAI Voice Agent Hackathon</strong> · September 2026</p><nav id="taskStrip" class="task-strip" aria-label="Tasks in this area" hidden></nav><div id="warehouseBrief"><span id="warehouseBriefImage" class="warehouse-art" aria-hidden="true" ></span><div class="brief-copy"><small class="brief-eyebrow">YOUR NEXT TASK</small><h2 id="warehouseBriefTitle"></h2><p id="warehouseBriefText"></p><blockquote id="warehouseGuideQuote" hidden><small>YOUR WAREHOUSE GUIDE</small><p>“A delivery just arrived. Let’s check it in.”</p></blockquote></div></div></div>
@@ -1407,6 +1408,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 </div>
 <div class="console-wrap">
 <div class="voice-column">
+<div class="voice-heading"><small>VOICE ASSISTANT</small><h2>Talk to GlovesOn</h2><p>Speak naturally to get things done.</p></div>
 <div class="workspace-utilities"><button type="button" popovertarget="workspaceExtras">Records &amp; help <span aria-hidden="true">↗</span></button></div>
 <div id="workspaceExtras" popover="auto" aria-label="Records and help">
   <div class="extras-heading"><h2>Records &amp; help</h2><button type="button" popovertarget="workspaceExtras" popovertargetaction="hide" aria-label="Close records and help">×</button></div>
@@ -2091,7 +2093,7 @@ function append(kind, who, text) {
   if (conversation && !conversation.open) conversation.open = true;
   const el = document.createElement('div');
   el.className = `msg ${kind}${/^(user|agent)/.test(kind) ? " is-latest" : ""}`;
-  el.innerHTML = who ? `<div class="who">${who}</div>` : '';
+  if (who) { const label = document.createElement('div'); label.className = 'who'; label.textContent = kind === 'user' ? 'Lena' : kind === 'agent' ? 'GlovesOn' : who; el.appendChild(label); }
   el.appendChild(document.createTextNode(text));
   logEl.appendChild(el);
   if (kind === 'agent') {
@@ -2711,6 +2713,8 @@ window.addEventListener('resize', alignWarehouseTargets);
 
 // The toolbar fuses into a bar once the page scrolls under it.
 const warehouseToolbar = document.querySelector('.warehouse-toolbar');
+const workUtilities = document.querySelector('.workspace-utilities');
+warehouseToolbar.append(workUtilities);
 window.addEventListener('scroll',
   () => warehouseToolbar.classList.toggle('is-stuck', window.scrollY > 24),
   { passive: true });
@@ -2739,6 +2743,7 @@ const TASK_SUGGESTIONS = {
   dropped: ['I dropped two ball bearings and they broke', 'Who should I tell?', 'Save a note about what happened'],
   reverse: ['Show me the recent documents', 'Reverse the last receipt', 'What did I post last?'],
 };
+let suggestionTimer;
 function renderVoiceSuggestions() {
   const box = document.getElementById('voiceSuggestions');
   if (!box) return;
@@ -2746,12 +2751,21 @@ function renderVoiceSuggestions() {
   // A custom task carries the action it rehearses, so it inherits that set.
   const key = pressed ? pressed.dataset.scenario : activeScenario?.action;
   const lines = TASK_SUGGESTIONS[key] || TASK_SUGGESTIONS.receive;
-  for (const old of [...box.querySelectorAll('q')]) old.remove();
-  const tail = box.querySelector('small');
-  for (const line of lines) {
-    const quote = document.createElement('q'); quote.textContent = line;
-    box.insertBefore(quote, tail);
-  }
+  box.replaceChildren();
+  const label = document.createElement('span'); label.textContent = 'Try saying';
+  const quote = document.createElement('q'); quote.textContent = lines[0];
+  const dots = document.createElement('div'); dots.className = 'suggestion-dots'; dots.setAttribute('aria-hidden','true');
+  lines.forEach((_,i) => { const dot = document.createElement('i'); dot.classList.toggle('active',i===0); dots.append(dot); });
+  box.append(label,quote,dots);
+  clearInterval(suggestionTimer);
+  let index = 0;
+  suggestionTimer = setInterval(() => {
+    if (live || box.hidden || document.hidden || warehouseStage !== 'work' || location.hash !== '#warehouse') return;
+    index = (index + 1) % lines.length;
+    quote.textContent = lines[index];
+    if (!reducedMotion.matches) quote.animate([{opacity:0,transform:'translateY(3px)'},{opacity:1,transform:'translateY(0)'}],{duration:300});
+    [...dots.children].forEach((dot,i) => dot.classList.toggle('active',i===index));
+  },5000);
 }
 // Every task in this area on one line, with the running one marked. It is what
 // is left of the chooser screen, and it costs no screen of its own.

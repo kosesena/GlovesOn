@@ -112,3 +112,83 @@
  .window-controls {letter-spacing:0;}
  .desktop-fields>div {grid-template-columns:90px minmax(0,1fr);}
 }
+
+/* Unified work surface: voice stays compact while tool results get room. */
+#warehouseWork .console-wrap {grid-template-columns:minmax(0,.37fr) minmax(0,.63fr);gap:0;border:1px solid #dfe4de;border-radius:18px;background:#fff;box-shadow:0 14px 45px #243b2c07;overflow:hidden;}
+#warehouseWork .voice-column {position:static;border:0;border-right:1px solid #e1e5df;border-radius:0;background:#fff;box-shadow:none;}
+#warehouseWork #agentDesktop {border:0;border-radius:0;background:#fdfefd;box-shadow:none;padding:28px;min-height:620px;}
+.voice-heading {padding:26px 26px 0;}
+.voice-heading small {font:10px var(--mono);letter-spacing:.16em;color:#657365;}
+#warehouseWork .voice-heading h2 {font:600 26px/1.2 system-ui;letter-spacing:-.045em;color:#182e23;text-transform:none;background:none;border:0;padding:0;margin:8px 0;}
+.voice-heading p {font:14px/1.5 system-ui;color:#68756d;margin:0;}
+#warehouseWork .workspace-utilities {padding:8px 24px 0;}
+#warehouseWork .workspace-utilities button {font-size:11px;padding:5px 10px;}
+#warehouseWork .console-wrap header {padding:12px 24px 20px;}
+#warehouseWork #talkBtn {display:block;font-size:15px;min-height:46px;min-width:220px;background:#204d36;color:#fff;}
+#warehouseWork #orbHint {display:none;}
+#warehouseWork #voiceSuggestions {display:grid;grid-template-columns:1fr;gap:10px;margin:0 24px 20px;padding:18px 0 0;border-top:1px solid #e3e7e0;}
+#warehouseWork #voiceSuggestions>span {text-align:left;font:10px var(--mono);text-transform:uppercase;letter-spacing:.15em;}
+#warehouseWork #voiceSuggestions q {display:flex;justify-content:center;align-items:center;min-height:54px;text-align:center;font:15px/1.5 system-ui;border:0;border-radius:12px;background:#f3f6f2;padding:12px;box-sizing:border-box;}
+.suggestion-dots {display:flex;gap:7px;justify-content:center;}
+.suggestion-dots i {width:5px;height:5px;border-radius:50%;background:#c9d0cb;}
+.suggestion-dots i.active {background:#285840;}
+#warehouseWork #conversationDetails {margin:0 24px;padding:14px 0!important;border-top:1px solid #e3e7e0;}
+#warehouseWork #conversationDetails:before {content:'Conversation';font:500 12px system-ui;color:#33503d;}
+#warehouseWork #log {height:140px;padding:14px 0;}
+#warehouseWork #log:has(.conversation-empty) {height:64px;}
+#warehouseWork .conversation-empty {font-size:12px;text-align:left;padding:4px 0;}
+#agentDesktop .desktop-heading h2 {font-size:29px;margin:0;}
+.desktop-heading p {margin:7px 0 0;color:#738075;font-size:13px;}
+.desktop-tabs {display:flex;border-bottom:1px solid #dfe5de;gap:8px;margin-bottom:14px;}
+.desktop-tabs button {flex:1;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:#67776d;padding:14px 6px;font:500 13px system-ui;cursor:pointer;}
+.desktop-tabs button[aria-pressed=true] {color:#204d36;border-bottom-color:#204d36;}
+.desktop-empty {min-height:350px;}
+.desktop-empty-symbol {width:100px;height:90px;border:0;background:linear-gradient(145deg,#faf8f2,#e7e9df);border-radius:16px;box-shadow:10px 16px 20px #23382d0a;font-size:65px;color:#a3ae9e;transform:rotate(-8deg);}
+#agentDesktop .desktop-empty h3 {font-size:25px;margin-top:28px;}
+.desktop-empty p {max-width:430px;margin:0;}
+.desktop-steps {font-size:12px;color:#768477;white-space:pre-wrap;margin-top:35px;}
+.desktop-contacts {border:1px solid #dfe5dd;border-radius:12px;padding:16px 18px;margin-top:18px;font-size:12px;}
+.desktop-contacts summary {cursor:pointer;font-weight:550;}
+.desktop-contacts p {color:#68766b;line-height:1.7;}
+#warehouseWork #warehouseBrief {max-width:1320px;text-align:left;justify-content:flex-start;padding:14px 0 24px;}
+#warehouseWork #warehouseBriefTitle {font-size:34px;}
+#warehouseWork #taskStrip {justify-content:flex-start;max-width:1320px;margin:0 auto;gap:10px;}
+#warehouseWork .task-strip-item {border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:#637468;box-shadow:none;}
+#warehouseWork .task-strip-item[aria-current=true] {color:#204d36;background:none;border-bottom-color:#204d36;}
+#warehouseWork .work-signature {margin-top:16px;font-size:9px;}
+@media(max-width:900px) {
+ #warehouseWork .console-wrap {grid-template-columns:minmax(0,1fr);}
+ #warehouseWork .voice-column {border-right:0;border-bottom:1px solid #e1e5df;}
+ #warehouseWork #agentDesktop {min-height:420px;padding:22px;}
+ #warehouseWork #taskStrip {overflow-x:auto;justify-content:flex-start;}
+ .desktop-empty {min-height:270px;}
+}
+@media(max-width:500px) {
+ .voice-heading {padding:22px 18px 0;}
+ #warehouseWork #warehouseBriefTitle {font-size:27px;}
+ #warehouseWork #agentDesktop {padding:20px 16px;}
+ #agentDesktop .desktop-heading h2 {font-size:24px;}
+ .desktop-tabs {gap:0;}
+ .desktop-steps {font-size:10px;}
+}
+#warehouseWork:not([hidden]) {display:grid;grid-template-columns:minmax(0,.44fr) minmax(0,.56fr);align-items:center;}
+#warehouseWork #warehouseBrief {grid-column:1;grid-row:1;margin:0;padding:22px 0;}
+#warehouseWork #taskStrip {grid-column:2;grid-row:1;width:100%;gap:2px;flex-wrap:wrap;justify-content:flex-end;padding:16px 0;}
+#warehouseWork .task-strip-item {font-size:12px;padding:12px 10px;}
+#warehouseWork .console-wrap,#warehouseWork .work-signature {grid-column:1/-1;width:100%;box-sizing:border-box;}
+.warehouse-toolbar .workspace-utilities {display:none;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .workspace-utilities {display:flex;}
+.warehouse-shell:has(#warehouseWork:not([hidden])) .workspace-utilities button {font-size:12px;padding:10px 14px;}
+#agentDesktop .desktop-empty-symbol {width:220px;height:145px;background: url('/assets/workspace-parcel.svg') center/contain no-repeat;box-shadow:none;transform:none;border-radius:0;}
+#warehouseWork .console-wrap header {padding-top:18px;}
+@media(max-width:1100px) {
+ #warehouseWork #warehouseBrief {grid-column:1/-1;grid-row:1;padding-bottom:4px;}
+ #warehouseWork #taskStrip {grid-column:1/-1;grid-row:2;justify-content:flex-start;padding-bottom:20px;}
+}
+@media(max-width:650px) {
+ #warehouseWork:not([hidden]) {display:block;}
+ .warehouse-shell:has(#warehouseWork:not([hidden])) .warehouse-toolbar {flex-wrap:wrap;gap:8px;}
+ .warehouse-shell:has(#warehouseWork:not([hidden])) .workspace-utilities button {font-size:11px;padding:9px 10px;}
+ #warehouseWork #warehouseBrief {padding:18px 0 8px;}
+ #warehouseWork #taskStrip {justify-content:flex-start;}
+}
