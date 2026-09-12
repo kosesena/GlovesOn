@@ -93,7 +93,7 @@
 #agentDesktop .desktop-device {margin:0;}
 
 /* ---- the stream: everything this action did, with the time it did it ---- */
-#warehouseWork .action-stream {display:flex;flex-direction:column;gap:0;margin:0;padding:20px 22px 8px;background:#fffdf7;border:1px solid #e3dfd2;border-radius:20px;flex:1 1 auto;min-height:150px;overflow:auto;overscroll-behavior:contain;}
+#warehouseWork .action-stream {display:flex;flex-direction:column;gap:0;margin:0;padding:20px 22px 8px;background:#fffdf7;border:1px solid #e3dfd2;border-radius:20px;flex:1 1 auto;min-height:150px;overflow:hidden;}
 #warehouseWork .action-stream:empty {display:none;}
 .stream-head {display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0;}
 .stream-head small {font:10px var(--mono);letter-spacing:.14em;color:#71806f;}
@@ -101,7 +101,7 @@
 .stream-live .desk-dot {width:7px;height:7px;}
 .stream-live.is-ready {color:#8b927f;}
 .stream-live.is-ready .desk-dot {background:#b9c4b4;}
-.stream-list {display:flex;flex-direction:column;position:relative;padding-left:84px;}
+.stream-list {display:flex;flex-direction:column;position:relative;padding-left:84px;flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;}
 .stream-list:before {content:'';position:absolute;left:63px;top:8px;bottom:30px;width:2px;background:#dfe5d6;}
 .stream-item {position:relative;padding-bottom:18px;}
 .stream-item:last-child {padding-bottom:6px;}

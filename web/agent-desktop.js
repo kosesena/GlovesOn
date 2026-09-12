@@ -390,7 +390,7 @@
       if(next) add(list,add(node('div','stream-item is-next'),node('span','stream-time','next'),node('i','stream-dot'),node('div','stream-title',next[0]),node('div','stream-text',next[1])));
       add(stream,list);
       // Newest at the bottom, and the bottom in view.
-      stream.scrollTop=stream.scrollHeight;
+      list.scrollTop=list.scrollHeight;
     }
     const interval=setInterval(()=>{const was=state.entries.map(e=>e.state).join();state.expire();if(was!==state.entries.map(e=>e.state).join())render();else if(state.entries.some(e=>e.state==='draft'))render();},1000);
     render();
