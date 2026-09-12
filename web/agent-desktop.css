@@ -396,8 +396,8 @@
  #warehouseWork .voice-column {border-right:0;border-bottom:1px solid #dce7eb;}
 }
 
-/* A warm suggestion card contrasts with the cool voice surface. */
-#warehouseWork #voiceSuggestions>span {color:#985128;}
-#warehouseWork #voiceSuggestions q {background:linear-gradient(120deg,#fff0df,#ffe7d6);color:#70432e;}
+/* Suggestions share the voice orb's soft blue palette. */
+#warehouseWork #voiceSuggestions>span {color:#49758f;}
+#warehouseWork #voiceSuggestions q {background:linear-gradient(120deg,#d6effb,#c5e3fa);color:#294f68;}
 #warehouseWork #voiceSuggestions .suggestion-dots {display:none;}
 #warehouseWork #voiceSuggestions q {border-radius:15px;padding:15px 12px;}
