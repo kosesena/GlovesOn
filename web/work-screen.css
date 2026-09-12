@@ -159,6 +159,19 @@
 #warehouseWork #log .msg .who {font:9px var(--mono);letter-spacing:.12em;color:#8b927f;text-transform:uppercase;margin-bottom:3px;}
 #warehouseWork #log .conversation-empty {font-size:13px;color:#8b927f;margin:0;}
 
+/* ---- the phone fits the sheet ---- */
+/* The demo phone kept the spacing of the old full-height workspace and ran
+   past the foot of the sheet, so the ledger was below the fold whenever a
+   call was on the table. Same phone, a tighter rhythm. */
+#agentDesktop .work-phone {min-height:0;}
+#agentDesktop .phone-screen {min-height:0;padding:40px 22px 18px;}
+#agentDesktop .phone-screen h3 {margin:4px 0 0;}
+#agentDesktop .contact-avatar {margin:16px auto 10px;}
+#agentDesktop .call-purpose {margin:12px 0;}
+#agentDesktop .phone-call-symbol {margin:14px auto 10px;}
+#agentDesktop .work-phone .desktop-notice {margin:10px 0 0;}
+#agentDesktop .work-phone .device-disclaimer {margin:10px 0 0;}
+
 /* ---- narrower than the drawing ---- */
 @media(max-width:1150px) {
  .warehouse-shell:has(#warehouseWork:not([hidden])) {padding:0 20px 10px;}
