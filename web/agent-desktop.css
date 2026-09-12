@@ -395,3 +395,10 @@
 @media(max-width:760px) {
  #warehouseWork .voice-column {border-right:0;border-bottom:1px solid #dce7eb;}
 }
+
+/* A warm suggestion card contrasts with the cool voice surface. */
+#warehouseWork #voiceSuggestions>span {color:#985128;}
+#warehouseWork #voiceSuggestions q {background:linear-gradient(120deg,#fff0df,#ffe7d6);color:#70432e;}
+#warehouseWork #voiceSuggestions .suggestion-dots {background:linear-gradient(120deg,#fff0df,#ffe7d6);}
+#warehouseWork #voiceSuggestions .suggestion-dots i {background:#d9b69e;}
+#warehouseWork #voiceSuggestions .suggestion-dots i.active {background:#d6652d;}
