@@ -29,7 +29,7 @@ async function start() {
     renderer.domElement.setAttribute('aria-hidden', 'true');
     renderer.domElement.addEventListener('webglcontextlost', fallback);
     const [gltf, data] = await Promise.all([
-      new GLTFLoader().loadAsync('/assets/avatar/worker-fingers.glb?v=1'),
+      new GLTFLoader().loadAsync('/assets/avatar/worker-fingers.glb?v=2'),
       fetch('/assets/avatar/motions.json?v=4').then(r => { if (!r.ok) throw Error('Motion unavailable'); return r.json(); })
     ]);
     if (reduced.matches) { renderer.dispose(); loaded = false; return; }
