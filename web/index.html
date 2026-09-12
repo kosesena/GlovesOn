@@ -1362,7 +1362,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 <div class="warehouse-toolbar"><a class="brand work-brand" href="#top" aria-label="GlovesOn home"><span class="brand-mark" aria-hidden="true">↗</span>GlovesOn</a><button id="warehouseBack">← Back to site</button><span id="warehouseCrumb">PLANT 1000 / WAREHOUSE</span><button id="replayAreaIntro" hidden>Watch a walkthrough ↗</button><button id="warehouseCreate">+ Create a task</button></div>
 <div id="warehouseLobby"><div class="warehouse-title"><div class="eyebrow">YOUR SHIFT / PLANT 1000</div><h1>Where are you working today?</h1><p>Step into an area to pick up your next task.</p></div><div class="warehouse-room" id="warehouseRoom"><div id="avatarStage" class="avatar-stage"></div><button class="warehouse-entry" data-enter="receiving"><span class="warehouse-art warehouse-art-receiving" aria-hidden="true"></span><b>Receiving bay</b><small>Deliveries & quantity checks</small><em>3 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="storage"><span class="warehouse-art warehouse-art-storage" aria-hidden="true"></span><b>Storage aisles</b><small>Materials, stock & incidents</small><em>2 guided tasks ↗</em></button><button class="warehouse-entry" data-enter="review"><span class="warehouse-art warehouse-art-review" aria-hidden="true"></span><b>Review desk</b><small>Check receipts & reverse entries</small><em>1 guided task ↗</em></button><span class="room-brand" aria-hidden="true"><span class="brand-mark">↗</span>GlovesOn</span></div></div>
 <div id="warehouseArea" hidden><div class="warehouse-title"><h1 id="warehouseAreaTitle"></h1><p>Take the next guided task, or open the task folder.</p></div><div class="warehouse-choice"><article><small>01 / TAKE A TASK</small><h2>Next on your shift</h2><p id="nextTaskDescription"></p><button id="takeNextTask">Take this task ↗</button></article><article><small>02 / TASK FOLDER</small><h2>Choose your task</h2><p>Browse the guided scenarios and the tasks you have created for this area.</p><button id="browseTasks">Open task folder ↗</button></article></div></div>
-<div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><p class="work-signature">Built for the <strong>AssemblyAI Voice Agent Hackathon</strong> · September 2026</p><nav id="taskStrip" class="task-strip" aria-label="Tasks in this area" hidden></nav><div id="warehouseBrief"><span id="warehouseBriefImage" class="warehouse-art" aria-hidden="true" ></span><div class="brief-copy"><small class="brief-eyebrow">YOUR NEXT TASK</small><h2 id="warehouseBriefTitle"></h2><p id="warehouseBriefText"></p><blockquote id="warehouseGuideQuote" hidden><small>YOUR WAREHOUSE GUIDE</small><p>“A delivery just arrived. Let’s check it in.”</p></blockquote></div></div><section id="actionRail" class="action-rail" aria-label="What was said, what was read back, what was recorded"><div class="rail-cell" data-cell="said"><div class="rail-eyebrow"><i></i><span>01 · SAID</span></div><p class="rail-text">Your words, as heard.</p><small class="rail-meta"></small></div><div class="rail-cell" data-cell="readback"><div class="rail-eyebrow"><i></i><span>02 · READ BACK</span></div><p class="rail-text">Every write is read back first: quantity, unit, description, bin.</p><div class="rail-chips"></div></div><div class="rail-cell" data-cell="recorded"><div class="rail-eyebrow"><i></i><span>03 · RECORDED</span></div><p class="rail-text">Nothing yet. A spoken yes posts the document. Anything else posts nothing.</p><small class="rail-meta"></small></div></section></div>
+<div id="warehouseTasks" hidden></div><div id="warehouseWork" hidden><p class="work-signature">Built for the <strong>AssemblyAI Voice Agent Hackathon</strong> · September 2026</p><nav id="taskStrip" class="task-strip" aria-label="Tasks in this area" hidden></nav><div id="warehouseBrief"><span id="warehouseBriefImage" class="warehouse-art" aria-hidden="true" ></span><div class="brief-copy"><small class="brief-eyebrow">YOUR NEXT TASK</small><h2 id="warehouseBriefTitle"></h2><p id="warehouseBriefText"></p><blockquote id="warehouseGuideQuote" hidden><small>YOUR WAREHOUSE GUIDE</small><p>“A delivery just arrived. Let’s check it in.”</p></blockquote></div></div><section id="actionRail" class="action-rail" aria-label="What was said, what was read back, what was recorded"><div class="rail-cell" data-cell="said"><div class="rail-eyebrow"><i></i><span>01 · SAID</span></div><p class="rail-text">Your words, as heard.</p><small class="rail-meta"></small></div><div class="rail-cell" data-cell="readback"><div class="rail-eyebrow"><i></i><span>02 · READ BACK</span></div><p class="rail-text">Every write is read back: quantity, unit, description, bin.</p><div class="rail-chips"></div></div><div class="rail-cell" data-cell="recorded"><div class="rail-eyebrow"><i></i><span>03 · RECORDED</span></div><p class="rail-text">Nothing yet. Only a spoken yes posts the document.</p><small class="rail-meta"></small></div></section></div>
 </section>
 <section class="shift" aria-label="Warehouse shift">
   <div class="shift-heading"><div><h3>Your shift starts here.</h3><p>Choose an area. Pick a task. Work by voice.</p></div></div>
@@ -2763,21 +2763,13 @@ function renderVoiceSuggestions() {
   // A custom task carries the action it rehearses, so it inherits that set.
   const key = pressed ? pressed.dataset.scenario : activeScenario?.action;
   const lines = TASK_SUGGESTIONS[key] || TASK_SUGGESTIONS.receive;
+  // All three at once, as chips. A single line that rotates every five
+  // seconds asks the worker to wait for the one they wanted.
   box.replaceChildren();
   const label = document.createElement('span'); label.textContent = 'Try saying';
-  const quote = document.createElement('q'); quote.textContent = lines[0];
-  const dots = document.createElement('div'); dots.className = 'suggestion-dots'; dots.setAttribute('aria-hidden','true');
-  lines.forEach((_,i) => { const dot = document.createElement('i'); dot.classList.toggle('active',i===0); dots.append(dot); });
-  box.append(label,quote,dots);
+  box.append(label);
+  for (const line of lines) { const quote = document.createElement('q'); quote.textContent = line; box.append(quote); }
   clearInterval(suggestionTimer);
-  let index = 0;
-  suggestionTimer = setInterval(() => {
-    if (live || box.hidden || document.hidden || warehouseStage !== 'work' || location.hash !== '#warehouse') return;
-    index = (index + 1) % lines.length;
-    quote.textContent = lines[index];
-    if (!reducedMotion.matches) quote.animate([{opacity:0,transform:'translateY(3px)'},{opacity:1,transform:'translateY(0)'}],{duration:300});
-    [...dots.children].forEach((dot,i) => dot.classList.toggle('active',i===index));
-  },5000);
 }
 // Every task in this area on one line, with the running one marked. It is what
 // is left of the chooser screen, and it costs no screen of its own.

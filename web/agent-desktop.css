@@ -459,3 +459,42 @@
 .record-why p {margin:0;font-size:12px;color:#2f5e44;overflow-wrap:anywhere;}
 .desktop-reach {margin:14px 0 0;padding-top:12px;border-top:1px solid #e0e5da;font:10px/1.7 var(--mono);letter-spacing:.06em;color:#8b927f;overflow-wrap:anywhere;}
 #agentDesktop .desktop-empty {min-height:0;padding:20px 0 6px;flex:0 0 auto;}
+
+/* Match the drawing. These sit last so they win over the earlier studio pass:
+   pills for the tasks, a quiet voice column with the orb and three chips, a
+   narrow left and a wide right, and a kicker instead of a title on the
+   workspace. Nothing here changes what the tools do. */
+#warehouseWork #taskStrip {gap:8px;padding:16px 0;justify-content:flex-end;flex-wrap:wrap;}
+#warehouseWork .task-strip-item {display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border:1px solid #dedfd9;border-radius:999px;background:#fff;color:#4a5a49;font:500 13px/1.2 system-ui;box-shadow:none;white-space:nowrap;}
+#warehouseWork .task-strip-item[aria-current="true"] {background:#244b35;border-color:#244b35;color:#fff;}
+#warehouseWork .task-strip-new {border-style:dashed;color:#7c8a79;background:transparent;}
+#warehouseWork .console-wrap {grid-template-columns:minmax(300px,.32fr) minmax(0,.68fr);}
+@media(min-width:1150px) {#warehouseWork .console-wrap {grid-template-columns:400px minmax(0,1fr);}}
+#warehouseWork .voice-column {background:#fff;border-right:1px solid #e1e5df;}
+#warehouseWork .voice-heading {display:none;}
+#warehouseWork .console-wrap header,#warehouseWork header:has(#talkBtn.live) {padding:28px 24px 12px;gap:8px;}
+#warehouseWork #voiceOrbButton {width:100px;height:100px;}
+#warehouseWork .console-wrap header #voiceOrbButton #orb {width:92px;height:92px;}
+#warehouseWork #status {font-size:14px;color:#253b2c;}
+#warehouseWork #orbHint {color:#6e7869;font-size:12px;}
+#warehouseWork .voice-credit {font-size:9px;letter-spacing:.12em;color:#8b927f;opacity:1;}
+#warehouseWork #voiceSuggestions {margin:0 24px 8px;padding:14px 0 0;gap:6px;display:flex;flex-wrap:wrap;justify-content:flex-start;border-top:1px solid #eef1ec;}
+#warehouseWork #voiceSuggestions>span {flex-basis:100%;margin:0 0 4px;text-align:left;font:10px var(--mono);letter-spacing:.14em;color:#71806f;text-transform:uppercase;}
+#warehouseWork #voiceSuggestions q {min-height:0;font:12px/1.3 system-ui;color:#536154;padding:7px 11px;border:1px solid #e1e7df;border-radius:20px;background:#f8faf7;}
+#warehouseWork .console-wrap #conversationDetails {margin:0 24px;border-top:1px solid #eef1ec;}
+#warehouseWork #conversationDetails summary,#warehouseWork #conversationDetails>summary {font:10px var(--mono);letter-spacing:.14em;color:#71806f;text-transform:uppercase;}
+#warehouseWork #log .msg.user,#warehouseWork #log .msg.agent {margin:0;padding:0;background:none;border:0;font:13px/1.45 system-ui;color:#253b2c;}
+#warehouseWork #log .msg.agent {color:#253b2c;}
+#warehouseWork #log .msg.user:before,#warehouseWork #log .msg.agent:before {display:none;}
+#warehouseWork #log .msg .who {font:9px var(--mono);letter-spacing:.12em;color:#8b927f;text-transform:uppercase;margin-bottom:3px;}
+#warehouseWork #log {gap:12px;}
+#agentDesktop .desktop-heading {align-items:center;justify-content:space-between;margin:0 0 6px;padding:0;border:0;}
+#agentDesktop .desktop-heading small {font:10px var(--mono);letter-spacing:.12em;color:#71806f;}
+#agentDesktop .desktop-heading .desktop-badge {font:600 10px/1.4 system-ui;letter-spacing:.03em;border:1px solid #d3dccd;background:#edf1e8;color:#4d674f;padding:6px 9px;border-radius:20px;}
+#agentDesktop .desktop-empty {align-items:flex-start;text-align:left;padding:10px 0 4px;gap:4px;}
+#agentDesktop .desktop-empty .document-kicker {font:10px var(--mono);letter-spacing:.12em;color:#71806f;}
+#agentDesktop .desktop-empty h3 {font:600 22px/1.2 system-ui;letter-spacing:-.04em;margin:2px 0 0;color:#253b2c;}
+#agentDesktop .desktop-empty p {font-size:13px;color:#8a958d;margin:0;}
+.desktop-recent {margin-top:14px;}
+.recent-reason {display:flex;gap:10px;align-items:baseline;}
+.recent-reason-label {font:9px var(--mono);letter-spacing:.12em;color:#71806f;text-transform:uppercase;flex-shrink:0;}

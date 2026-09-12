@@ -179,12 +179,13 @@
     const stateText={pending:'Working…',draft:'Your confirmation needed',saved:'Saved',read:'Checked',rejected:'Needs attention',error:'Could not finish',uncertain:'Result uncertain',expired:'Draft expired',superseded:'Draft replaced',submitted:'Draft used',stopped:'Stopped'};
     function render() {
       state.expire(); host.replaceChildren();
-      add(host,add(node('div','desktop-heading'),add(node('div'),node('h2','',"Lena’s workspace"),node('p','','Tool results and records')),badge('Demo')));
+      // A kicker, not a title: the card below is the thing, this only names the surface.
+      add(host,add(node('div','desktop-heading'),node('small','',"LENA’S WORKSPACE"),badge('Mock S/4HANA')));
       // No device tabs: the worker never chooses a device, the tool does. The
       // card shows whatever the current action is, and earlier ones are reached
       // through the session activity list below.
       if(!state.current) {
-        const empty=add(node('div','desktop-empty'),node('h3','','No document yet'),node('p','','What you confirm appears here as the record it becomes: a material document, a demo call, a message or a note.'));
+        const empty=add(node('div','desktop-empty'),node('small','document-kicker','MATERIAL DOCUMENT · NONE YET'),node('h3','','No document yet'),node('p','','What you confirm becomes the record here.'));
         add(host,empty);
         // Evidence that the system has done things, even on a quiet day: the
         // last documents in the mock ERP, each with the sentence behind it one
@@ -193,11 +194,14 @@
           const list=add(node('section','desktop-recent'),node('small','','RECENT DOCUMENTS · WHY EACH ONE EXISTS'));
           for(const d of recent.slice(0,4)) {
             const row=node('div','recent-row');
-            add(row,node('span','recent-number',d.MBLNR),node('span','recent-type',d.BWART),node('span','recent-what',`${words(d.MENGE)} ${d.MEINS||''} · material ${d.MATNR}${d.LGPLA?' · bin '+d.LGPLA:''}`));
+            // The movement type in words as well as the code: 501 means nothing to
+            // a reader who has not lived in MM, and "receipt" is what it means.
+            const kind={'101':'receipt','501':'receipt','102':'reversal','502':'reversal'}[String(d.BWART)]||'movement';
+            add(row,node('span','recent-number',d.MBLNR),node('span','recent-type',`${d.BWART} · ${kind}`),node('span','recent-what',`${words(d.MENGE)} ${d.MEINS||''} · material ${d.MATNR}${d.LGPLA?' · bin '+d.LGPLA:''}`));
             if(provenance) {
               const why=node('button','recent-why','why ↗');why.type='button';
               why.onclick=async()=>{why.disabled=true;let row_=null;try{row_=await provenance(d.MBLNR);}catch{row_=null;}
-                const said=row_?.voice?.utterance;const line=node('p','recent-reason',said?('“'+said+'”'):'No provenance row for this document.');
+                const said=row_?.voice?.utterance;const line=add(node('p','recent-reason'),node('span','recent-reason-label','Confirmed with'),node('span','',said?('“'+said+'”'):'No provenance row for this document.'));
                 row.after(line);why.remove();};
               add(row,why);
             }
@@ -274,7 +278,7 @@
       if(said) setCell('said','is-live','“'+said+'”',''); else setCell('said','','Your words, as heard.','');
       const source=draft||used;
       if(source){const r=readback(source);setCell('readback',draft?'is-waiting':'is-live',r.text,'',r.chips);}
-      else setCell('readback','','Every write is read back first: quantity, unit, description, bin.','',[]);
+      else setCell('readback','','Every write is read back: quantity, unit, description, bin.','',[]);
       if(write&&write.state==='saved') {
         const r=write.result||{};
         const what=r.MBLNR?('Material document '+r.MBLNR+(r.reverses?' reverses '+r.reverses:'')):('Saved · '+(r.record?.id||''));
@@ -285,7 +289,7 @@
       } else if(write&&write.state==='uncertain') setCell('recorded','is-refused','Result uncertain. Records are checked before anything is tried again.','');
       else if(write&&write.state==='pending') setCell('recorded','is-waiting','Posting…','');
       else if(draft) setCell('recorded','','Nothing yet. Say yes to post it. Anything else posts nothing.',draft.expires?'Draft expires in '+countdown(draft.expires):'');
-      else setCell('recorded','','Nothing yet. A spoken yes posts the document. Anything else posts nothing.','');
+      else setCell('recorded','','Nothing yet. Only a spoken yes posts the document.','');
     }
     const interval=setInterval(()=>{const was=state.entries.map(e=>e.state).join();state.expire();if(was!==state.entries.map(e=>e.state).join())render();else if(state.entries.some(e=>e.state==='draft'))renderRail();},1000);
     render();
