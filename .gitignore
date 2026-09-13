@@ -17,3 +17,8 @@ skills-lock.json
 
 # Local experiment notes and parked patches, never part of the submission
 docs/experiments/
+
+# Local credentials and environment variants
+.env.*
+!.env.example
+.envecho
