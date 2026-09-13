@@ -2930,7 +2930,7 @@ async function enterWarehouseArea(key) {
   // Authorize this same media element during the click, then hold it for arrival.
   let ready = Promise.resolve();
   if (!seen && !reducedMotion.matches) {
-    video.src = `/assets/avatar/${key}-intro.mp4`;
+    video.src = `/assets/avatar/${key}-intro.mp4${key === 'review' ? '?v=20260913-v5' : ''}`;
     const playback = video.play();
     video.pause();
     ready = Promise.resolve(playback).catch(() => {});
@@ -2945,7 +2945,7 @@ async function enterWarehouseArea(key) {
 const areaIntros = {
   receiving: {title:'A delivery just arrived', line:'A delivery just arrived. Let’s check it in.'},
   storage: {title:'Find the right material', line:'Let’s find the right material and check what’s in stock.'},
-  review: {title:'Check the receipt', line:'Let’s check the receipt before we make any changes.'}
+  review: {title:'Practice scenario · Duplicate delivery', line:'This delivery was recorded twice. Let’s fix it.'}
 };
 function enterWarehouseAreaWithIntro(key, force = false) {
   const intro = areaIntros[key];
@@ -3025,7 +3025,7 @@ function enterWarehouseAreaWithIntro(key, force = false) {
   dialog.querySelector('footer p').textContent = intro.line;
   video.setAttribute('aria-label', intro.title);
   video.poster = '/assets/hero-scene.png';
-  const source = `/assets/avatar/${key}-intro.mp4`;
+  const source = `/assets/avatar/${key}-intro.mp4${key === 'review' ? '?v=20260913-v5' : ''}`;
   if (video.getAttribute('src') !== source) {
     video.src = source;
     video.load();
