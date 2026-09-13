@@ -34,11 +34,15 @@ entries=[]; key='receive'; context.renderVoiceSuggestions();
 const chips=()=>box.children.filter(n=>n.tag==='q');
 assert.deepEqual(chips().map(q=>q.attrs['aria-pressed']),['true','false','false']);
 chips()[1].onclick();
-assert.equal(context.talkBtn.clicks,1,'choosing a line opens the microphone when it is closed');
-context.live=true; chips()[2].onclick(); assert.equal(context.talkBtn.clicks,1,'and leaves it alone when it is open'); context.live=false; chips()[1].onclick();
+assert.equal(context.talkBtn.clicks,0,'choosing a line must not open the microphone');
+context.live=true; chips()[2].onclick(); assert.equal(context.talkBtn.clicks,0,'and leaves it alone when it is open'); context.live=false; chips()[1].onclick();
 assert.deepEqual(chips().map(q=>q.attrs['aria-pressed']),['false','true','false']);
 context.renderVoiceSuggestions();
 assert.deepEqual(chips().map(q=>q.attrs['aria-pressed']),['false','true','false']);
+for (const key of ['Enter', ' ']) {
+  chips()[1].onkeydown({key, preventDefault(){}});
+  assert.equal(context.talkBtn.clicks,0,'keyboard selection must not open the microphone');
+}
 context.forgetSuggestionChoice(); context.renderVoiceSuggestions();
 assert.deepEqual(chips().map(q=>q.attrs['aria-pressed']),['true','false','false']);
 console.log('Suggestions: three lines per task, the three answers with their effect while a draft waits, no rotation, a chosen line stays chosen passed.');

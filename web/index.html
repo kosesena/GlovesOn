@@ -2796,10 +2796,8 @@ function renderVoiceSuggestions() {
   const hints = draft ? (comms
     ? ['→ saves it, nowhere real', '→ drafted again', '→ nothing is saved']
     : [`→ posts ${d.MENGE !== undefined ? d.MENGE + ' ' + (d.MEINS || '') : 'it'}`, '→ new read-back', '→ nothing is recorded']) : null;
-  // The lines can be chosen. The chosen one is the green one, and choosing it
-  // opens the microphone if it is not open, because the next thing to do with
-  // a line is to say it. Nothing is typed to the agent on the worker's behalf:
-  // a write still needs a spoken yes, and the chip never speaks for anyone.
+  // Choosing a line only highlights it. Starting the microphone remains an
+  // explicit action on the orb; suggestions never speak for the worker.
   const chosen = lines.includes(selectedSuggestion) ? selectedSuggestion : lines[0];
   lines.forEach((line, i) => {
     // The quotes are written into the text: the browser's own <q> marks became
@@ -2811,7 +2809,6 @@ function renderVoiceSuggestions() {
     if (hints) { const hint = document.createElement('small'); hint.textContent = hints[i]; quote.append(hint); }
     quote.onclick = () => {
       selectedSuggestion = line; renderVoiceSuggestions();
-      if (!live && typeof talkBtn !== 'undefined' && !talkBtn.disabled) talkBtn.click();
     };
     quote.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); quote.onclick(); } };
     box.append(quote);
