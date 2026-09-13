@@ -160,7 +160,7 @@
 <!-- 4 · SOLUTION -->
 <section class="slide"><span class="tag">04 · THE SOLUTION</span>
  <div class="kicker">Say it. It posts.</div>
- <h1 style="font-size:60px;margin:24px 0 30px">One spoken sentence<br>becomes a real document.</h1>
+ <h1 style="font-size:60px;margin:24px 0 30px">Speak. Review. Confirm.<br>A demo record is created.</h1>
  <div class="xchg" style="max-width:9.6in">
    <div class="r"><b>YOU</b>“Forty M8 bolts arrived.”</div>
    <div class="r" style="color:var(--green)"><b style="color:#8aa891">GUIDE</b>“Forty pieces of hex bolt M8x40 into bin A-03-02 — confirm?”</div>
@@ -173,8 +173,8 @@
 
 <!-- 5 · SEE IT WORK -->
 <section class="slide"><span class="tag">05 · SEE IT WORK</span>
- <div class="kicker">A confirmed write, live</div>
- <h2 style="margin:22px 0 26px;font-size:40px">Every number on screen is real.</h2>
+ <div class="kicker">Illustrative demo result</div>
+ <h2 style="margin:22px 0 26px;font-size:40px">A result you can review.</h2>
  <div class="console">
    <div class="top"><span class="dot"></span>GLOVESON · PLANT 1000 / RECEIVING · DEMO</div>
    <div class="body">
@@ -198,8 +198,8 @@
    </div>
  </div>
  <div class="lede" style="margin-top:22px;font-size:18px">The read-back names the <b class="g">description</b>, not just the number — which is what lets a worker catch they are holding nuts, not bolts.</div>
- <div class="lede" style="margin-top:10px;font-size:15px">The warehouse around this console is staging — you cannot ship a receiving floor to a judge. The scenery is the only fiction; <b class="g">one environment variable</b> points the same contract at a real tenant.</div>
- <div class="foot">Replace with a GIF of the live demo before submitting.</div>
+ <div class="lede" style="margin-top:10px;font-size:15px">The warehouse around this console is staging — you cannot ship a receiving floor to a judge. The values shown here are illustrative demo data. Live SAP tenant connectivity has not been verified.</div>
+ <div class="foot">Illustrative values · mock ERP · no live SAP transaction shown.</div>
 </section>
 
 <!-- 6 · DISCIPLINE -->
@@ -208,7 +208,7 @@
  <h2 style="margin:22px 0 30px">Five guardrails, each one deliberate.</h2>
  <div class="pts">
    <div class="pt"><span class="n">1</span><div><b>The read-back names four things.</b><p>Quantity, unit, material description, bin. The description is load-bearing.</p></div></div>
-   <div class="pt"><span class="n">2</span><div><b>Nothing posts without a spoken yes.</b><p><code style="font-family:var(--mono);color:var(--green)">execution_mode: hold</code> — the agent waits for the ERP instead of narrating success.</p></div></div>
+   <div class="pt"><span class="n">2</span><div><b>Writes require a confirmed draft.</b><p>The gateway validates the exact draft. Spoken consent is reported by the agent; results appear only after the tool returns.</p></div></div>
    <div class="pt"><span class="n">3</span><div><b>A duplicate is refused.</b><p>The same receipt within two minutes is caught — by a guard in the gateway, because real S/4HANA would accept it twice.</p></div></div>
    <div class="pt"><span class="n">4</span><div><b>Nothing is deleted — it is reversed.</b><p>A wrong receipt gets a reversal document (102 against a 101). Both stay, because that is what a ledger is.</p></div></div>
    <div class="pt"><span class="n">5</span><div><b>Every document answers why it exists.</b><p>Click a posted row: the sentence the worker confirmed, and the second it happened.</p></div></div>
@@ -223,7 +223,7 @@
  <div style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:26px 30px;text-align:center">
    <img src="architecture.svg" style="width:100%;max-height:3.1in;object-fit:contain" alt="architecture">
  </div>
- <div class="lede" style="margin-top:auto;font-size:19px">It speaks in warehouse terms; the gateway owns auth, SAP field translation and every write guardrail. Swapping the mock for a real tenant is <b class="g">one environment variable</b> — there is no second code path.</div>
+ <div class="lede" style="margin-top:auto;font-size:19px">It speaks in warehouse terms; the gateway owns auth, SAP field translation and every write guardrail. The demo uses a mock ERP behind the OData client. A real SAP tenant still needs verified credentials, permissions and integration testing.</div>
  <div class="foot">docs/adr/0001 · docs/adr/0003</div>
 </section>
 
@@ -236,8 +236,8 @@
    <div class="chip">LLM routing</div>
    <div class="chip">Voice output</div>
    <div class="chip">Turn-taking &amp; VAD</div>
-   <div class="chip"><b>JSON-Schema</b> HTTP tools</div>
-   <div class="chip"><b>execution_mode: hold</b> on both writes</div>
+   <div class="chip"><b>JSON-Schema</b> client functions</div>
+   <div class="chip">Browser-to-gateway tool bridge</div>
    <div class="chip">transcription_prompt</div>
    <div class="chip">56 keyterms → SAP material numbers</div>
    <div class="chip">Barge-in</div>
@@ -278,10 +278,10 @@
  <h2 style="margin:22px 0 30px">What this does not do yet.</h2>
  <div class="lim">
    <div class="row"><span><b>The ERP is a mock</b> — the OData contract and the CSRF handshake are real, but no claim is made that this has run against a live tenant.</span></div>
-   <div class="row"><span><b>Nobody is authenticated, and the posting is made by a service user</b> — SAP cannot say who did it. The missing Clean Core piece: principal propagation.</span></div>
+   <div class="row"><span><b>No employee sign-in or SAP principal propagation</b> — session capabilities protect tool calls, but do not establish a worker’s identity.</span></div>
    <div class="row"><span><b>Noise robustness is unmeasured</b> — voice_focus: far-field is set, but a config change is a claim, not a measurement.</span></div>
-   <div class="row"><span><b>The demo serves one session at a time</b>, by design.</span></div>
-   <div class="row"><span><b>Turkish is understood on input</b>, but the agent cannot answer in Turkish yet (TTS support pending).</span></div>
+   <div class="row"><span><b>Session events are isolated; warehouse records are shared</b> — this is a demonstration, not a tenant-isolated production system.</span></div>
+   <div class="row"><span><b>The supported product language is English</b>; other languages are outside the demo scope.</span></div>
  </div>
  <div class="lede" style="margin-top:30px;font-size:17px">Naming the gap is the credibility. Every one is written up in the repo, and the judge guide ends with them.</div>
  <div class="foot">docs/clean-core.md · docs/nfr.md</div>
