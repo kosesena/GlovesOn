@@ -132,14 +132,16 @@
 #warehouseWork #orbHint {display:inline;margin:0;font:12px/1.3 system-ui;color:#6e7869;}
 #warehouseWork .voice-credit {display:inline-flex;align-items:center;gap:4px;margin:0;font:12px/1.3 system-ui;letter-spacing:0;color:#6e7869;opacity:1;}
 #warehouseWork .voice-credit svg {height:11px;width:auto;opacity:.7;}
-/* A white-blue cloud surface, with motion contained inside the voice control. */
+/* Feather the cloud into the card instead of clipping it to a hard disc. */
 #warehouseWork #voiceOrbButton {position:relative;overflow:visible;}
 #warehouseWork #voiceOrbButton::before {content:none;}
 #warehouseWork #voiceOrbButton:focus-visible {outline:2px solid #4a9de0;outline-offset:5px;}
 #warehouseWork .console-wrap header #voiceOrbButton #orb {
   background:radial-gradient(circle at 48% 22%,#fff 0 24%,#f0faff 49%,#d2edff 76%,#79bafa 100%);
-  mask-image:none;-webkit-mask-image:none;
-  box-shadow:inset 0 0 7px #ffffffc9,0 3px 16px #92c7eb24;
+  border-radius:0;
+  -webkit-mask-image:radial-gradient(ellipse at 49% 50%,#000 30%,#000e 43%,#0008 55%,#0003 64%,transparent 72%);
+  mask-image:radial-gradient(ellipse at 49% 50%,#000 30%,#000e 43%,#0008 55%,#0003 64%,transparent 72%);
+  box-shadow:none;
   transform:scale(calc(.96 + var(--lvl) * .04));
   opacity:1;
 }
