@@ -80,3 +80,18 @@ complete. The workspace reports individual tool outcomes, not a full task score.
 The existing provider loop remains AssemblyAI Voice Agent API. The browser
 relays function calls through scoped capabilities; `gateway/communications.py`
 contains no email or telephony provider integration.
+
+## Fictional Alex conversation — 14 September 2026
+
+After a successful, freshly confirmed demo call to Alex whose purpose describes
+ damage, the browser switches the existing voice session into explicitly labelled
+Alex role-play. Alex asks about the incident and missing item/count information,
+asks again when unclear, then gives a brief practice response. It uses the current
+session voice; it is not a separately connected person or telephony service.
+All tools and workspace action shortcuts are blocked during this role-play.
+Say “end call”, “hang up” or “goodbye”, or use End simulated call, to restore
+GlovesOn and the task prompt. Ending the whole voice session removes the control.
+The original call log persists; no call duration, real answer or conversation
+summary is written. Other contacts and non-damage calls remain log-only.
+Policy and transport contracts cover activation, role restoration and blocked
+writes. Real microphone/provider dialogue quality remains unverified.

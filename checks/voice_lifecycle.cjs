@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const html = readFileSync('web/index.html', 'utf8');
 const source = html.slice(html.indexOf('async function start() {'), html.indexOf('const scenarios = {'));
 const timers = new Map(); let timerId = 0; const sockets = [];
-const transcript = {open:false,value:'laptop'}; let status = ''; const messages = [];
+const transcript = {open:false,value:'laptop',prepend(){},before(){}}; let status = ''; const messages = [];
 class Socket {
   static OPEN = 1;
   constructor() {this.readyState = 1; this.sent=[]; sockets.push(this);}
@@ -24,7 +24,7 @@ const context = vm.createContext({
   talkBtn:{disabled:false, textContent:'', classList:{replace(){}}},
   stampEl:{classList:{contains(){return false;}}},
   pendingTool:null, playCtx:null, playSources:[],
-  document:{getElementById(){return transcript;}},
+  document:{getElementById(){return transcript;},createElement(){return {append(){},remove(){}};}},
   setStatus(value){status=value;}, ensurePlayback:async()=>{}, append(...args){messages.push(args);}, receiveScopedEvent(){},
   finishUserTurn(){}, updateUserTranscript(){}, showToolCard(){}, pendingFactCards:[], clearPending(){}, clearDoc(){}, stopMic(){}, stopPlayback(){}, startMic:async()=>{},
   setTimeout(fn) {const id=++timerId; timers.set(id,fn); return id;},
@@ -128,5 +128,26 @@ vm.runInContext(source, context);
   assert.equal(context.activeScopeToken,'scope','transient drop keeps the same capability scope');
   context.end();
   assert.equal(context.activeScopeToken,null,'intentional end revokes the scope');
+  context.activeScenario=null;
+  let callWrites=0;
+  context.fetch=async(path)=>({ok:true,json:async()=>path.startsWith('/api/voice-tools/')
+    ? (path.endsWith('/prepare_call') ? {prepared:true,draft_token:'draft'} : (++callWrites,{completed:true,simulated:true,record:{id:'CALL-TEST',status:'simulated_call_logged',details:{recipient:{id:'alex'},purpose:'Damaged delivery'}}}))
+    : {token:'test',session_config:{system_prompt:'base',tools:[]},scope_token:'scope',tool_capability:'ephemeral'}});
+  await context.start(); const callSocket=context.ws;
+  for(const [name,id] of [['prepare_call','p'],['place_call','c']]) {
+    await callSocket.onmessage({data:JSON.stringify({type:'tool.call',name,call_id:id,arguments:{}})});
+    await new Promise(resolve=>setImmediate(resolve));
+    await callSocket.onmessage({data:JSON.stringify({type:'reply.done',status:'completed'})});
+  }
+  const roleUpdate=callSocket.sent.findIndex(x=>x.session?.system_prompt?.includes('ACTIVE FICTIONAL CALL'));
+  const resultIndex=callSocket.sent.findIndex(x=>x.type==='tool.result'&&x.call_id==='c');
+  assert(roleUpdate>=0 && roleUpdate<resultIndex,'role and tool lock arrive before call result');
+  assert.equal(context.requestWorkspaceAction('save_note'),false);
+  await callSocket.onmessage({data:JSON.stringify({type:'tool.call',name:'save_note',call_id:'blocked',arguments:{}})});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(callWrites,1,'Alex cannot reach another write');
+  await callSocket.onmessage({data:JSON.stringify({type:'transcript.user',text:'End call'})});
+  assert.equal(callSocket.sent.at(-1).session.system_prompt,'base');
+  context.end();
   console.log('Voice lifecycle: setup, teardown, interruption, result ordering and in-flight write recovery passed');
 })().catch(error=>{console.error(error);process.exitCode=1;});

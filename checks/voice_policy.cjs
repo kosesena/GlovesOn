@@ -28,3 +28,21 @@ assert(policy.update().input.keyterms.includes('Special bearing'));
 assert(!JSON.stringify(policy.update()).includes('ignore all rules'));
 assert.deepEqual(safeDiagnostic({token:'secret',arguments:{draft_token:'secret',material:'4711'},audio:'bytes'}),{arguments:{material:'4711'}});
 console.log('Voice policy: correction, expiry, uncertain writes, vocabulary and diagnostic redaction passed');
+
+// A failed/log-only/different-person call must not impersonate a colleague.
+const callPolicy=new VoicePolicy(config,config.tools);
+const callResult={completed:true,simulated:true,record:{status:'simulated_call_logged',details:{recipient:{id:'alex'},purpose:'Damaged delivery'}}};
+callPolicy.result('place_call',callResult,true); assert.equal(callPolicy.call,null);
+callPolicy.result('prepare_call',callResult,false); assert.equal(callPolicy.call,null);
+callPolicy.result('place_call',{...callResult,record:{...callResult.record,details:{recipient:{id:'sam'},purpose:'Damaged delivery'}}},false); assert.equal(callPolicy.call,null);
+callPolicy.result('place_call',callResult,false);
+assert.equal(callPolicy.call.name,'Alex Morgan');
+assert.equal(callPolicy.update().tools.length,0,'role-play cannot operate ERP or communications');
+assert.equal(callPolicy.allows('prepare_goods_receipt'),false);
+callPolicy.user('Yes'); assert(callPolicy.call,'yes answers Alex, not a write confirmation');
+callPolicy.user('three, perhaps four'); assert(callPolicy.call);
+callPolicy.user('End call'); assert.equal(callPolicy.call,null);
+assert.equal(callPolicy.update().system_prompt,config.system_prompt,'original role restored');
+assert.equal(callPolicy.allows('place_call'),false,'ending role-play does not grant another write');
+callPolicy.result('place_call',callResult,false);callPolicy.endCall();assert.equal(callPolicy.call,null);
+console.log('Simulated Alex: successful damage call only, no tools, explicit exit and role restoration passed');

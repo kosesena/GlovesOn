@@ -241,3 +241,7 @@
  #agentDesktop .desk-stub-what {white-space:normal;}
  #warehouseWork .action-stream {flex:0 0 auto;min-height:0;max-height:320px;}
 }
+
+/* Explicit role boundary for the fictional supervisor conversation. */
+.simulated-call-banner:not([hidden]) {display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;background:#e8f2ed;color:#214d39;border:1px solid #b6cfc0;border-radius:16px;margin-bottom:12px;font:14px system-ui;}
+.simulated-call-banner button {padding:10px 14px;border:1px solid #214d39;border-radius:20px;background:white;color:#214d39;cursor:pointer;}
