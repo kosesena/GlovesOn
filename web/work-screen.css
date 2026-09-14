@@ -132,16 +132,46 @@
 #warehouseWork #orbHint {display:inline;margin:0;font:12px/1.3 system-ui;color:#6e7869;}
 #warehouseWork .voice-credit {display:inline-flex;align-items:center;gap:4px;margin:0;font:12px/1.3 system-ui;letter-spacing:0;color:#6e7869;opacity:1;}
 #warehouseWork .voice-credit svg {height:11px;width:auto;opacity:.7;}
-/* The orb breathes as drawn: a ring leaves it and fades, slower while it
-   waits and at the drawing's pace while it listens; the cloud inside moves
-   faster than it did at full size, where the same drift was visible. */
+/* A white-blue cloud surface, with motion contained inside the voice control. */
 #warehouseWork #voiceOrbButton {position:relative;overflow:visible;}
-#warehouseWork #voiceOrbButton::before {content:'';position:absolute;inset:-2px;border-radius:50%;border:2px solid #9fcbec;animation:listen 2.6s ease-out infinite;pointer-events:none;}
-#warehouseWork #voiceOrbButton[aria-pressed="true"]::before {animation-duration:1.8s;}
-#warehouseWork #voiceOrbButton:disabled::before {animation:none;opacity:0;}
-#warehouseWork .console-wrap header #voiceOrbButton #orb:before {animation-duration:4s;}
-#warehouseWork .console-wrap header #voiceOrbButton #orb:after {animation-duration:5.5s;}
-@keyframes listen {0% {transform:scale(1);opacity:.5;} 100% {transform:scale(1.5);opacity:0;}}
+#warehouseWork #voiceOrbButton::before {content:none;}
+#warehouseWork #voiceOrbButton:focus-visible {outline:2px solid #4a9de0;outline-offset:5px;}
+#warehouseWork .console-wrap header #voiceOrbButton #orb {
+  background:radial-gradient(circle at 48% 22%,#fff 0 24%,#f0faff 49%,#d2edff 76%,#79bafa 100%);
+  mask-image:none;-webkit-mask-image:none;
+  box-shadow:inset 0 0 7px #ffffffc9,0 3px 16px #92c7eb24;
+  transform:scale(calc(.96 + var(--lvl) * .04));
+  opacity:1;
+}
+#warehouseWork .console-wrap header #voiceOrbButton #orb::before {
+  inset:-12%;border-radius:42%;filter:blur(3px);opacity:.95;
+  background:radial-gradient(ellipse at 27% 69%,#147cec 0%,#62b2fa 20%,transparent 42%),
+    radial-gradient(ellipse at 78% 76%,#3397f5 0%,#9edaff 25%,transparent 48%),
+    radial-gradient(ellipse at 52% 22%,#fff 0 28%,transparent 54%);
+  animation:voice-cloud-drift 8s ease-in-out infinite alternate;
+}
+#warehouseWork .console-wrap header #voiceOrbButton #orb::after {
+  inset:-8%;border-radius:46%;filter:blur(2px);mix-blend-mode:normal;opacity:.9;
+  background:radial-gradient(ellipse at 32% 31%,#fff 0 19%,#ffffffdd 30%,transparent 49%),
+    radial-gradient(ellipse at 83% 43%,#eaf9ff 0 15%,transparent 40%);
+  animation:voice-cloud-light 10s ease-in-out infinite alternate;
+}
+#warehouseWork .console-wrap header #voiceOrbButton #orb.agent-speaking::before {animation-duration:2.8s;}
+#warehouseWork .console-wrap header #voiceOrbButton #orb.agent-speaking::after {animation-duration:3.5s;}
+@keyframes voice-cloud-drift {
+  0% {transform:translate(-6%,6%) rotate(-18deg) scale(1.04);}
+  50% {transform:translate(7%,-3%) rotate(32deg) scale(1.12);}
+  100% {transform:translate(-3%,-5%) rotate(-8deg) scale(1.02);}
+}
+@keyframes voice-cloud-light {
+  0% {transform:translate(-7%,-4%) rotate(-12deg);}
+  100% {transform:translate(9%,9%) rotate(45deg);}
+}
+@media(prefers-reduced-motion:reduce) {
+  #warehouseWork .console-wrap header #voiceOrbButton #orb {transform:none;}
+  #warehouseWork .console-wrap header #voiceOrbButton #orb::before,
+  #warehouseWork .console-wrap header #voiceOrbButton #orb::after {animation:none;}
+}
 /* the answers: what can be said now, and what each one does */
 #warehouseWork #voiceSuggestions {display:flex;flex-direction:column;flex-wrap:nowrap;gap:6px;margin:0;padding:0;border:0;background:transparent;}
 #warehouseWork #voiceSuggestions>span,#warehouseWork #voiceSuggestions>small,#warehouseWork #voiceSuggestions .suggestion-dots {display:none;}
