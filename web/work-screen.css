@@ -139,8 +139,8 @@
 #warehouseWork .console-wrap header #voiceOrbButton #orb {
   background:radial-gradient(circle at 48% 22%,#eefaff 0 15%,#b9e5ff 42%,#80c5fa 68%,#4a9eea 100%);
   border-radius:0;
-  -webkit-mask-image:radial-gradient(ellipse at 49% 50%,#000 53%,#000e 59%,#0008 65%,transparent 72%);
-  mask-image:radial-gradient(ellipse at 49% 50%,#000 53%,#000e 59%,#0008 65%,transparent 72%);
+  -webkit-mask-image:radial-gradient(circle closest-side at 50% 50%,#000 72%,#000e 80%,#0008 90%,transparent 100%);
+  mask-image:radial-gradient(circle closest-side at 50% 50%,#000 72%,#000e 80%,#0008 90%,transparent 100%);
   box-shadow:none;
   transform:scale(calc(.96 + var(--lvl) * .04));
   opacity:1;
