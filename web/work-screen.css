@@ -137,10 +137,10 @@
 #warehouseWork #voiceOrbButton::before {content:none;}
 #warehouseWork #voiceOrbButton:focus-visible {outline:2px solid #4a9de0;outline-offset:5px;}
 #warehouseWork .console-wrap header #voiceOrbButton #orb {
-  background:radial-gradient(circle at 48% 22%,#fff 0 24%,#f0faff 49%,#d2edff 76%,#79bafa 100%);
+  background:radial-gradient(circle at 48% 22%,#eefaff 0 15%,#b9e5ff 42%,#80c5fa 68%,#4a9eea 100%);
   border-radius:0;
-  -webkit-mask-image:radial-gradient(ellipse at 49% 50%,#000 30%,#000e 43%,#0008 55%,#0003 64%,transparent 72%);
-  mask-image:radial-gradient(ellipse at 49% 50%,#000 30%,#000e 43%,#0008 55%,#0003 64%,transparent 72%);
+  -webkit-mask-image:radial-gradient(ellipse at 49% 50%,#000 53%,#000e 59%,#0008 65%,transparent 72%);
+  mask-image:radial-gradient(ellipse at 49% 50%,#000 53%,#000e 59%,#0008 65%,transparent 72%);
   box-shadow:none;
   transform:scale(calc(.96 + var(--lvl) * .04));
   opacity:1;
@@ -153,7 +153,7 @@
   animation:voice-cloud-drift 8s ease-in-out infinite alternate;
 }
 #warehouseWork .console-wrap header #voiceOrbButton #orb::after {
-  inset:-8%;border-radius:46%;filter:blur(2px);mix-blend-mode:normal;opacity:.9;
+  inset:-8%;border-radius:46%;filter:blur(2px);mix-blend-mode:normal;opacity:.65;
   background:radial-gradient(ellipse at 32% 31%,#fff 0 19%,#ffffffdd 30%,transparent 49%),
     radial-gradient(ellipse at 83% 43%,#eaf9ff 0 15%,transparent 40%);
   animation:voice-cloud-light 10s ease-in-out infinite alternate;
