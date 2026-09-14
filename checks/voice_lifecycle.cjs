@@ -130,7 +130,7 @@ vm.runInContext(source, context);
   assert.equal(context.activeScopeToken,null,'intentional end revokes the scope');
   context.activeScenario=null;
   let callWrites=0;
-  context.fetch=async(path)=>({ok:true,json:async()=>path.startsWith('/api/voice-tools/')
+  context.fetch=async(path)=>({ok:true,json:async()=>path==='/api/voice-session/alex-token' ? {token:'alex-token',voice:'james'} : path.startsWith('/api/voice-tools/')
     ? (path.endsWith('/prepare_call') ? {prepared:true,draft_token:'draft'} : (++callWrites,{completed:true,simulated:true,record:{id:'CALL-TEST',status:'simulated_call_logged',details:{recipient:{id:'alex'},purpose:'Damaged delivery'}}}))
     : {token:'test',session_config:{system_prompt:'base',tools:[]},scope_token:'scope',tool_capability:'ephemeral'}});
   await context.start(); const callSocket=context.ws;
@@ -141,20 +141,20 @@ vm.runInContext(source, context);
   }
   assert.equal(callSocket.sent.some(x=>x.session?.system_prompt?.includes('ACTIVE FICTIONAL CALL')),false,'pending call must receive its result before its tool is removed');
   await callSocket.onmessage({data:JSON.stringify({type:'reply.done',status:'completed'})});
-  const roleUpdate=callSocket.sent.findIndex(x=>x.session?.system_prompt?.includes('ACTIVE FICTIONAL CALL'));
-  const resultIndex=callSocket.sent.findIndex(x=>x.type==='tool.result'&&x.call_id==='c');
-  assert(roleUpdate>=0 && roleUpdate>resultIndex,'role update follows the completed tool continuation');
-  assert.equal(callSocket.sent.filter(x=>x.type==='reply.create').length,0,'greeting waits for role acknowledgement');
-  await callSocket.onmessage({data:JSON.stringify({type:'session.updated'})});
-  assert.match(callSocket.sent.at(-1).instructions,/Hi Lena, Alex here/);
-  await callSocket.onmessage({data:JSON.stringify({type:'session.updated'})});
-  assert.equal(callSocket.sent.filter(x=>x.type==='reply.create').length,1,'duplicate acknowledgement cannot repeat greeting');
-  assert.equal(context.requestWorkspaceAction('save_note'),false);
-  await callSocket.onmessage({data:JSON.stringify({type:'tool.call',name:'save_note',call_id:'blocked',arguments:{}})});
   await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(callWrites,1,'Alex cannot reach another write');
-  await callSocket.onmessage({data:JSON.stringify({type:'transcript.user',text:'End call'})});
-  assert.equal(callSocket.sent.at(-1).session.system_prompt,'base');
+  const alex=sockets.at(-1);
+  assert.notEqual(alex,callSocket,'Alex gets a separate voice session');
+  alex.onopen();
+  assert.equal(alex.sent[0].session.tools.length,0);
+  assert.equal(alex.sent[0].session.output.voice,'james');
+  assert.equal(context.ws,null,'microphone waits for Alex readiness');
+  assert(!alex.sent[0].session.system_prompt.includes('base'));
+  await alex.onmessage({data:JSON.stringify({type:'session.ready'})});
+  await alex.onmessage({data:JSON.stringify({type:'tool.call',name:'search_material',call_id:'stale'})});
+  assert.equal(callWrites,1,'Alex cannot call the gateway');
+  await alex.onmessage({data:JSON.stringify({type:'transcript.user',text:'Thanks, Alex. End call.'})});
+  assert.equal(context.ws,callSocket,'ending Alex restores the original GlovesOn conversation');
+  assert.equal(alex.readyState,3);
   context.end();
   console.log('Voice lifecycle: setup, teardown, interruption, result ordering and in-flight write recovery passed');
 })().catch(error=>{console.error(error);process.exitCode=1;});

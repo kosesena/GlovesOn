@@ -2308,14 +2308,63 @@ async function start() {
   callBanner.append(callLabel, endCallButton);
   // Rendering the workspace replaces its children; keep the call control outside it.
   document.getElementById('agentDesktop').before(callBanner);
-  globalThis.closeCallPreview = () => callBanner.remove();
+  globalThis.closeCallPreview = () => { closeAlex(false); callBanner.remove(); };
   function syncCall() { callBanner.hidden = !policy.call; if (!policy.call) callHandoff = null; }
-  endCallButton.onclick = () => {
-    if (!policy.call || socket?.readyState !== WebSocket.OPEN) return;
+  let alexSocket = null, mainSocket = null, alexTimer = null;
+  function closeAlex(restore = true) {
+    clearTimeout(alexTimer); alexTimer=null;
+    const old = alexSocket; alexSocket=null;
+    if (old) { old.onclose=null; if (old.readyState === WebSocket.OPEN) old.send(JSON.stringify({type:'session.end'})); old.close(); }
+    if (mainSocket) {
+      if (restore) { socket=ws=mainSocket; }
+      else { mainSocket.onclose=null; mainSocket.close(); }
+      mainSocket=null;
+    }
+    if (!restore) return;
     stopPlayback(); policy.endCall(); syncCall();
-    socket.send(JSON.stringify({type:'session.update',session:policy.update()}));
-    socket.send(JSON.stringify({type:'reply.create',instructions:'The simulated call has ended. You are GlovesOn again. Briefly say the simulation ended; no real person was contacted. Wait for the worker. Do not perform any operation.'}));
-  };
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({type:'session.update',session:policy.update()}));
+      socket.send(JSON.stringify({type:'reply.create',instructions:'The fictional Alex call has ended. Briefly acknowledge the end as GlovesOn. No real person was contacted. Wait for the worker.'}));
+    } else failSession('The call ended. Tap to reconnect to GlovesOn.');
+  }
+  endCallButton.onclick = () => { if (policy.call) closeAlex(); };
+  async function openAlex() {
+    if (alexSocket || mainSocket || !policy.call) return;
+    mainSocket=socket; ws=null; // hold microphone frames until Alex is ready
+    setStatus('connecting to simulated Alex…', true);
+    const parent=mainSocket;
+    try {
+      const response=await fetch('/api/voice-session/alex-token',{method:'POST',headers:voiceHeaders});
+      if (!response.ok) throw new Error('Alex unavailable');
+      const data=await response.json();
+      if (activeScopeToken !== scopeToken || !policy.call || mainSocket !== parent) return;
+      const call=new WebSocket(`${WS_URL}?token=${encodeURIComponent(data.token)}`);
+      alexSocket=call;
+      alexTimer=setTimeout(()=>{if(alexSocket===call){append('sys','','Alex could not connect. Returning to GlovesOn.');closeAlex();}},15000);
+      call.onopen=()=>{ if(alexSocket!==call)return; call.send(JSON.stringify({type:'session.update',session:{
+        ...policy.update(),greeting:'Simulated call. Hi Lena, Alex here. What happened?',
+        output:{voice:data.voice,type:'audio',format:{encoding:'audio/pcm'}}
+      }})); };
+      call.onmessage=event=>{
+        if (alexSocket !== call || activeScopeToken !== scopeToken) return;
+        const m=JSON.parse(event.data);
+        if(m.type==='session.ready'){ws=call;clearTimeout(alexTimer);alexTimer=null;setStatus('Alex connected · simulated',true);}
+        else if(m.type==='input.speech.started'){stopPlayback();setStatus('Alex is listening',true);}
+        else if(m.type==='transcript.user.delta')updateUserTranscript(m.text??m.delta??'',false);
+        else if(m.type==='transcript.user'){
+          updateUserTranscript(m.text??'',true);policy.user(m.text??'');
+          if(!policy.call)closeAlex();
+        }
+        else if(m.type==='reply.audio')playChunk(base64ToFloat32(m.data??m.audio));
+        else if(m.type==='transcript.agent'){finishUserTurn();append('agent','Alex · simulated call',m.text??'');}
+        else if(m.type==='reply.done')setStatus('Alex is listening',true);
+        else if(m.type==='session.error'||m.type==='session.ended')closeAlex();
+        // This session has no tools and never reaches the ERP/communications bridge.
+      };
+      call.onclose=()=>{if(alexSocket===call)closeAlex();};
+      call.onerror=()=>{if(alexSocket===call)closeAlex();};
+    } catch { if(mainSocket===parent){append('sys','','Alex voice could not start. Returning to GlovesOn.');closeAlex();} }
+  }
   let lastToolEvent = null, toolEpoch = 0;
   let callHandoff = null;
   const toolResults = [], handledCalls = new Map();
@@ -2350,6 +2399,15 @@ async function start() {
     if (handledCalls.has(message.call_id)) {
       const cached = handledCalls.get(message.call_id);
       if (cached) { toolResults.push(cached); flushToolResults(); }
+      return;
+    }
+    if (policy.call) {
+      // A stale provider tool request cannot turn the phone view into an ERP error.
+      const reply = {type:'tool.result',call_id:message.call_id,is_error:true,result:JSON.stringify({
+        error:'Tools are disabled in the fictional Alex conversation. No lookup or operation was attempted. Continue as Alex using the worker’s reported facts; ask only for missing incident details. Do not retry tools or ask to repeat a clear material number.'
+      })};
+      handledCalls.set(message.call_id, reply);
+      toolResults.push(reply); flushToolResults();
       return;
     }
     handledCalls.set(message.call_id, null);
@@ -2449,11 +2507,6 @@ async function start() {
         await beginMicrophone();
         break;
       case 'session.updated':
-        if (callHandoff === 'update' && policy.call) {
-          callHandoff = null;
-          socket.send(JSON.stringify({type:'reply.create',instructions:'Begin the explicitly labelled fictional Alex call now. Say exactly: Simulated call. Hi Lena, Alex here. What happened? Then wait for the worker. Do not perform any tool operation.'}));
-          lastToolEvent = 'reply.started';
-        }
         if (!scenarioUpdatePending) break;
         scenarioUpdatePending = false; clearTimeout(sessionSetupTimer);
         append('sys', '', 'Scenario loaded: ' + activeScenario.title);
@@ -2484,6 +2537,7 @@ async function start() {
       case 'tool.call': {
         lastToolEvent = 'tool.call';
         if (sessionConfig) void runVoiceTool(m);
+        if (policy.call) break;
         const args = m.arguments ?? {};
         append('tool', '', `\u2192 ${m.name}(${JSON.stringify(args)})`);
         pendingTool = m.name;
@@ -2525,7 +2579,7 @@ async function start() {
         if (m.status === 'interrupted') { toolEpoch++; toolResults.length = 0; lastToolEvent = null; }
         else if (callHandoff === 'reply' && policy.call) {
           callHandoff = 'update'; policyDirty=false;
-          socket.send(JSON.stringify({type:'session.update',session:policy.update()}));
+          void openAlex();
         } else flushToolResults();
         endToolPhase();
         setStatus('listening', true);

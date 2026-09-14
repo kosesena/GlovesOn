@@ -48,3 +48,8 @@ callPolicy.result('place_call',callResult,false);callPolicy.endCall();assert.equ
 console.log('Simulated Alex: successful damage call only, no tools, explicit exit and role restoration passed');
 
 callPolicy.result('place_call',callResult,false); callPolicy.user('Thanks, Alex. End call.'); assert.equal(callPolicy.call,null);
+
+callPolicy.basePrompt='ERP_ONLY_INSTRUCTION: search every material'; callPolicy.result('place_call',callResult,false);
+assert(!callPolicy.update().system_prompt.includes('ERP_ONLY_INSTRUCTION'));
+assert.match(callPolicy.update().system_prompt,/Do not look up/);
+callPolicy.endCall(); assert.equal(callPolicy.update().system_prompt,callPolicy.basePrompt);

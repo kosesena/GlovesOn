@@ -866,6 +866,26 @@ async def provider_belongs_to_scope(scope: str, session_id: str) -> bool:
     return isinstance(prompt, str) and voice_tools.correlation(scope, TOOL_SHARED_SECRET) in prompt
 
 
+@app.post('/api/voice-session/alex-token')
+async def alex_voice_token(request: Request):
+    scope = await active_voice_scope(request)
+    history = await asyncio.to_thread(communications.history, scope)
+    if not any(r.get('status') == 'simulated_call_logged'
+               and r.get('details', {}).get('recipient', {}).get('id') == 'alex'
+               for r in history['records']):
+        raise HTTPException(status_code=409, detail='Confirm an Alex demo call first')
+    if await asyncio.to_thread(live.voice_budget_left, VOICE_TOKEN_MAX) <= 0:
+        raise HTTPException(status_code=429, detail='Voice session budget exhausted')
+    await asyncio.to_thread(live.mint_session, secrets.token_hex(4))
+    async with httpx.AsyncClient(timeout=8) as client:
+        response = await client.get('https://agents.assemblyai.com/v1/token',
+            params={'expires_in_seconds': 60, 'max_session_duration_seconds': 180},
+            headers={'Authorization': f'Bearer {ASSEMBLYAI_API_KEY}'})
+    if not response.is_success:
+        raise HTTPException(status_code=502, detail='Alex voice unavailable')
+    return {'token': response.json()['token'], 'voice': 'james'}
+
+
 @app.post('/api/voice-session/resume-token')
 async def resume_voice_token(request: Request):
     scope = await active_voice_scope(request)
