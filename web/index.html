@@ -2309,7 +2309,7 @@ async function start() {
   // Rendering the workspace replaces its children; keep the call control outside it.
   document.getElementById('agentDesktop').before(callBanner);
   globalThis.closeCallPreview = () => callBanner.remove();
-  function syncCall() { callBanner.hidden = !policy.call; }
+  function syncCall() { callBanner.hidden = !policy.call; if (!policy.call) callHandoff = null; }
   endCallButton.onclick = () => {
     if (!policy.call || socket?.readyState !== WebSocket.OPEN) return;
     stopPlayback(); policy.endCall(); syncCall();
@@ -2317,12 +2317,16 @@ async function start() {
     socket.send(JSON.stringify({type:'reply.create',instructions:'The simulated call has ended. You are GlovesOn again. Briefly say the simulation ended; no real person was contacted. Wait for the worker. Do not perform any operation.'}));
   };
   let lastToolEvent = null, toolEpoch = 0;
+  let callHandoff = null;
   const toolResults = [], handledCalls = new Map();
   const voiceHeaders = {'Content-Type':'application/json','X-Event-Scope':scopeToken,'X-Voice-Capability':toolCapability};
   function flushToolResults() {
     if (activeScopeToken !== scopeToken || !socket || socket.readyState !== WebSocket.OPEN || lastToolEvent !== 'reply.done') return;
-    if (policyDirty) { socket.send(JSON.stringify({type:'session.update',session:policy.update()})); policyDirty=false; }
+    // Resolve the pending function before replacing its tool catalog.
+    if (callHandoff === 'reply' || callHandoff === 'update') return;
+    if (policyDirty && callHandoff !== 'queued') { socket.send(JSON.stringify({type:'session.update',session:policy.update()})); policyDirty=false; }
     while (toolResults.length) socket.send(JSON.stringify(toolResults.shift()));
+    if (callHandoff === 'queued') callHandoff = 'reply';
   }
   globalThis.requestWorkspaceAction = key => {
     // The colleague comes from the tool result, not from this file: hard-coding
@@ -2377,7 +2381,9 @@ async function start() {
     globalThis.agentDesktop?.finish(message.name, result, failed, message.call_id);
     if (/^(post_goods_receipt|reverse_goods_receipt)$/.test(message.name)) globalThis.refreshRecentDocuments?.();
     noteVoice('tool', {call_id:message.call_id,name:message.name,arguments:message.arguments,result,failed});
+    const previousCall = policy.call;
     policy.result(message.name,result,failed); syncCall(); policyDirty=true;
+    if (!previousCall && policy.call) callHandoff = 'queued';
     clearTimeout(expiryTimer);
     if (policy.draft) expiryTimer=setTimeout(()=>{policy.draft=null;policyDirty=true;flushToolResults();},115000);
     if (!failed) showToolCard(message.name, result);
@@ -2443,6 +2449,11 @@ async function start() {
         await beginMicrophone();
         break;
       case 'session.updated':
+        if (callHandoff === 'update' && policy.call) {
+          callHandoff = null;
+          socket.send(JSON.stringify({type:'reply.create',instructions:'Begin the explicitly labelled fictional Alex call now. Say exactly: Simulated call. Hi Lena, Alex here. What happened? Then wait for the worker. Do not perform any tool operation.'}));
+          lastToolEvent = 'reply.started';
+        }
         if (!scenarioUpdatePending) break;
         scenarioUpdatePending = false; clearTimeout(sessionSetupTimer);
         append('sys', '', 'Scenario loaded: ' + activeScenario.title);
@@ -2512,7 +2523,10 @@ async function start() {
       case 'reply.done':
         lastToolEvent = 'reply.done';
         if (m.status === 'interrupted') { toolEpoch++; toolResults.length = 0; lastToolEvent = null; }
-        else flushToolResults();
+        else if (callHandoff === 'reply' && policy.call) {
+          callHandoff = 'update'; policyDirty=false;
+          socket.send(JSON.stringify({type:'session.update',session:policy.update()}));
+        } else flushToolResults();
         endToolPhase();
         setStatus('listening', true);
         break;

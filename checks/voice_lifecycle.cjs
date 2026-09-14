@@ -139,9 +139,16 @@ vm.runInContext(source, context);
     await new Promise(resolve=>setImmediate(resolve));
     await callSocket.onmessage({data:JSON.stringify({type:'reply.done',status:'completed'})});
   }
+  assert.equal(callSocket.sent.some(x=>x.session?.system_prompt?.includes('ACTIVE FICTIONAL CALL')),false,'pending call must receive its result before its tool is removed');
+  await callSocket.onmessage({data:JSON.stringify({type:'reply.done',status:'completed'})});
   const roleUpdate=callSocket.sent.findIndex(x=>x.session?.system_prompt?.includes('ACTIVE FICTIONAL CALL'));
   const resultIndex=callSocket.sent.findIndex(x=>x.type==='tool.result'&&x.call_id==='c');
-  assert(roleUpdate>=0 && roleUpdate<resultIndex,'role and tool lock arrive before call result');
+  assert(roleUpdate>=0 && roleUpdate>resultIndex,'role update follows the completed tool continuation');
+  assert.equal(callSocket.sent.filter(x=>x.type==='reply.create').length,0,'greeting waits for role acknowledgement');
+  await callSocket.onmessage({data:JSON.stringify({type:'session.updated'})});
+  assert.match(callSocket.sent.at(-1).instructions,/Hi Lena, Alex here/);
+  await callSocket.onmessage({data:JSON.stringify({type:'session.updated'})});
+  assert.equal(callSocket.sent.filter(x=>x.type==='reply.create').length,1,'duplicate acknowledgement cannot repeat greeting');
   assert.equal(context.requestWorkspaceAction('save_note'),false);
   await callSocket.onmessage({data:JSON.stringify({type:'tool.call',name:'save_note',call_id:'blocked',arguments:{}})});
   await new Promise(resolve=>setImmediate(resolve));

@@ -46,3 +46,5 @@ assert.equal(callPolicy.update().system_prompt,config.system_prompt,'original ro
 assert.equal(callPolicy.allows('place_call'),false,'ending role-play does not grant another write');
 callPolicy.result('place_call',callResult,false);callPolicy.endCall();assert.equal(callPolicy.call,null);
 console.log('Simulated Alex: successful damage call only, no tools, explicit exit and role restoration passed');
+
+callPolicy.result('place_call',callResult,false); callPolicy.user('Thanks, Alex. End call.'); assert.equal(callPolicy.call,null);

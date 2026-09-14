@@ -15,7 +15,7 @@
       this.basePrompt = config.system_prompt || "";
     }
     user(text) {
-      if (this.call && /^(?:(?:please|okay|ok|thanks)[, ]+)?(?:end (?:the )?call|hang up|goodbye|bye)[.!]?$/i.test(text.trim())) this.endCall();
+      if (this.call && /^(?:(?:please|okay|ok|thanks(?:[, ]+Alex)?)[,. ]+)?(?:end (?:the )?call|hang up|goodbye|bye)[.!]?$/i.test(text.trim())) this.endCall();
       if (!/^(yes|confirm|yes[ ,]+confirm|i confirm)[.!]?$/i.test(text.trim())) this.draft = null;
     }
     begin(name) {
