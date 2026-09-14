@@ -2207,12 +2207,24 @@ class Cap extends AudioWorkletProcessor {
 registerProcessor('cap', Cap);
 `;
 
+async function prepareMicrophone() {
+  // Create/resume on the original tap, before any network or permission wait.
+  const context = new AudioContext({ sampleRate: SAMPLE_RATE });
+  micCtx = context;
+  const resumed = context.state === 'suspended' ? context.resume() : Promise.resolve();
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true },
+    });
+    if (micCtx !== context) { stream.getTracks().forEach(t => t.stop()); return; }
+    micStream = stream;
+    await resumed;
+  } catch (error) { stopMic(); throw error; }
+}
+
 async function startMic() {
-  micStream = await navigator.mediaDevices.getUserMedia({
-    audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true },
-  });
-  micCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
-  if (micCtx.state === 'suspended') await micCtx.resume();
+  if (!micStream || !micCtx) throw new Error('Microphone preparation was cancelled');
+  if (micCtx.state !== 'running') throw new Error('Microphone audio is not running');
   const url = URL.createObjectURL(new Blob([WORKLET], { type: 'application/javascript' }));
   try { await micCtx.audioWorklet.addModule(url); }
   finally { URL.revokeObjectURL(url); }
@@ -2244,9 +2256,9 @@ async function start() {
   setStatus('connecting…');
   talkBtn.disabled = true;
   try {
-    await ensurePlayback();   // open audio while the click gesture still counts
+    await Promise.all([ensurePlayback(), prepareMicrophone()]); // both contexts start on this tap
   } catch (error) {
-    failSession('Audio could not start. Check browser audio settings and retry.');
+    failSession('Microphone or audio could not start. Check microphone permission and tap again.');
     return;
   }
 
@@ -2260,11 +2272,11 @@ async function start() {
     }));
   } catch (err) {
     append('sys', '', 'Could not mint a token. Is ASSEMBLYAI_API_KEY set in .env?');
-    setStatus('error'); talkBtn.disabled = false; return;
+    cleanup(); setStatus('error'); return;
   }
   if (!sessionConfig && !agentId) {
     append('sys', '', 'The voice session could not be set up: the token endpoint returned no agent.');
-    setStatus('no agent'); talkBtn.disabled = false; return;
+    cleanup(); setStatus('no agent'); return;
   }
 
   if (!scopeToken) { append('sys', '', 'Private session setup unavailable.'); cleanup(); return; }
@@ -2405,7 +2417,9 @@ async function start() {
         if (!resuming && voiceSessionId) voiceBinding=fetch('/api/voice-session/bind', {
           method:'POST',headers:voiceHeaders,body:JSON.stringify({session_id:voiceSessionId})
         }).then(r=>r.ok).catch(()=>false);
-        if (resuming) { policyDirty=true; flushToolResults(); await beginMicrophone(); break; }
+        if (resuming) { policyDirty=true; flushToolResults();
+          try { await prepareMicrophone(); } catch { failSession('Microphone could not resume. Tap to restart.'); break; }
+          await beginMicrophone(); break; }
         if (activeScenario) {
           const base = m.config?.system_prompt;
           if (!base) {
@@ -2551,7 +2565,7 @@ async function start() {
 async function beginMicrophone() {
   const channel = sse;
   try { await startMic(); } catch (error) {
-    append('sys', '', 'Microphone could not start. Check permission and retry.'); end(); return;
+    failSession('Microphone could not start. Check permission and tap again.'); return;
   }
   if (!channel || sse !== channel) { stopMic(); return; }
   live = true; talkBtn.disabled = false; talkBtn.textContent = 'End session';

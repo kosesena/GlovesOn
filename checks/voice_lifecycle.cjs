@@ -25,7 +25,7 @@ const context = vm.createContext({
   stampEl:{classList:{contains(){return false;}}},
   pendingTool:null, playCtx:null, playSources:[],
   document:{getElementById(){return transcript;},createElement(){return {append(){},remove(){}};}},
-  setStatus(value){status=value;}, ensurePlayback:async()=>{}, append(...args){messages.push(args);}, receiveScopedEvent(){},
+  setStatus(value){status=value;}, ensurePlayback:async()=>{}, prepareMicrophone:async()=>{}, append(...args){messages.push(args);}, receiveScopedEvent(){},
   finishUserTurn(){}, updateUserTranscript(){}, showToolCard(){}, pendingFactCards:[], clearPending(){}, clearDoc(){}, stopMic(){}, stopPlayback(){}, startMic:async()=>{},
   setTimeout(fn) {const id=++timerId; timers.set(id,fn); return id;},
   clearTimeout(id) {timers.delete(id);},

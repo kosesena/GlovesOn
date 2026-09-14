@@ -57,6 +57,7 @@ jobs:
 
       - name: Browser voice contracts
         run: |
+          node checks/microphone_start.cjs
           node checks/voice_pause.cjs
           node checks/voice_policy.cjs
           node checks/voice_lifecycle.cjs
