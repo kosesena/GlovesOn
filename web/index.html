@@ -1382,7 +1382,7 @@ body:not(.is-lookup) .console-wrap main {grid-template-columns:minmax(240px,.72f
 </section>
 <dialog class="scenario-dialog" id="scenarioDialog" aria-labelledby="scenarioDialogTitle">
 <form id="scenarioForm">
-<h2 id="scenarioDialogTitle">Create a practice scenario</h2><p>Set up a situation to rehearse with Lena. Saved in this browser. This creates a brief; records change only through confirmed voice actions.</p>
+<h2 id="scenarioDialogTitle">Create a practice scenario</h2><p>Set up a situation to rehearse with GlovesOn. Saved in this browser. This creates a brief; records change only through confirmed voice actions.</p>
 <label>Task title<input name="title" required maxlength="70" placeholder="A short delivery at the loading bay"></label>
 <label>Worker role<select name="role"><option value="Warehouse operator">Warehouse operator</option><option value="Maintenance technician">Maintenance technician</option><option value="Warehouse supervisor">Warehouse supervisor</option></select></label>
 <label>Situation<textarea name="situation" required maxlength="400" rows="2" placeholder="A delivery has arrived. Check and record the quantity."></textarea></label>
@@ -1580,7 +1580,7 @@ const stripEl    = document.getElementById('stockStrip');
 
 const F = id => document.getElementById(id);
 globalThis.agentDesktop = GlovesOnDesktop.mount(F('agentDesktop'), key => {
-  if (!globalThis.requestWorkspaceAction?.(key)) append('sys', '', 'Start a conversation, or let Lena finish speaking, then choose a next step.');
+  if (!globalThis.requestWorkspaceAction?.(key)) append('sys', '', 'Start a conversation, or let GlovesOn finish speaking, then choose a next step.');
 }, {stream: F('actionStream'), aside: F('workAside'), records: 'workspaceExtras', provenance: mblnr => fetch('/api/provenance/' + encodeURIComponent(mblnr)).then(r => r.ok ? r.json() : null)});
 // The spoken menu follows the sheet: while a draft waits, the three lines are
 // the three answers; otherwise they are the task's own openers.
@@ -2578,8 +2578,8 @@ function cleanup() {
 }
 
 const scenarios = {
-  damaged: ['Three hydraulic hoses arrived damaged.', 'Tell Lena what is damaged and how many. Choose a demo call, an email draft or an incident note; review the details before confirming.', 'Damage on arrival. Record only the facts you report. This demo cannot quarantine or scrap stock, and damaged items must not be posted as usable stock.'],
-  dropped: ['I dropped two ball bearings and they broke.', 'Explain what happened. Lena can help record an incident or contact the supervisor in the demo after your confirmation.', 'Damage during handling. A saved incident note does not reduce stock or create a scrap movement. The responsible team must decide the inventory adjustment.'],
+  damaged: ['Three hydraulic hoses arrived damaged.', 'Tell GlovesOn what is damaged and how many. Choose a demo call, an email draft or an incident note; review the details before confirming.', 'Damage on arrival. Record only the facts you report. This demo cannot quarantine or scrap stock, and damaged items must not be posted as usable stock.'],
+  dropped: ['I dropped two ball bearings and they broke.', 'Explain what happened. GlovesOn can help record an incident or contact the supervisor in the demo after your confirmation.', 'Damage during handling. A saved incident note does not reduce stock or create a scrap movement. The responsible team must decide the inventory adjustment.'],
   stock: ['Where are the ball bearings stored?', 'Ask by material name or number. Your guide returns its location and available stock.', 'Find a material by description. This is a stock lookup; it does not create a receipt or change inventory.'],
   receive: ['Post a goods receipt, twenty pieces of four seven one one.', 'Listen to the material, quantity and destination. Say confirm when the details are right.', 'A new delivery of hex bolts. Follow the receipt from your spoken request to a document and an updated stock level.'],
   correct: ['Post a goods receipt, twenty pieces of four seven one one.', 'During the read-back, say: “Actually, twelve pieces.” Wait for the corrected details, then confirm.', 'Try correcting a quantity before posting. The final document should contain twelve pieces.'],

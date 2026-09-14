@@ -251,7 +251,7 @@
         const text=entry.state==='uncertain'?'The result could not be verified. Records are checked before anything is tried again.':(r.duplicate?`This exact posting already went through as ${r.MBLNR}. Nothing was posted twice.`:(typeof r.message==='string'?r.message:'Nothing was recorded.'));
         add(sheet,add(node('div','desk-band is-refused'),add(node('div','desk-band-head'),add(node('span','desk-band-eyebrow'),node('i','desk-dot is-refused'),node('span','',entry.state==='uncertain'?'RESULT UNCERTAIN':'REFUSED · '+clock(entry.doneAt||Date.now())))),node('p','desk-band-big',text),node('span','desk-band-hint','Nothing is recorded. A new read-back starts from what you say next.')));
       } else if(!entry) {
-        add(sheet,add(node('div','desk-band is-idle'),add(node('div','desk-band-head'),add(node('span','desk-band-eyebrow'),node('i','desk-dot is-pulse'),node('span','','NOTHING ON THE TABLE'))),node('p','desk-band-big','Say what arrived.'),node('span','desk-band-hint','Lena looks the material up, reads the receipt back, and writes nothing until you say yes.')));
+        add(sheet,add(node('div','desk-band is-idle'),add(node('div','desk-band-head'),add(node('span','desk-band-eyebrow'),node('i','desk-dot is-pulse'),node('span','','NOTHING ON THE TABLE'))),node('p','desk-band-big','Say what arrived.'),node('span','desk-band-hint','GlovesOn looks the material up, reads the receipt back, and writes nothing until you say yes.')));
       }
       // The body: the document's fields, or the device the action lives on.
       if(entry&&c==='erp'&&(entry.state==='draft'&&isPrepare(entry)||entry.state==='saved'&&isWrite(entry)||['rejected','uncertain'].includes(entry.state)&&isWrite(entry))) {
@@ -288,7 +288,7 @@
         for(const [key,label] of [['call_colleague',to?'Call '+to.name:'Call a colleague'],['draft_email',to?'Email '+to.name:'Draft email'],['save_note','Save a note']]) {
           const button=node('button','',label);button.type='button';button.onclick=()=>onChoice(key);add(options,button);
         }
-        add(box,options,node('small','','Choose here or tell Lena. Nothing happens until you confirm.'));add(sheet,box);
+        add(box,options,node('small','','Choose here or tell GlovesOn. Nothing happens until you confirm.'));add(sheet,box);
       }
       // The ledger: what the mock ERP holds today, each with its sentence a click away.
       const ledger=node('div','desk-ledger');
