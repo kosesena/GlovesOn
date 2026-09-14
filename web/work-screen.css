@@ -146,14 +146,14 @@
   opacity:1;
 }
 #warehouseWork .console-wrap header #voiceOrbButton #orb::before {
-  inset:-12%;border-radius:42%;filter:blur(3px);opacity:.95;
+  inset:-12%;border-radius:42%;filter:blur(2px);opacity:.95;
   background:radial-gradient(ellipse at 27% 69%,#147cec 0%,#62b2fa 20%,transparent 42%),
     radial-gradient(ellipse at 78% 76%,#3397f5 0%,#9edaff 25%,transparent 48%),
     radial-gradient(ellipse at 52% 22%,#fff 0 28%,transparent 54%);
   animation:voice-cloud-drift 8s ease-in-out infinite alternate;
 }
 #warehouseWork .console-wrap header #voiceOrbButton #orb::after {
-  inset:-8%;border-radius:46%;filter:blur(2px);mix-blend-mode:normal;opacity:.65;
+  inset:-8%;border-radius:46%;filter:blur(1.4px);mix-blend-mode:normal;opacity:.65;
   background:radial-gradient(ellipse at 32% 31%,#fff 0 19%,#ffffffdd 30%,transparent 49%),
     radial-gradient(ellipse at 83% 43%,#eaf9ff 0 15%,transparent 40%);
   animation:voice-cloud-light 10s ease-in-out infinite alternate;
