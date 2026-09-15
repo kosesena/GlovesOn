@@ -14,7 +14,7 @@ the arguments come from this file instead of from a worker and an agent, and
 the confirmation it sends says so in its own text, because a receipt that
 implies a microphone nobody switched on would be worth less than no receipt.
 
-    python -m checks.record_receipts --base https://gloveson.vercel.app
+    python -m checks.record_receipts --base https://gloveson.space
 
 Session tokens, the capability and draft tokens are redacted before writing:
 they are short-lived, and a receipt is a record, not a credential store.
@@ -100,7 +100,7 @@ class Recorder:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--base", default="https://gloveson.vercel.app")
+    parser.add_argument("--base", default="https://gloveson.space")
     parser.add_argument("--material", default="4711")
     parser.add_argument("--quantity", type=int, default=40)
     parser.add_argument("--out", default="receipts")

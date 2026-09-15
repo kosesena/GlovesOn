@@ -4,7 +4,7 @@ Every claim this submission makes, and where to check it. File and line for
 reading, a command for running, and — at the end — what this system does **not**
 do, said before you find it.
 
-**Live:** <https://gloveson.vercel.app> · no credentials, no sign-up, Chrome
+**Live:** <https://gloveson.space> · no credentials, no sign-up, Chrome
 · **CI:** [![CI](https://github.com/kosesena/GlovesOn/actions/workflows/ci.yml/badge.svg)](https://github.com/kosesena/GlovesOn/actions/workflows/ci.yml)
 
 The first request of a session wakes a serverless function and a database
@@ -34,26 +34,26 @@ for it, or run your own copy with one of your choosing.
 
 ```bash
 # 1. it is alive, and it reaches its ERP in-process, not over the internet
-curl -s https://gloveson.vercel.app/health
+curl -s https://gloveson.space/health
 
 # 2. a stock question — quantity, unit, description and the bin, in one reply
 curl -s -H "X-Tool-Secret: $S" \
-  "https://gloveson.vercel.app/erp/stock?material=4711"
+  "https://gloveson.space/erp/stock?material=4711"
 
 # 3. try to post a receipt the way a script would — and watch it refused
 curl -s -X POST -H "X-Tool-Secret: $S" -H "Content-Type: application/json" \
   -d '{"material":"4711","quantity":20,
        "confirmed_utterance":"Twenty pieces of hex bolt M8x40 into bin A-03-02"}' \
-  https://gloveson.vercel.app/erp/goods-receipt
+  https://gloveson.space/erp/goods-receipt
 
 # 4. so where do documents come from? the ones the voice demo has posted
-curl -s -H "X-Tool-Secret: $S" https://gloveson.vercel.app/erp/recent-documents
+curl -s -H "X-Tool-Secret: $S" https://gloveson.space/erp/recent-documents
 
 # 5. why does that document exist? the sentence that caused it
-curl -s https://gloveson.vercel.app/api/provenance/<MBLNR from step 4>
+curl -s https://gloveson.space/api/provenance/<MBLNR from step 4>
 
 # 6. no secret, no empty list: a run that already happened, kept in the repo
-curl -s https://gloveson.vercel.app/api/provenance/4922857164
+curl -s https://gloveson.space/api/provenance/4922857164
 ```
 
 Step 3 is the one worth watching, and it is worth watching because it **fails**.

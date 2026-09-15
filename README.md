@@ -2,7 +2,7 @@
 <p align="center"><b>Hands-free warehouse work — an AssemblyAI voice agent with a mock SAP workflow.</b></p>
 
 <p align="center">
-  <a href="https://gloveson.vercel.app"><img src="docs/img/landing.png" width="820"
+  <a href="https://gloveson.space"><img src="docs/img/landing.png" width="820"
      alt="The GlovesOn landing page: a warehouse worker in a headset holding a box, over the words Gloves on. Hands full. Just speak."></a>
 </p>
 
@@ -16,8 +16,8 @@
 </p>
 
 <p align="center">
-  <b><a href="https://gloveson.vercel.app">Live demo</a></b> ·
-  <b><a href="https://gloveson.vercel.app/how-it-works">How it works</a></b> — the map, in the browser: every part, its file, its rule, its test ·
+  <b><a href="https://gloveson.space">Live demo</a></b> ·
+  <b><a href="https://gloveson.space/how-it-works">How it works</a></b> — the map, in the browser: every part, its file, its rule, its test ·
   <b><a href="docs/JUDGE-GUIDE.md">Judge guide</a></b> — the same evidence, in the repo
 </p>
 
@@ -290,11 +290,11 @@ them — it maps each one to a file and a command, and ends with what this syste
 ## Check it without reading any of this
 
 <p align="center">
-  <a href="https://gloveson.vercel.app/how-it-works"><img src="docs/img/how-it-works.png" width="820"
+  <a href="https://gloveson.space/how-it-works"><img src="docs/img/how-it-works.png" width="820"
      alt="The how-it-works page: counters for tools, tests, decision records, keyterms and documents posted, above a map of the system whose selected node explains the gateway, the rules it cannot break, and where they live."></a>
 </p>
 
-[**gloveson.vercel.app/how-it-works**](https://gloveson.vercel.app/how-it-works) is the
+[**gloveson.space/how-it-works**](https://gloveson.space/how-it-works) is the
 same map, in the browser, with no sign-up. Click any box and it tells you what that part
 does, the rule it must not break, the file and line it lives on, and the command that
 proves it.

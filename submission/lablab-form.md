@@ -65,8 +65,8 @@ OData · Mock ERP · FastAPI · Python · Postgres · Logistics · Warehousing
 
 ## Links to verify before submission
 
-- Application: https://gloveson.vercel.app
-- Architecture: https://gloveson.vercel.app/how-it-works
+- Application: https://gloveson.space
+- Architecture: https://gloveson.space/how-it-works
 - Repository: https://github.com/kosesena/GlovesOn — private for now
 - Demo platform: Vercel + Neon Postgres
 - PDF deck: `submission/GlovesOn-deck.pdf` — refresh and review

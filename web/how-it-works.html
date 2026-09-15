@@ -253,7 +253,7 @@ pytest</span>
       <span class="cmd">curl -s -X POST -H "X-Tool-Secret: $S" \
   -H "Content-Type: application/json" \
   -d '{"material":"4711","quantity":20}' \
-  https://gloveson.vercel.app/erp/goods-receipt</span>
+  https://gloveson.space/erp/goods-receipt</span>
       <p>Valid input, correct secret, no document. The refusal is the exhibit.</p>
     </div>
   </div>
@@ -311,8 +311,8 @@ const NODES = {
     rules:['Every /erp/* endpoint requires the shared secret. A missing or wrong one is 401 before anything is read.',
            'The gateway refuses to boot without a secret. Refusing to start is loud; serving unprotected writes is quiet.',
            'The page never holds that secret. It gets a capability derived from its own session, and /api/voice-tools proxies to the same /erp/* routes with the same draft protocol behind it.'],
-    verify:['curl -s -o /dev/null -w "%{http_code}" https://gloveson.vercel.app/erp/stock?material=4711   # 401',
-            'curl -s -o /dev/null -w "%{http_code}" -X POST https://gloveson.vercel.app/api/voice-tools/get_stock   # 401',
+    verify:['curl -s -o /dev/null -w "%{http_code}" https://gloveson.space/erp/stock?material=4711   # 401',
+            'curl -s -o /dev/null -w "%{http_code}" -X POST https://gloveson.space/api/voice-tools/get_stock   # 401',
             'pytest checks/test_scope_routes.py']
   },
   draft: {
@@ -366,7 +366,7 @@ const NODES = {
            {p:'docs/adr/0003-mock-erp-behind-a-faithful-contract.md',l:null,label:'why faithful rather than convenient'}],
     rules:['The mock is faithful, not helpful. Where real SAP is permissive, the mock is permissive too — the guardrails belong to us.',
            'It is never routed publicly. Do not remount it for convenience.'],
-    verify:['pytest tests/test_public_surface.py','curl -s https://gloveson.vercel.app/health   # names the ERP target'],
+    verify:['pytest tests/test_public_surface.py','curl -s https://gloveson.space/health   # names the ERP target'],
     counts:['target','materials','documents']
   },
   audit: {
@@ -377,7 +377,7 @@ const NODES = {
            {p:'docs/clean-core.md',l:null,label:'why this is not identity, and what would be'}],
     rules:['Consent is agent-reported and bound to a one-use draft. It is a mistake control, never an authorisation control — stated plainly rather than dressed up.'],
     verify:['pytest tests/test_write_guarantees.py -k a_document_can_be_traced_back_to_the_sentence_that_caused_it',
-            'curl -s https://gloveson.vercel.app/api/provenance/<MBLNR>']
+            'curl -s https://gloveson.space/api/provenance/<MBLNR>']
   },
   live: {
     kicker:'The screen', title:'The live ERP view',
