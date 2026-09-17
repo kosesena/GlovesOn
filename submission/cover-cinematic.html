@@ -1,0 +1,76 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>GlovesOn — deck (cinematic)</title>
+<style>
+ @page { size: 13.333in 7.5in; margin: 0; } html,body{width:13.333in;height:7.5in;overflow:hidden}
+ *{ margin:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+ :root{ --orange:#f08a45; --orange2:#ce5428; --mint:#b9edc9; --ink:#f3f1ea; --muted:#c9cec4; --dim:#8f978d; --line:rgba(255,255,255,.22);
+   --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace; --sans:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif; }
+ html,body{ font-family:var(--sans); color:var(--ink); background:#0e1310; }
+ .slide{ position:relative; width:13.333in; height:7.5in; overflow:hidden; page-break-after:always; break-after:page; background:#0e1310; }
+ .slide:last-child{ page-break-after:auto; }
+ .bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+ .shade{ position:absolute; inset:0; background:linear-gradient(90deg,rgba(8,12,10,.94) 0%,rgba(8,12,10,.82) 40%,rgba(8,12,10,.28) 70%,rgba(8,12,10,.05) 100%); }
+ .shade.full{ background:linear-gradient(90deg,rgba(8,12,10,.96) 0%,rgba(8,12,10,.93) 58%,rgba(8,12,10,.55) 82%,rgba(8,12,10,.25) 100%); }
+ .shade.top{ background:linear-gradient(180deg,rgba(8,12,10,.92) 0%,rgba(8,12,10,.86) 55%,rgba(8,12,10,.35) 100%); }
+ .txt{ position:absolute; left:.9in; top:.85in; right:.9in; }
+ .tag{ position:absolute; top:.5in; right:.8in; font:9px var(--mono); letter-spacing:.14em; color:var(--dim); }
+ .k{ font:12px var(--mono); letter-spacing:.2em; text-transform:uppercase; color:var(--orange); }
+ h1{ font-size:70px; font-weight:700; letter-spacing:-.04em; line-height:.98; margin:18px 0 24px; max-width:8.2in; text-shadow:0 2px 24px rgba(0,0,0,.45); }
+ h1.s{ font-size:52px; max-width:9.6in; }
+ h1 b{ color:var(--orange); font-weight:700; }
+ .cap{ font-size:21px; line-height:1.42; color:var(--muted); max-width:7.4in; }
+ .cap b{ color:#fff; font-weight:600; }
+ .cap p+p{ margin-top:12px; }
+ .punch{ position:absolute; left:.9in; right:.9in; bottom:.75in; font:600 24px var(--sans); color:var(--orange); text-shadow:0 2px 12px rgba(0,0,0,.6); max-width:9in; }
+ .foot{ position:absolute; left:.9in; right:.9in; bottom:.42in; display:flex; justify-content:space-between; font:10px var(--mono); letter-spacing:.08em; color:var(--dim); }
+ .foot b{ color:var(--mint); font-weight:600; }
+ .aai{ height:1.3em; aspect-ratio:161/28; display:inline-block; vertical-align:middle; opacity:.9; filter:invert(1) brightness(1.4); }
+ .cover{ background:#f6e5ce; } .cover img{ width:100%; height:100%; object-fit:cover; }
+ /* exchange */
+ .x{ font:17px/1.75 var(--mono); border-left:3px solid var(--orange); padding-left:18px; max-width:8in; color:var(--ink); }
+ .x .r b{ display:inline-block; width:84px; color:var(--dim); font:600 10px var(--mono); letter-spacing:.14em; }
+ .x .g{ color:var(--mint); } .x .out{ margin-top:12px; padding-top:12px; border-top:1px solid var(--line); color:var(--orange); font-weight:600; }
+ /* shift table */
+ .shift{ display:grid; grid-template-columns:1fr 1fr; gap:0 44px; max-width:9.2in; margin-top:6px; }
+ .shift .r{ display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--line); font-size:17px; }
+ .shift .r span:last-child{ font:600 9px var(--mono); letter-spacing:.14em; padding:3px 8px; border-radius:4px; }
+ .un{ background:rgba(255,255,255,.12); color:#e6e9e3; } .gone{ background:rgba(240,138,69,.2); color:var(--orange); } .voice{ background:rgba(185,237,201,.18); color:var(--mint); } .new{ background:#fff; color:#0e1310; }
+ /* guardrails */
+ .pts{ display:grid; gap:12px; max-width:8.4in; }
+ .pt{ display:grid; grid-template-columns:34px 1fr; gap:14px; align-items:start; }
+ .pt .n{ width:30px; height:30px; border-radius:50%; background:var(--orange); color:#0e1310; font:700 14px var(--mono); display:grid; place-items:center; margin-top:2px; }
+ .pt b{ font-size:19px; display:block; } .pt p{ font-size:15px; line-height:1.4; color:var(--muted); margin-top:2px; }
+ /* chips */
+ .chips{ display:flex; flex-wrap:wrap; gap:10px; max-width:8.6in; }
+ .chip{ font:13px var(--mono); padding:9px 13px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.06); color:var(--ink); }
+ .chip b{ color:var(--mint); font-weight:600; }
+ /* cards */
+ .cards{ display:grid; grid-template-columns:1fr 1fr; gap:22px; max-width:9.4in; }
+ .card{ border:1px solid var(--line); border-radius:12px; padding:20px 22px; background:rgba(14,19,16,.72); }
+ .card .who{ font:10px var(--mono); letter-spacing:.16em; color:var(--orange); text-transform:uppercase; }
+ .card h3{ font-size:24px; margin:8px 0 8px; } .card p{ font-size:15px; line-height:1.45; color:var(--muted); }
+ .nums{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:22px; max-width:10in; }
+ .num{ border-top:2px solid var(--orange); padding-top:14px; }
+ .num .v{ font:700 44px var(--sans); letter-spacing:-.03em; } .num p{ font-size:14px; line-height:1.4; color:var(--muted); margin-top:6px; }
+ .lim .row{ display:flex; gap:14px; padding:11px 0; border-bottom:1px solid var(--line); font-size:16px; line-height:1.4; max-width:9.4in; color:var(--muted); }
+ .lim .row:before{ content:"—"; color:var(--orange); flex:none; } .lim b{ color:#fff; }
+ .cols{ display:grid; grid-template-columns:1fr 1.1fr 1fr; gap:34px; max-width:11.2in; margin-top:6px; }
+ .cols h3{ font:10px var(--mono); letter-spacing:.18em; text-transform:uppercase; color:var(--mint); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+ .cols h3.red{ color:var(--orange); } .cols li{ list-style:none; font-size:15px; line-height:1.38; padding:6px 0; color:var(--ink); }
+ .cols li:before{ content:"· "; color:var(--mint); } .cols .red li:before{ color:var(--orange); }
+ .cols code{ font:13px var(--mono); background:rgba(255,255,255,.1); padding:1px 6px; border-radius:4px; }
+ .links{ display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+ .link{ font:600 13px var(--mono); padding:11px 16px; border-radius:9px; background:var(--orange); color:#0e1310; }
+ .link.ghost{ background:transparent; color:var(--ink); border:1.5px solid var(--line); }
+ .shot{ border-radius:12px; border:1px solid var(--line); box-shadow:0 20px 50px rgba(0,0,0,.5); }
+</style></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="aai" viewBox="0 0 24 24"><path d="M12 3 2 21h5l5-9 5 9h5L12 3z" fill="#fff"/></symbol></defs></svg>
+
+<!-- 1 · COVER -->
+<section class="slide"><img class="bg" src="stills/box-front.jpg" alt="" style="transform:scale(1.28) translate(19%,5%);transform-origin:center"><div class="shade" style="background:linear-gradient(90deg,rgba(8,12,10,.95) 0%,rgba(8,12,10,.85) 38%,rgba(8,12,10,.35) 62%,rgba(8,12,10,.05) 100%)"></div>
+ <div class="txt" style="top:1.05in"><div style="display:flex;align-items:center;gap:14px;margin-bottom:34px"><span style="width:46px;height:46px;border-radius:12px;background:linear-gradient(150deg,#f0803e,#d8542a);display:grid;place-items:center;color:#fff;font-size:24px">↗</span><span style="font-size:30px;font-weight:700;letter-spacing:-.03em">GlovesOn</span></div>
+ <div class="k">Built for hands that are busy</div>
+ <h1 style="font-size:92px;line-height:.94;margin:18px 0 26px;max-width:7in">Gloves on.<br>Hands full.<br><b>Just speak.</b></h1>
+ <div class="cap" style="font-size:22px;max-width:6.4in">Speak a goods receipt. Review and confirm it. It posts into <b>SAP</b> — a mock S/4HANA behind SAP's released OData API.</div></div>
+ <div class="foot"><span>Goods receipt · Stock · Reversal · SAP OData</span><span>AssemblyAI Voice Agent Hackathon · September 2026</span></div></section>
+
+</body></html>

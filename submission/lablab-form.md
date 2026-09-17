@@ -70,5 +70,5 @@ OData · Mock ERP · FastAPI · Python · Postgres · Logistics · Warehousing
 - Repository: https://github.com/kosesena/GlovesOn — private for now
 - Demo platform: Vercel + Neon Postgres
 - PDF deck: `submission/GlovesOn-deck.pdf` — refresh and review
-- Cover: `submission/cover-16x9.jpg` — review against final scope
+- Cover: `submission/cover-16x9.jpg` — cinematic cover, same still as the deck; the cream poster is kept as `cover-16x9-poster.jpg`
 - Pitch video: pending
