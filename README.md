@@ -1,5 +1,5 @@
 <h1 align="center">GlovesOn</h1>
-<p align="center"><b>Hands-free warehouse work — an AssemblyAI voice agent with a mock SAP workflow.</b></p>
+<p align="center"><b>A voice agent that posts goods receipts into SAP — read back, confirmed, reversible. Built on the AssemblyAI Voice Agent API.</b></p>
 
 <p align="center">
   <a href="https://gloveson.space"><img src="docs/img/landing.png" width="820"
@@ -65,14 +65,8 @@ a call, email or incident note. A damage report does not silently post usable
 stock or perform a scrap movement. **Practice** holds the optional scenario
 builder; creating a brief does not change inventory or complete a task.
 
-See [workspace behavior and validation](docs/agent-workspace.md) and the
-[hackathon readiness check](docs/hackathon-readiness.md). New communication
-flows still need live microphone validation. The repository stays private for
-now, as requested; public submission access is a later decision.
-
-Lena's [character references and production memory](docs/lena-memory.md) include
-four saved image sheets, generation prompts and the user-approved first scenario
-video. The selected damaged-delivery clip is ready; app integration is pending.
+See [workspace behavior and validation](docs/agent-workspace.md) for what each
+communication flow does, what it refuses, and how it was checked.
 
 ## Architecture
 
@@ -412,13 +406,35 @@ not by the worker, so SAP cannot say who did it. That gap is written up in
 
 ## Voice reliability and evaluation
 
-The English agent supports reviewed MM references, identifier hints, laptop/headset
-Voice Focus, dynamic material vocabulary, progressive tool availability and private
-session notes. Run `python checks/run_voice_checks.py` for offline transport and policy
-contracts. Recorded-audio and provider probes are separate, opt-in paid checks.
-See [voice features and verification limits](docs/voice-features.md), including the
-provider's currently failing native session-resumption path. No Bluejay account is
-required for the local test infrastructure.
+Recognition is tuned for the warehouse, not benchmarked in one: a `transcription_prompt`
+that explains how material numbers are spoken, keyterms drawn from the material master and
+the movement vocabulary, `voice_focus: far-field`, and turn detection pinned rather than
+adaptive so a non-native speaker is not cut off mid-sentence. What that earns and what it
+does not is measured in [`docs/voice-features.md`](docs/voice-features.md): the offline
+transport and policy contracts run with `python checks/run_voice_checks.py` and need no
+account; the recorded-audio and live-provider probes are opt-in because they cost money.
+Accent and forklift-noise robustness are **not** measured, and the README does not claim
+them.
+
+## Submission
+
+The hackathon deliverables live in [`submission/`](submission/), built from the same
+sentences as this file so they cannot drift from it:
+
+| Deliverable | File | Note |
+|---|---|---|
+| Slide deck | [`GlovesOn-deck-cinematic.pdf`](submission/GlovesOn-deck-cinematic.pdf) | 13 slides over stills from the film; the cream edition is [`GlovesOn-deck.pdf`](submission/GlovesOn-deck.pdf) |
+| Cover image | [`cover-16x9.jpg`](submission/cover-16x9.jpg) | 1920×1080, same frame as the deck's first slide |
+| Evidence card | [`evidence-card-cinematic-16x9.png`](submission/evidence-card-cinematic-16x9.png) | the film's last frame; its counts are filled from `git` and `pytest` by [`render-cards.sh`](submission/render-cards.sh) |
+| Video | on the lablab submission page | script in [`video-script.md`](submission/video-script.md) |
+| Form copy | [`lablab-form.md`](submission/lablab-form.md) | short and long description, with the limits paragraph |
+
+And the one thing a judge should leave with, which is also how the deck and the film end:
+
+<p align="center">
+  <img src="submission/evidence-card-cinematic-16x9.png" width="820"
+     alt="What a judge can check: the goods receipt posts straight into SAP, here a mock S/4HANA that speaks SAP's released OData contract. Checkable: gloveson.space with no login, the repository with its commits, tests and CI, receipts/ with document 4922857164 posted, refused as a duplicate and reversed, the provenance endpoint, six decision records. Not verified: a real S/4HANA tenant — the sandbox answered 401 — posting as the worker, accents and forklift noise; email, calls and notes are demo records.">
+</p>
 
 ## License
 
