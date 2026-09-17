@@ -1,0 +1,57 @@
+<!doctype html><html><head><meta charset="utf-8"><title>GlovesOn — evidence card</title>
+<style>
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden}
+body{background:radial-gradient(120% 90% at 50% 40%,#f8f4e8 0%,#f3efe3 55%,#ebe5d6 100%);font-family:-apple-system,"SF Pro Display","Helvetica Neue",Inter,system-ui,sans-serif;color:#2b3a2e;-webkit-font-smoothing:antialiased}
+.wrap{position:absolute;inset:0;padding:72px 110px 0}
+.top{display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:22px}
+.tile{width:64px;height:64px;border-radius:16px;background:linear-gradient(145deg,#f08a45,#e25a1f);box-shadow:0 10px 24px rgba(226,90,31,.25);display:flex;align-items:center;justify-content:center}
+.tile svg{width:34px;height:34px}
+.word{font-size:54px;font-weight:800;letter-spacing:-2px;color:#2b3a2e}
+.kicker{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:20px;letter-spacing:3px;color:#6b7a6e;text-transform:uppercase}
+h1{margin:48px 0 0;font-size:62px;line-height:1.08;font-weight:700;letter-spacing:-1.5px;max-width:1500px}
+h1 b{color:#e8632b;font-weight:700}
+.cols{display:grid;grid-template-columns:1.05fr 1.15fr .95fr;gap:56px;margin-top:40px}
+.col h2{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:19px;letter-spacing:3px;text-transform:uppercase;color:#6b7a6e;margin:0 0 18px;padding-bottom:12px;border-bottom:2px solid #d9d3c3}
+.col h2.red{color:#c6502a;border-color:#e9c4b3}
+.col h2.green{color:#1f6b52;border-color:#bfd9cb}
+.col p,.col li{font-size:26px;line-height:1.32;margin:0}
+.col p{margin-bottom:16px}
+.col ul{list-style:none;padding:0;margin:0}
+.col li{padding:8px 0 8px 30px;position:relative}
+.col li:before{content:"";position:absolute;left:0;top:19px;width:14px;height:14px;border-radius:50%;background:#1f6b52}
+.red li:before{background:#c6502a;border-radius:3px}
+.col li code,.col p code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:23px;background:#ece6d6;padding:2px 8px;border-radius:6px;color:#2b3a2e}
+.num{font-weight:800;color:#2b3a2e}
+.foot{position:absolute;left:110px;right:110px;bottom:56px;display:flex;justify-content:space-between;align-items:center;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:20px;color:#6b7a6e;letter-spacing:.5px}
+.foot b{color:#1f6b52;font-weight:700}
+.foot .aai{display:inline-flex;align-items:center;gap:8px}
+</style></head><body><div class="wrap">
+<div class="top"><div class="brand"><div class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18 18 6M9 6h9v9"/></svg></div><div class="word">GlovesOn</div></div><div class="kicker">What a judge can check</div></div>
+<h1>Posts the goods receipt <b>straight into SAP</b> — here a mock S/4HANA that speaks SAP's released OData contract, one setting away from a live tenant.</h1>
+<div class="cols">
+<div class="col"><h2 class="green">What it does</h2>
+<ul>
+<li><code>X-CSRF-Token: Fetch</code> handshake, <code>A_MaterialDocumentHeader</code>, movement types <span class="num">101 / 102</span></li>
+<li>Read-back names quantity, unit, material <em>description</em> and bin; nothing posts without a spoken yes</li>
+<li>Wrong receipt is reversed, never deleted — both documents stay</li>
+<li>The same receipt twice is refused in the gateway, because real S/4HANA would accept it</li>
+</ul></div>
+<div class="col"><h2 class="green">What you can check</h2>
+<ul>
+<li><b>gloveson.space</b> — no login, talk to it</li>
+<li><code>github.com/kosesena/GlovesOn</code> — <span class="num">281 commits</span> since 5 Sept, <span class="num">97 tests</span>, CI green, MIT</li>
+<li><code>receipts/</code> — <span class="num">13 steps</span> of one real run: document <span class="num">4922857164</span> posted, the same receipt refused, then reversed</li>
+<li><code>/api/provenance/4922857164</code> — the sentence that caused the document</li>
+<li><code>docs/adr/</code> — six decisions, each with the option rejected and its cost</li>
+</ul></div>
+<div class="col red"><h2 class="red">Not verified</h2>
+<ul>
+<li>Real S/4HANA: the sandbox answered <span class="num">401</span> on all four required services</li>
+<li>The posting is not made as the worker — no principal propagation yet</li>
+<li>Accents and forklift noise: not benchmarked</li>
+<li>Email, calls and notes are demo records; nothing reaches a real person</li>
+</ul></div>
+</div>
+<div class="foot"><span><b>gloveson.space</b> · Built on the <span class="aai"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 3 2 21h5l5-9 5 9h5L12 3z" fill="#2b3a2e"/></svg>AssemblyAI</span> Voice Agent API</span><span>Demo: mock ERP · simulated calls · demo email outbox</span></div>
+</div></body></html>
