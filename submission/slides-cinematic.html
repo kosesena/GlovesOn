@@ -1,0 +1,173 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>GlovesOn — deck (cinematic)</title>
+<style>
+ @page { size: 13.333in 7.5in; margin: 0; }
+ *{ margin:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+ :root{ --orange:#f08a45; --orange2:#ce5428; --mint:#b9edc9; --ink:#f3f1ea; --muted:#c9cec4; --dim:#8f978d; --line:rgba(255,255,255,.22);
+   --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace; --sans:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif; }
+ html,body{ font-family:var(--sans); color:var(--ink); background:#0e1310; }
+ .slide{ position:relative; width:13.333in; height:7.5in; overflow:hidden; page-break-after:always; break-after:page; background:#0e1310; }
+ .slide:last-child{ page-break-after:auto; }
+ .bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+ .shade{ position:absolute; inset:0; background:linear-gradient(90deg,rgba(8,12,10,.94) 0%,rgba(8,12,10,.82) 40%,rgba(8,12,10,.28) 70%,rgba(8,12,10,.05) 100%); }
+ .shade.full{ background:linear-gradient(90deg,rgba(8,12,10,.96) 0%,rgba(8,12,10,.93) 58%,rgba(8,12,10,.55) 82%,rgba(8,12,10,.25) 100%); }
+ .shade.top{ background:linear-gradient(180deg,rgba(8,12,10,.92) 0%,rgba(8,12,10,.86) 55%,rgba(8,12,10,.35) 100%); }
+ .txt{ position:absolute; left:.9in; top:.85in; right:.9in; }
+ .tag{ position:absolute; top:.5in; right:.8in; font:9px var(--mono); letter-spacing:.14em; color:var(--dim); }
+ .k{ font:12px var(--mono); letter-spacing:.2em; text-transform:uppercase; color:var(--orange); }
+ h1{ font-size:70px; font-weight:700; letter-spacing:-.04em; line-height:.98; margin:18px 0 24px; max-width:8.2in; text-shadow:0 2px 24px rgba(0,0,0,.45); }
+ h1.s{ font-size:52px; max-width:9.6in; }
+ h1 b{ color:var(--orange); font-weight:700; }
+ .cap{ font-size:21px; line-height:1.42; color:var(--muted); max-width:7.4in; }
+ .cap b{ color:#fff; font-weight:600; }
+ .cap p+p{ margin-top:12px; }
+ .punch{ position:absolute; left:.9in; right:.9in; bottom:.75in; font:600 24px var(--sans); color:var(--orange); text-shadow:0 2px 12px rgba(0,0,0,.6); max-width:9in; }
+ .foot{ position:absolute; left:.9in; right:.9in; bottom:.42in; display:flex; justify-content:space-between; font:10px var(--mono); letter-spacing:.08em; color:var(--dim); }
+ .foot b{ color:var(--mint); font-weight:600; }
+ .aai{ height:1.3em; aspect-ratio:161/28; display:inline-block; vertical-align:middle; opacity:.9; filter:invert(1) brightness(1.4); }
+ .cover{ background:#f6e5ce; } .cover img{ width:100%; height:100%; object-fit:cover; }
+ /* exchange */
+ .x{ font:17px/1.75 var(--mono); border-left:3px solid var(--orange); padding-left:18px; max-width:8in; color:var(--ink); }
+ .x .r b{ display:inline-block; width:84px; color:var(--dim); font:600 10px var(--mono); letter-spacing:.14em; }
+ .x .g{ color:var(--mint); } .x .out{ margin-top:12px; padding-top:12px; border-top:1px solid var(--line); color:var(--orange); font-weight:600; }
+ /* shift table */
+ .shift{ display:grid; grid-template-columns:1fr 1fr; gap:0 44px; max-width:9.2in; margin-top:6px; }
+ .shift .r{ display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--line); font-size:17px; }
+ .shift .r span:last-child{ font:600 9px var(--mono); letter-spacing:.14em; padding:3px 8px; border-radius:4px; }
+ .un{ background:rgba(255,255,255,.12); color:#e6e9e3; } .gone{ background:rgba(240,138,69,.2); color:var(--orange); } .voice{ background:rgba(185,237,201,.18); color:var(--mint); } .new{ background:#fff; color:#0e1310; }
+ /* guardrails */
+ .pts{ display:grid; gap:12px; max-width:8.4in; }
+ .pt{ display:grid; grid-template-columns:34px 1fr; gap:14px; align-items:start; }
+ .pt .n{ width:30px; height:30px; border-radius:50%; background:var(--orange); color:#0e1310; font:700 14px var(--mono); display:grid; place-items:center; margin-top:2px; }
+ .pt b{ font-size:19px; display:block; } .pt p{ font-size:15px; line-height:1.4; color:var(--muted); margin-top:2px; }
+ /* chips */
+ .chips{ display:flex; flex-wrap:wrap; gap:10px; max-width:8.6in; }
+ .chip{ font:13px var(--mono); padding:9px 13px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.06); color:var(--ink); }
+ .chip b{ color:var(--mint); font-weight:600; }
+ /* cards */
+ .cards{ display:grid; grid-template-columns:1fr 1fr; gap:22px; max-width:9.4in; }
+ .card{ border:1px solid var(--line); border-radius:12px; padding:20px 22px; background:rgba(14,19,16,.72); }
+ .card .who{ font:10px var(--mono); letter-spacing:.16em; color:var(--orange); text-transform:uppercase; }
+ .card h3{ font-size:24px; margin:8px 0 8px; } .card p{ font-size:15px; line-height:1.45; color:var(--muted); }
+ .nums{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:22px; max-width:10in; }
+ .num{ border-top:2px solid var(--orange); padding-top:14px; }
+ .num .v{ font:700 44px var(--sans); letter-spacing:-.03em; } .num p{ font-size:14px; line-height:1.4; color:var(--muted); margin-top:6px; }
+ .lim .row{ display:flex; gap:14px; padding:11px 0; border-bottom:1px solid var(--line); font-size:16px; line-height:1.4; max-width:9.4in; color:var(--muted); }
+ .lim .row:before{ content:"—"; color:var(--orange); flex:none; } .lim b{ color:#fff; }
+ .cols{ display:grid; grid-template-columns:1fr 1.1fr 1fr; gap:34px; max-width:11.2in; margin-top:6px; }
+ .cols h3{ font:10px var(--mono); letter-spacing:.18em; text-transform:uppercase; color:var(--mint); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+ .cols h3.red{ color:var(--orange); } .cols li{ list-style:none; font-size:15px; line-height:1.38; padding:6px 0; color:var(--ink); }
+ .cols li:before{ content:"· "; color:var(--mint); } .cols .red li:before{ color:var(--orange); }
+ .cols code{ font:13px var(--mono); background:rgba(255,255,255,.1); padding:1px 6px; border-radius:4px; }
+ .links{ display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+ .link{ font:600 13px var(--mono); padding:11px 16px; border-radius:9px; background:var(--orange); color:#0e1310; }
+ .link.ghost{ background:transparent; color:var(--ink); border:1.5px solid var(--line); }
+ .shot{ border-radius:12px; border:1px solid var(--line); box-shadow:0 20px 50px rgba(0,0,0,.5); }
+</style></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="aai" viewBox="0 0 24 24"><path d="M12 3 2 21h5l5-9 5 9h5L12 3z" fill="#fff"/></symbol></defs></svg>
+
+<!-- 1 · COVER -->
+<section class="slide cover"><img src="cover-16x9.jpg" alt="GlovesOn"></section>
+
+<!-- 2 · THE WORKER -->
+<section class="slide"><img class="bg" src="stills/pallet-legs.jpg" alt=""><div class="shade"></div><span class="tag">02 · THE WORKER</span>
+ <div class="txt"><div class="k">Receiving dock · morning shift</div><h1>Lena has both hands under a box.</h1>
+ <div class="cap"><p>The pallet landed four minutes ago and it is on no one's books yet. Until that delivery is a document in SAP, the company does not know it owns the goods — <b>purchasing chases it, production plans without it.</b></p></div></div>
+ <div class="punch">Booking it costs Lena a walk: gloves off, across the floor, to a shared terminal. Every delivery, every shift.</div>
+ <div class="foot"><span>GlovesOn · AssemblyAI Voice Agent Hackathon · 2026</span><span></span></div></section>
+
+<!-- 3 · THE SHIFT -->
+<section class="slide"><img class="bg" src="stills/aisle-boxes.jpg" alt=""><div class="shade full"></div><span class="tag">03 · THE SHIFT</span>
+ <div class="txt"><div class="k">What this touches — and what it does not</div><h1 class="s" style="margin-bottom:16px">A shift is a bundle of tasks.</h1>
+ <div class="shift">
+  <div><div class="r"><span>Unload the pallet</span><span class="un">UNTOUCHED</span></div><div class="r"><span>Check the packing slip</span><span class="un">UNTOUCHED</span></div><div class="r"><span>Set damaged cartons aside</span><span class="un">UNTOUCHED</span></div><div class="r"><span>Take the gloves off</span><span class="gone">GONE</span></div><div class="r"><span>Walk to the shared terminal</span><span class="gone">GONE</span></div></div>
+  <div><div class="r"><span>Type the material number</span><span class="gone">GONE</span></div><div class="r"><span>Look up which bin it goes to</span><span class="voice">AUTOMATIC</span></div><div class="r"><span>Post the goods receipt</span><span class="voice">BY VOICE</span></div><div class="r"><span>Correct a wrong posting</span><span class="voice">BY VOICE</span></div><div class="r"><span>Hear the line before it is true</span><span class="new">NEW</span></div></div>
+ </div></div>
+ <div class="punch">GlovesOn cannot unload the pallet. It removes the three tasks that exist only because the record lives on a screen — and adds one worth doing.</div>
+ <div class="foot"><span>GlovesOn · AssemblyAI Voice Agent Hackathon · 2026</span><span></span></div></section>
+
+<!-- 4 · THE SOLUTION -->
+<section class="slide"><img class="bg" src="stills/box-side.jpg" alt=""><div class="shade"></div><span class="tag">04 · THE SOLUTION</span>
+ <div class="txt"><div class="k">Say it. It posts.</div><h1>Both hands on the box.<br>The receipt <b>posts into SAP.</b></h1>
+ <div class="x"><div class="r"><b>YOU</b>“Twenty pieces of material 4711 arrived.”</div><div class="r"><b>GLOVESON</b><span class="g">“Twenty pieces of Hex Bolt M8x40 Zinc Plated into bin A-03-02 — confirm?”</span></div><div class="r"><b>YOU</b>“Actually twelve.”</div><div class="r"><b>GLOVESON</b><span class="g">“Twelve pieces … into bin A-03-02 — confirm?”</span></div><div class="r"><b>YOU</b>“Yes.”</div><div class="out">→ Material document 4937706921 · movement 501 · stock 271 → 283</div></div></div>
+ <div class="punch">A mock S/4HANA that speaks SAP's released OData contract. One setting from a live tenant. Hands never leave the box.</div>
+ <div class="foot"><span>gloveson.space</span><span></span></div></section>
+
+<!-- 5 · SEE IT WORK -->
+<section class="slide"><img class="bg" src="stills/shelves-tray.jpg" alt=""><div class="shade full"></div><span class="tag">05 · SEE IT WORK</span>
+ <div class="txt" style="top:.7in"><div class="k">Real screen · session of 15 September 2026</div><h1 class="s" style="margin:14px 0 16px;font-size:44px">A result you can review.</h1>
+ <div style="display:grid;grid-template-columns:7.2in 1fr;gap:26px;align-items:start">
+  <img class="shot" src="real-run-4937706921.png" alt="Material document 4937706921" style="width:100%;max-height:4.55in;object-fit:cover;object-position:top">
+  <div class="cap" style="font-size:16px;line-height:1.42;max-width:none"><p>Material document <b>4937706921</b>, movement <b>501</b>, stock <b>271 → 283</b> — recorded through SAP's released OData path into the demo's mock S/4HANA, after the worker corrected twenty to twelve during the read-back.</p><p>The read-back names the <b>description</b>, not just the number — which is what lets a worker catch they are holding nuts, not bolts.</p><p>The card carries <b>the sentence that caused the document</b>. An earlier run, document 4922857164 with its refused duplicate and its reversal, is kept as JSON in <span style="font-family:var(--mono)">receipts/</span>.</p></div>
+ </div></div>
+ <div class="foot"><span>Actual demo screen, unedited · mock S/4HANA · no live SAP tenant · receipts/README.md</span><span></span></div></section>
+
+<!-- 6 · THE DISCIPLINE -->
+<section class="slide"><img class="bg" src="stills/hands-bolts.jpg" alt=""><div class="shade full"></div><span class="tag">06 · THE DISCIPLINE</span>
+ <div class="txt" style="top:.7in"><div class="k">Asking is easy. Finishing is the hard part.</div><h1 class="s" style="margin:14px 0 18px">Five guardrails, each one deliberate.</h1>
+ <div class="pts">
+  <div class="pt"><span class="n">1</span><div><b>The read-back names four things.</b><p>Quantity, unit, material description, bin. The description is load-bearing.</p></div></div>
+  <div class="pt"><span class="n">2</span><div><b>Writes require a confirmed draft.</b><p>The gateway validates the exact draft. Spoken consent is reported by the agent; results appear only after the tool returns.</p></div></div>
+  <div class="pt"><span class="n">3</span><div><b>A duplicate is refused.</b><p>The same receipt within two minutes is caught — by a guard in the gateway, because real S/4HANA would accept it twice.</p></div></div>
+  <div class="pt"><span class="n">4</span><div><b>Nothing is deleted — it is reversed.</b><p>A wrong receipt gets a reversal document, 102 against a 101. Both stay, because that is what a ledger is.</p></div></div>
+  <div class="pt"><span class="n">5</span><div><b>Every document answers why it exists.</b><p>Click a posted row: the sentence the worker confirmed, and the second it happened.</p></div></div>
+ </div></div>
+ <div class="foot"><span>Reasoning in full: docs/adr/0002-confirm-before-write.md</span><span></span></div></section>
+
+<!-- 7 · ARCHITECTURE -->
+<section class="slide"><img class="bg" src="stills/aisle-camera.jpg" alt="" style="object-position:right"><div class="shade full"></div><span class="tag">07 · ARCHITECTURE</span>
+ <div class="txt" style="top:.7in"><div class="k">The agent never sees SAP</div><h1 class="s" style="margin:14px 0 18px">One boundary carries every guardrail.</h1>
+ <img src="architecture-dark.svg" alt="Architecture" style="width:10.6in;display:block;border-radius:12px;background:rgba(14,19,16,.55);padding:14px">
+ <div class="cap" style="margin-top:16px;font-size:17px;max-width:10.6in">It speaks in warehouse terms; the gateway owns auth, SAP field translation and every write guardrail. The mock sits opposite the gateway, reached like any other system — so <b>SAP_BASE_URL</b> pointed at a real tenant is the whole migration. No second code path.</div></div>
+ <div class="foot"><span>docs/adr/0001 · docs/adr/0006 · gateway/sap_client.py</span><span></span></div></section>
+
+<!-- 8 · BUILT ON ASSEMBLYAI -->
+<section class="slide"><img class="bg" src="stills/desk-close.jpg" alt=""><div class="shade"></div><span class="tag">08 · BUILT ON ASSEMBLYAI</span>
+ <div class="txt"><div class="k">The whole voice loop is the Voice Agent API</div><h1 class="s">One connection: speech, reasoning, voice, tools.</h1>
+ <div class="chips"><div class="chip">Streaming <b>speech-to-text</b></div><div class="chip">LLM routing</div><div class="chip">Voice output</div><div class="chip">Turn-taking &amp; VAD</div><div class="chip"><b>JSON-Schema</b> client functions</div><div class="chip">Browser-to-gateway tool bridge</div><div class="chip">transcription_prompt</div><div class="chip">39 keyterms → SAP material numbers</div><div class="chip">voice_focus: far-field</div><div class="chip">Barge-in</div><div class="chip">session.resume</div><div class="chip">Session token minted server-side</div></div>
+ <div class="cap" style="margin-top:24px;font-size:17px">Turn detection is pinned (<b>800 / 2000 ms</b>) for non-native speakers — adaptive pacing is deliberately off, so we do not claim per-speaker adaptation.</div></div>
+ <div class="foot"><span>agent/agent.json · docs/assemblyai-notlari.md</span><span><svg class="aai" style="height:14px;width:14px"><use href="#aai"/></svg> AssemblyAI</span></div></section>
+
+<!-- 9 · WHY THIS IS NEW -->
+<section class="slide"><img class="bg" src="stills/trolley.jpg" alt=""><div class="shade full"></div><span class="tag">09 · WHY THIS IS NEW</span>
+ <div class="txt"><div class="k">Everyone else voice-guides planned work</div><h1 class="s">The unplanned pallet has no voice path.</h1>
+ <div class="cards"><div class="card"><div class="who">The incumbents</div><h3>Honeywell · Lydia · Ivanti</h3><p>The WMS issues the task; the worker answers fixed prompts. Decades of it. But a worker cannot initiate a document by describing it.</p></div><div class="card"><div class="who">SAP itself</div><h3>Joule</h3><p>Posts and reverses goods movements — by <b>chat</b>, today. Real-time voice announced for its top cloud tiers, GA planned H2 2026.</p></div></div></div>
+ <div class="punch">GlovesOn is the unplanned moment — by voice, today.</div>
+ <div class="foot"><span>sources with bias tags: docs/market.md §1–2</span><span></span></div></section>
+
+<!-- 10 · MARKET & COST -->
+<section class="slide"><img class="bg" src="stills/box-front.jpg" alt="" style="object-position:right"><div class="shade full"></div><span class="tag">10 · MARKET &amp; COST</span>
+ <div class="txt"><div class="k">An established budget line</div><h1 class="s">Zero per-seat hardware against a $5,000 norm.</h1>
+ <div class="nums"><div class="num"><div class="v">$4.8–6.5B</div><p>voice-directed warehousing today · ~14–17%/yr (analyst estimates, cited as a range)</p></div><div class="num"><div class="v">~$5,000</div><p>incumbent cost per user, hardware + software</p></div><div class="num"><div class="v" style="color:var(--orange)">$0.00</div><p>GlovesOn per-seat hardware — a browser and a headset. Voice: $0.075 per connected minute.</p></div></div>
+ <div class="cap" style="margin-top:28px;font-size:15px">No ROI figure is quoted — session length per receipt is unmeasured (docs/nfr.md §5).</div></div>
+ <div class="foot"><span>market numbers: docs/market.md §4</span><span></span></div></section>
+
+<!-- 11 · HONEST LIMITS -->
+<section class="slide"><img class="bg" src="stills/desk-monitor.jpg" alt="" style="object-position:right"><div class="shade full"></div><span class="tag">11 · HONEST LIMITS</span>
+ <div class="txt" style="top:.75in"><div class="k">Named, not hidden</div><h1 class="s" style="margin:14px 0 14px">What this does not do yet.</h1>
+ <div class="lim">
+  <div class="row"><span><b>The ERP is a mock</b> — the OData contract and the CSRF handshake are real; a live tenant was tried and the Business Accelerator Hub sandbox answered <b>401</b> on all four required services (10 September). Nothing here has run against real S/4HANA.</span></div>
+  <div class="row"><span><b>No employee sign-in or SAP principal propagation</b> — session capabilities protect tool calls, but do not establish a worker's identity.</span></div>
+  <div class="row"><span><b>Noise robustness is unmeasured</b> — voice_focus: far-field is set, but a config change is a claim, not a measurement.</span></div>
+  <div class="row"><span><b>Session events are isolated; warehouse records are shared</b> — this is a demonstration, not a tenant-isolated production system.</span></div>
+  <div class="row"><span><b>The supported product language is English</b>; other languages are outside the demo scope.</span></div>
+ </div>
+ <div class="cap" style="margin-top:18px;font-size:16px">Naming the gap is the credibility. Every one is written up in the repo, and the judge guide ends with them.</div></div>
+ <div class="foot"><span>docs/clean-core.md · docs/nfr.md</span><span></span></div></section>
+
+<!-- 12 · EVIDENCE -->
+<section class="slide"><img class="bg" src="stills/shelves-tray.jpg" alt="" style="object-position:right"><div class="shade full"></div><span class="tag">12 · EVIDENCE</span>
+ <div class="txt" style="top:.7in"><div class="k">What a judge can check</div><h1 class="s" style="margin:14px 0 18px;font-size:42px;max-width:11in">Posts the goods receipt <b>straight into SAP</b> — here a mock S/4HANA that speaks SAP's released OData contract, one setting away from a live tenant.</h1>
+ <div class="cols">
+  <div><h3>What it does</h3><ul><li><code>X-CSRF-Token: Fetch</code> handshake, <code>A_MaterialDocumentHeader</code>, movement types 101 / 102</li><li>Read-back names quantity, unit, material <em>description</em> and bin; nothing posts without a spoken yes</li><li>Wrong receipt is reversed, never deleted — both documents stay</li><li>The same receipt twice is refused in the gateway</li></ul></div>
+  <div><h3>What you can check</h3><ul><li><b>gloveson.space</b> — no login, talk to it</li><li><code>github.com/kosesena/GlovesOn</code> — <b>281 commits</b> since 5 Sept, <b>97 tests</b>, CI green, MIT</li><li><code>receipts/</code> — <b>13 steps</b> of one real run: document <b>4922857164</b> posted, the same receipt refused, then reversed</li><li><code>/api/provenance/4922857164</code> — the sentence that caused the document</li><li><code>docs/adr/</code> — six decisions, each with the option rejected and its cost</li></ul></div>
+  <div class="red"><h3 class="red">Not verified</h3><ul><li>Real S/4HANA: the sandbox answered <b>401</b> on all four required services</li><li>The posting is not made as the worker — no principal propagation yet</li><li>Accents and forklift noise: not benchmarked</li><li>Email, calls and notes are demo records; nothing reaches a real person</li></ul></div>
+ </div></div>
+ <div class="foot"><span><b>gloveson.space</b> · Built on the AssemblyAI Voice Agent API</span><span>Demo: mock ERP · simulated calls · demo email outbox</span></div></section>
+
+<!-- 13 · CLOSE -->
+<section class="slide"><img class="bg" src="stills/aisle-camera.jpg" alt=""><div class="shade"></div><span class="tag">13</span>
+ <div class="txt"><div class="k">GlovesOn</div><h1 style="font-size:56px;max-width:8.6in">It doesn't just stop and ask. It finishes — and leaves a document that can tell you <b>why it exists.</b></h1>
+ <div class="links"><span class="link">Live demo · gloveson.space</span><span class="link ghost">github.com/kosesena/GlovesOn</span><span class="link ghost">Judge guide — every claim → a file &amp; a command</span></div></div>
+ <div class="punch" style="color:var(--ink);font-weight:500;font-size:20px">Gloves on. Hands full. <span style="color:var(--orange);font-weight:700">Just speak.</span></div>
+ <div class="foot"><span>Built on the AssemblyAI Voice Agent API</span><span>Demo: mock ERP · simulated calls · demo email outbox</span></div></section>
+</body></html>
