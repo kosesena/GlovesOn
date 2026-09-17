@@ -173,33 +173,17 @@
 
 <!-- 5 · SEE IT WORK -->
 <section class="slide"><span class="tag">05 · SEE IT WORK</span>
- <div class="kicker">Illustrative demo result</div>
- <h2 style="margin:22px 0 26px;font-size:40px">A result you can review.</h2>
- <div class="console">
-   <div class="top"><span class="dot"></span>GLOVESON · PLANT 1000 / RECEIVING · DEMO</div>
-   <div class="body">
-     <div class="col">
-       <div class="lbl">CONVERSATION</div>
-       <div class="say"><span class="q">“Post a goods receipt, forty pieces of forty-seven eleven.”</span><br><br>
-         <span class="g">“Forty pieces of hex bolt M8x40 into bin A-03-02 — confirm?”</span><br><br>
-         <span class="q">“Confirm.”</span></div>
-     </div>
-     <div class="col">
-       <div class="lbl">YOUR RESULT</div>
-       <div class="doc">
-         <div class="row"><span>Document</span><b>4900000123</b></div>
-         <div class="row"><span>Material</span><b>4711 · Hex Bolt M8x40</b></div>
-         <div class="row"><span>Movement</span><b>501</b></div>
-         <div class="row"><span>Quantity</span><b>40 EA → bin A-03-02</b></div>
-         <div class="row"><span>Stock</span><b>240 → 280</b></div>
-         <span class="stamp">POSTED ✓</span>
-       </div>
-     </div>
+ <div class="kicker">Real screen · session of 15 September 2026</div>
+ <h2 style="margin:14px 0 14px;font-size:38px">A result you can review.</h2>
+ <div style="display:grid;grid-template-columns:1.25fr .75fr;gap:28px;align-items:start">
+   <img src="real-run-4937706921.png" alt="Material document 4937706921 on the GlovesOn screen" style="width:100%;max-height:4.75in;object-fit:cover;object-position:top;border-radius:12px;border:1px solid var(--line);box-shadow:0 14px 36px rgba(138,113,83,.18)">
+   <div>
+     <div class="lede" style="font-size:18px;line-height:1.45">Material document <b class="g">4937706921</b>, movement <b class="g">501</b>, stock <b class="g">271 → 283</b> — recorded through SAP’s released OData path into the demo’s mock S/4HANA, after the worker corrected twenty to twelve during the read-back.</div>
+     <div class="lede" style="font-size:17px;line-height:1.45;margin-top:16px">The read-back names the <b class="g">description</b>, not just the number — which is what lets a worker catch they are holding nuts, not bolts.</div>
+     <div class="lede" style="font-size:17px;line-height:1.45;margin-top:16px">The card carries <b class="g">the sentence that caused the document</b>. An earlier run, document 4922857164 with its refused duplicate and its reversal, is kept as JSON in <span style="font-family:var(--mono)">receipts/</span>.</div>
    </div>
  </div>
- <div class="lede" style="margin-top:22px;font-size:18px">The read-back names the <b class="g">description</b>, not just the number — which is what lets a worker catch they are holding nuts, not bolts.</div>
- <div class="lede" style="margin-top:10px;font-size:15px">The warehouse around this console is staging — you cannot ship a receiving floor to a judge. The values shown here are illustrative demo data. Live SAP tenant connectivity has not been verified.</div>
- <div class="foot">Illustrative values · mock ERP · no live SAP transaction shown.</div>
+ <div class="foot">Actual demo screen, unedited · mock S/4HANA · no live SAP tenant · receipts/README.md</div>
 </section>
 
 <!-- 6 · DISCIPLINE -->
@@ -239,7 +223,7 @@
    <div class="chip"><b>JSON-Schema</b> client functions</div>
    <div class="chip">Browser-to-gateway tool bridge</div>
    <div class="chip">transcription_prompt</div>
-   <div class="chip">56 keyterms → SAP material numbers</div>
+   <div class="chip">39 keyterms → SAP material numbers</div>
    <div class="chip">Barge-in</div>
    <div class="chip">Session token minted server-side</div>
  </div>
@@ -277,7 +261,7 @@
  <div class="kicker">Named, not hidden</div>
  <h2 style="margin:22px 0 30px">What this does not do yet.</h2>
  <div class="lim">
-   <div class="row"><span><b>The ERP is a mock</b> — the OData contract and the CSRF handshake are real, but no claim is made that this has run against a live tenant.</span></div>
+   <div class="row"><span><b>The ERP is a mock</b> — the OData contract and the CSRF handshake are real; a live tenant was tried and the Business Accelerator Hub sandbox answered <b>401</b> on all four required services (10 September). Nothing here has run against real S/4HANA.</span></div>
    <div class="row"><span><b>No employee sign-in or SAP principal propagation</b> — session capabilities protect tool calls, but do not establish a worker’s identity.</span></div>
    <div class="row"><span><b>Noise robustness is unmeasured</b> — voice_focus: far-field is set, but a config change is a claim, not a measurement.</span></div>
    <div class="row"><span><b>Session events are isolated; warehouse records are shared</b> — this is a demonstration, not a tenant-isolated production system.</span></div>
@@ -287,13 +271,16 @@
  <div class="foot">docs/clean-core.md · docs/nfr.md</div>
 </section>
 
-<!-- 11 · CLOSE -->
-<section class="slide"><span class="tag">12</span>
+<!-- 12 · EVIDENCE -->
+<section class="slide cover"><img src="evidence-card-16x9.png" alt="What a judge can check"></section>
+
+<!-- 13 · CLOSE -->
+<section class="slide"><span class="tag">13</span>
  <div class="kicker">GlovesOn</div>
  <h1 style="font-size:52px;margin:26px 0 24px;max-width:16ch">It doesn’t just stop and ask. It finishes — and leaves a document that can tell you why it exists.</h1>
  <div class="links" style="margin-top:14px">
    <span class="link">Live demo · gloveson.space</span>
-   <span class="link ghost">GitHub repository</span>
+   <span class="link ghost">github.com/kosesena/GlovesOn</span>
    <span class="link ghost">Judge guide — every claim → a file &amp; a command</span>
  </div>
  <div style="margin-top:auto;display:flex;align-items:center;gap:14px">
