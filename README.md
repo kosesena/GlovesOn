@@ -66,11 +66,8 @@ communication flow does, what it refuses, and how it was checked.
 ## Architecture
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/img/architecture-dark.svg">
-    <img src="docs/img/architecture-light.svg" width="880"
-         alt="The worker speaks to the browser, which streams audio to the AssemblyAI Voice Agent API. The agent's tool call comes back down to the browser, which posts it to the GlovesOn gateway with a session capability. The gateway holds the shared secret, speaks OData to S/4HANA, and streams the live warehouse screen back over SSE.">
-  </picture>
+  <img src="docs/img/architecture-cinematic.svg" width="880"
+     alt="The worker speaks to the browser, which streams audio to the AssemblyAI Voice Agent API. The agent's tool call comes back down to the browser, which posts it to the GlovesOn gateway with a session capability. The gateway holds the shared secret, speaks OData to S/4HANA, and streams the live warehouse screen back over SSE.">
 </p>
 
 **The agent never sees SAP.** It asks for a tool by name and gets warehouse terms back —
@@ -95,11 +92,8 @@ gateway enforces after the relay, never the ones the page enforces before it.
 ## The part that matters: a confirmed write
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/img/confirmed-write-dark.svg">
-    <img src="docs/img/confirmed-write-light.svg" width="900"
-         alt="Sequence: the worker names a delivery; the agent prepares a draft through the page and the gateway, which returns the authoritative quantity, description and bin plus a one-use token; the agent reads that back and waits for a spoken confirmation; only then does the write tool exist, and the gateway checks the token and the duplicate window, fetches a CSRF token, posts the material document, and streams it to the live screen.">
-  </picture>
+  <img src="docs/img/confirmed-write-cinematic.svg" width="900"
+     alt="Sequence: the worker names a delivery; the agent prepares a draft through the page and the gateway, which returns the authoritative quantity, description and bin plus a one-use token; the agent reads that back and waits for a spoken confirmation; only then does the write tool exist, and the gateway checks the token and the duplicate window, fetches a CSRF token, posts the material document, and streams it to the live screen.">
 </p>
 
 <sub align="center">Click the diagram to open it full size. Source: <a href="docs/img/confirmed-write.mmd"><code>docs/img/confirmed-write.mmd</code></a>.</sub>

@@ -42,6 +42,21 @@ DARK = dict(
     packet="#b9edc9", glow="#b9edc9", wave="#edba72",
 )
 
+# The film's palette: the deck, the cover and the README banners are stills from
+# the film with white type and one orange. This theme paints its own background
+# so it reads the same on GitHub's light and dark pages, which is why the README
+# uses it alone instead of switching between LIGHT and DARK.
+CINE = dict(
+    name="cinematic", bg=("#16201a", "#0e1310"),
+    node_text="#f3f1ea", sub="#c9cec4", wire="#5d675f", label="#c9cec4",
+    ext_fill="#141b17", ext_stroke="#3a463d", ext_text="#f3f1ea",
+    hub_stroke="#f08a45",
+    gw_fill="#1e3a2b", gw_stroke="#b9edc9", gw_text="#f3f1ea", gw_sub="#b9edc9",
+    erp_fill="#161d19", erp_stroke="#8fa697", erp_text="#f3f1ea",
+    ui_fill="#141b17", ui_stroke="#3a463d", ui_text="#f3f1ea",
+    packet="#f08a45", glow="#b9edc9", wave="#f08a45",
+)
+
 FONT = "system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif"
 MONO = "ui-monospace,'SF Mono',Menlo,Consolas,monospace"
 
@@ -128,6 +143,11 @@ def build(c):
       <path d="M0,0 L10,5 L0,10 z" fill="{c['wire']}"/>
     </marker>
   </defs>''')
+    if c.get("bg"):
+        inner, outer = c["bg"]
+        p.append(f'''<defs><radialGradient id="bg" cx="40%" cy="35%" r="80%">
+      <stop offset="0" stop-color="{inner}"/><stop offset="1" stop-color="{outer}"/></radialGradient></defs>
+  <rect x="0" y="34" width="{W}" height="388" rx="18" fill="url(#bg)"/>''')
 
     # wires first, so the boxes sit on top of them.
     #
@@ -212,6 +232,6 @@ def build(c):
 
 if __name__ == "__main__":
     out = Path(__file__).resolve().parent
-    for c in (LIGHT, DARK):
+    for c in (LIGHT, DARK, CINE):
         (out / f"architecture-{c['name']}.svg").write_text(build(c))
         print("wrote", out / f"architecture-{c['name']}.svg")

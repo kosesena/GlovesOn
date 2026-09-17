@@ -57,6 +57,25 @@ DARK = {
 }
 
 
+# The film's palette, with its own painted background so the README can show one
+# drawing on GitHub's light and dark pages alike. Orange is the note and the
+# activations, as before; mint is the gateway's label box, as on the deck.
+CINE = {
+    "fontFamily": FONT, "fontSize": "15px",
+    "primaryColor": "#141b17", "primaryTextColor": "#f3f1ea",
+    "primaryBorderColor": "#3a463d", "lineColor": "#5d675f", "textColor": "#f3f1ea",
+    "actorBkg": "#1a221d", "actorBorder": "#4a5a4f", "actorTextColor": "#f3f1ea",
+    "actorLineColor": "#3d4a41",
+    "signalColor": "#9aa69d", "signalTextColor": "#f3f1ea",
+    "noteBkgColor": "#2a221b", "noteBorderColor": "#f08a45", "noteTextColor": "#f3f1ea",
+    "labelBoxBkgColor": "#1e3a2b", "labelBoxBorderColor": "#b9edc9",
+    "labelTextColor": "#f3f1ea",
+    "activationBkgColor": "#1a221d", "activationBorderColor": "#f08a45",
+    "sequenceNumberColor": "#0e1310",
+}
+BACKGROUND = {"light": "transparent", "dark": "transparent", "cinematic": "#0e1310"}
+
+
 def render(name: str, variables: dict, tmp: Path) -> None:
     # The palette goes in as an %%{init}%% directive on a copy of the source, not
     # through mermaid-cli's -c config file. The config file is silently ignored for
@@ -73,7 +92,7 @@ def render(name: str, variables: dict, tmp: Path) -> None:
     raw = tmp / f"{name}.svg"
     subprocess.run(
         ["npx", "-y", "@mermaid-js/mermaid-cli@11", "-i", str(themed),
-         "-o", str(raw), "-b", "transparent"],
+         "-o", str(raw), "-b", BACKGROUND[name]],
         check=True,
     )
     svg = raw.read_text()
@@ -94,3 +113,4 @@ if __name__ == "__main__":
         tmp = Path(raw_tmp)
         render("light", LIGHT, tmp)
         render("dark", DARK, tmp)
+        render("cinematic", CINE, tmp)
