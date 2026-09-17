@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{margin:0;box-sizing:border-box}html,body{width:1600px;height:1000px;overflow:hidden;background:radial-gradient(900px 600px at 30% 20%,#16201a,#0e1310);font-family:-apple-system,system-ui,sans-serif;color:#f3f1ea}
+.wrap{padding:44px 56px}.k{font:12px ui-monospace,Menlo,monospace;letter-spacing:.22em;text-transform:uppercase;color:#f08a45}
+h1{font-size:34px;font-weight:700;letter-spacing:-.03em;margin:10px 0 30px}
+.flow{display:grid;grid-template-columns:1fr 40px 1fr 40px 1fr 40px 1fr;align-items:stretch;gap:0}
+.st{border-radius:16px;padding:22px 22px 18px;background:#141b17;border:1px solid #3a463d;display:flex;flex-direction:column}
+.st .big{font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.st .who{font:10px ui-monospace,Menlo,monospace;letter-spacing:.16em;text-transform:uppercase;color:#b9edc9;margin:10px 0 12px}
+.st .say{font-size:16px;line-height:1.35;margin-bottom:12px}
+.st ul{list-style:none;margin-top:auto}.st li{font:12.5px/1.5 ui-monospace,Menlo,monospace;color:#c9cec4;padding:5px 0;border-top:1px solid rgba(255,255,255,.12)}
+.arr{display:grid;place-items:center;color:#f08a45;font-size:28px}
+.gate{position:relative;border:2px solid #f08a45;background:#1c1512}
+.gate:before{content:"THE GATE";position:absolute;top:-11px;left:18px;font:700 10px ui-monospace,Menlo,monospace;letter-spacing:.2em;color:#f08a45;background:#1c1512;padding:0 8px}
+.post{border-color:#b9edc9;background:#1e3a2b}
+.under{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px;margin-top:26px}
+.u{border-top:2px solid #f08a45;padding-top:12px}.u b{font-size:16px}.u p{font-size:13.5px;line-height:1.4;color:#c9cec4;margin-top:4px}
+</style></head><body><div class="wrap"><div class="k">The part that matters · a confirmed write</div><h1>Speak. Review. Confirm. Post. — and the gate between them.</h1>
+<div class="flow">
+<div class="st"><div class="big">Speak</div><div class="who">Worker → Voice Agent</div><div class="say">“Twenty pieces of 4711 arrived.”</div><ul><li>open vocabulary, hands on the box</li><li>the agent has no write tool yet</li><li>prepare_goods_receipt(4711, 20)</li></ul></div>
+<div class="arr">→</div>
+<div class="st"><div class="big">Review</div><div class="who">Gateway → Agent → Worker</div><div class="say">“Twenty pieces of hex bolt M8×40 into bin A-03-02 — confirm?”</div><ul><li>gateway looks up stock, description, bin</li><li>one-use draft token · valid 2 min</li><li>post_goods_receipt exists only now</li></ul></div>
+<div class="arr">→</div>
+<div class="st gate"><div class="big">Confirm</div><div class="who">Worker → Voice Agent</div><div class="say">“Actually twelve.” — a new draft.<br>“Yes.” — the gate opens.</div><ul><li>a correction invalidates the draft</li><li>the spoken sentence travels with the token</li><li>no yes, no write · no draft, no tool</li></ul></div>
+<div class="arr">→</div>
+<div class="st post"><div class="big">Post</div><div class="who">Gateway → S/4HANA</div><div class="say">Material document 4937706921 · 501 · stock 271 → 283</div><ul><li>duplicate guard: same intent in 120 s?</li><li>X-CSRF-Token: Fetch · A_MaterialDocumentHeader</li><li>live screen over SSE · provenance kept</li></ul></div>
+</div>
+<div class="under"><div class="u"><b>Wrong? Reverse.</b><p>A 102 against the 101. Both documents stay; nothing is deleted.</p></div><div class="u"><b>Same receipt again? Refused.</b><p>Caught in our gateway, because real S/4HANA would accept it twice.</p></div><div class="u"><b>Why does this document exist?</b><p>Click it: the sentence the worker confirmed, and the second it happened.</p></div></div>
+</div></body></html>

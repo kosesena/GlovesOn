@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{margin:0;box-sizing:border-box}html,body{width:1600px;height:1000px;overflow:hidden;background:radial-gradient(900px 600px at 30% 20%,#16201a,#0e1310);font-family:-apple-system,system-ui,sans-serif;color:#f3f1ea}
+.wrap{padding:44px 56px}.k{font:12px ui-monospace,Menlo,monospace;letter-spacing:.22em;text-transform:uppercase;color:#f08a45}
+h1{font-size:34px;font-weight:700;letter-spacing:-.03em;margin:10px 0 26px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.p{border-radius:14px;overflow:hidden;background:#141b17;border:1px solid #3a463d;position:relative}
+.p img{width:100%;height:230px;object-fit:cover;object-position:top;display:block}
+.p .cap{padding:14px 16px 16px}.p .n{position:absolute;top:10px;left:10px;width:30px;height:30px;border-radius:50%;background:#f08a45;color:#0e1310;font:700 14px ui-monospace,Menlo,monospace;display:grid;place-items:center}
+.p b{display:block;font-size:17px;margin-bottom:5px}.p p{font-size:13.5px;line-height:1.4;color:#c9cec4}.p .who{font:10px ui-monospace,Menlo,monospace;letter-spacing:.16em;text-transform:uppercase;color:#b9edc9;margin-bottom:6px}
+.p.gate{border-color:#f08a45;box-shadow:0 0 0 2px rgba(240,138,69,.25)}
+.foot{margin-top:22px;font:13px ui-monospace,Menlo,monospace;color:#c9cec4;text-align:center}
+</style></head><body><div class="wrap"><div class="k">The part that matters · a confirmed write</div><h1>Six frames from one goods receipt.</h1>
+<div class="grid">
+<div class="p"><span class="n">1</span><img src="../../../submission/stills/box-side.jpg"><div class="cap"><div class="who">Worker → Voice Agent</div><b>“Twenty pieces of 4711 arrived.”</b><p>Open vocabulary, both hands on the box. The agent has no write tool yet.</p></div></div>
+<div class="p"><span class="n">2</span><img src="../../../submission/stills/shelves-tray.jpg"><div class="cap"><div class="who">Agent → Page → Gateway → S/4HANA</div><b>prepare_goods_receipt(4711, 20)</b><p>The gateway looks the material up: 280 EA, hex bolt M8×40, bin A-03-02. It issues a one-use draft token, valid two minutes. Now, and only now, post_goods_receipt exists.</p></div></div>
+<div class="p"><span class="n">3</span><img src="../../../submission/stills/hands-bolts.jpg"><div class="cap"><div class="who">Voice Agent → Worker → Voice Agent · the correction</div><b>“Twenty pieces of hex bolt M8x40 into bin A-03-02 — confirm?” “Actually twelve.”</b><p>The read-back names quantity, unit, description and bin. The correction invalidates the draft for twenty; a new one is prepared for twelve.</p></div></div>
+<div class="p gate"><span class="n">4</span><img src="ui-readback.jpg"><div class="cap"><div class="who">Voice Agent → Worker · the gate</div><b>“Twelve pieces of hex bolt M8x40 into bin A-03-02 — confirm?” “Yes.”</b><p>Not yet posted until the spoken yes. The sentence travels with the one-use token; without both, there is no write.</p></div></div>
+<div class="p"><span class="n">5</span><img src="ui-posted.jpg"><div class="cap"><div class="who">Gateway → S/4HANA</div><b>X-CSRF-Token: Fetch · POST A_MaterialDocumentHeader · 501</b><p>Duplicate guard first: same intent in the last 120 s? Then the document. Material document 4937706921, stock 271 → 283.</p></div></div>
+<div class="p"><span class="n">6</span><img src="../../../submission/stills/desk-close.jpg"><div class="cap"><div class="who">Gateway → Page · SSE</div><b>“Posted. Material document 4937706921.”</b><p>The live screen shows the document and the sentence that caused it. Wrong? Say “reverse it”: a 102 against the 101, both documents stay.</p></div></div>
+</div><div class="foot">the write tool does not exist until a draft has been prepared · nothing posts before the spoken confirm · nothing is deleted</div></div></body></html>

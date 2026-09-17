@@ -92,13 +92,16 @@ gateway enforces after the relay, never the ones the page enforces before it.
 ## The part that matters: a confirmed write
 
 <p align="center">
-  <img src="docs/img/confirmed-write-cinematic.svg" width="900"
-     alt="Sequence: the worker names a delivery; the agent prepares a draft through the page and the gateway, which returns the authoritative quantity, description and bin plus a one-use token; the agent reads that back and waits for a spoken confirmation; only then does the write tool exist, and the gateway checks the token and the duplicate window, fetches a CSRF token, posts the material document, and streams it to the live screen.">
+  <img src="docs/img/figures/confirmed-write-gate.jpg" width="920"
+     alt="Four stages, Speak, Review, Confirm, Post, with the Confirm stage drawn as a gate: the worker says twenty pieces of 4711 arrived; the gateway looks up stock, description and bin and issues a one-use draft token; the agent reads the line back; the worker corrects to twelve and says yes; only then does the gateway check the duplicate window, fetch a CSRF token and post material document 4937706921, stock 271 to 283. Below: wrong means reverse, the same receipt again is refused, and every document keeps the sentence that caused it.">
 </p>
 
-<sub align="center">Click the diagram to open it full size. Source: <a href="docs/img/confirmed-write.mmd"><code>docs/img/confirmed-write.mmd</code></a>.</sub>
+<p align="center">
+  <img src="docs/img/figures/confirmed-write-storyboard.jpg" width="920"
+     alt="The same receipt as six frames from the film and two unedited screens: the worker speaking with both hands on a box; the gateway looking the material up at the shelves; gloved hands over hex bolts as the read-back for twenty is corrected to twelve; the read-back card for twelve stamped NOT YET POSTED, waiting for the yes; the posted document card, movement 501; and the worker at the desk hearing the document number read back.">
+</p>
 
-Five things in that diagram are deliberate and each one costs something:
+Five things in those frames are deliberate and each one costs something:
 
 - **The write tool does not exist yet at step one.** `post_goods_receipt` is absent from
   the configuration the agent is given, and appears only once a preparation has returned a
