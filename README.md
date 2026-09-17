@@ -7,11 +7,6 @@
 </p>
 
 <p align="center">
-  <img alt="AssemblyAI Voice Agent API" src="https://img.shields.io/badge/AssemblyAI-Voice%20Agent%20API-f08a45?style=for-the-badge&labelColor=0e1310">
-  <img alt="SAP S/4HANA OData" src="https://img.shields.io/badge/SAP-S%2F4HANA%20OData-b9edc9?style=for-the-badge&labelColor=0e1310">
-  <img alt="Python 3.11" src="https://img.shields.io/badge/Python-3.11-f3f1ea?style=for-the-badge&labelColor=0e1310">
-  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-f3f1ea?style=for-the-badge&labelColor=0e1310">
-  <img alt="MIT" src="https://img.shields.io/badge/License-MIT-f3f1ea?style=for-the-badge&labelColor=0e1310">
   <a href="https://github.com/kosesena/GlovesOn/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/kosesena/GlovesOn/actions/workflows/ci.yml/badge.svg"></a>
 </p>
 
