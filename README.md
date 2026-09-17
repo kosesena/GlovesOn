@@ -2,16 +2,16 @@
 <p align="center"><b>A voice agent that posts goods receipts into SAP — read back, confirmed, reversible. Built on the AssemblyAI Voice Agent API.</b></p>
 
 <p align="center">
-  <a href="https://gloveson.space"><img src="docs/img/landing.png" width="820"
-     alt="The GlovesOn landing page: a warehouse worker in a headset holding a box, over the words Gloves on. Hands full. Just speak."></a>
+  <a href="https://gloveson.space"><img src="submission/cover-16x9.jpg" width="920"
+     alt="Lena, a warehouse worker in a headset, holds a box in a dark aisle beside the words Gloves on. Hands full. Just speak. Speak a goods receipt, review and confirm it, it posts into SAP."></a>
 </p>
 
 <p align="center">
-  <img alt="AssemblyAI Voice Agent API" src="https://img.shields.io/badge/AssemblyAI-Voice%20Agent%20API-5A31F4?style=flat-square">
-  <img alt="SAP S/4HANA OData" src="https://img.shields.io/badge/SAP-S%2F4HANA%20OData-0FAAFF?style=flat-square">
-  <img alt="Python 3.11" src="https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square">
-  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?style=flat-square">
-  <img alt="MIT" src="https://img.shields.io/badge/License-MIT-green?style=flat-square">
+  <img alt="AssemblyAI Voice Agent API" src="https://img.shields.io/badge/AssemblyAI-Voice%20Agent%20API-f08a45?style=for-the-badge&labelColor=0e1310">
+  <img alt="SAP S/4HANA OData" src="https://img.shields.io/badge/SAP-S%2F4HANA%20OData-b9edc9?style=for-the-badge&labelColor=0e1310">
+  <img alt="Python 3.11" src="https://img.shields.io/badge/Python-3.11-f3f1ea?style=for-the-badge&labelColor=0e1310">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-f3f1ea?style=for-the-badge&labelColor=0e1310">
+  <img alt="MIT" src="https://img.shields.io/badge/License-MIT-f3f1ea?style=for-the-badge&labelColor=0e1310">
   <a href="https://github.com/kosesena/GlovesOn/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/kosesena/GlovesOn/actions/workflows/ci.yml/badge.svg"></a>
 </p>
 
@@ -95,6 +95,8 @@ gateway enforces after the relay, never the ones the page enforces before it.
 
 ---
 
+<p align="center"><img src="docs/img/banners/confirmed-write.jpg" width="920" alt="Gloved hands over hex bolts in an orange bin: Asking is easy. Finishing is the hard part."></p>
+
 ## The part that matters: a confirmed write
 
 <p align="center">
@@ -131,6 +133,8 @@ Five things in that diagram are deliberate and each one costs something:
 
 Reasoning in full: [ADR-0002 — confirm before write](docs/adr/0002-confirm-before-write.md).
 
+<p align="center"><img src="docs/img/banners/reversed.jpg" width="920" alt="Lena at a review desk: Nothing is deleted. It is reversed."></p>
+
 ## Nothing is deleted. It is reversed.
 
 A wrong document is not removed, because SAP does not remove documents and neither should
@@ -149,6 +153,8 @@ again, and a reversal is refused if the original has scrolled out of the recent 
 refusing is cheaper than guessing.
 
 ---
+
+<p align="center"><img src="docs/img/banners/talking-to-sap.jpg" width="920" alt="Lena at the storage shelves: Talking to SAP. The contract is real. The tenant is a mock."></p>
 
 ## Talking to SAP
 
@@ -280,6 +286,8 @@ or [the judge guide](docs/JUDGE-GUIDE.md) if you would rather check the claims t
 them — it maps each one to a file and a command, and ends with what this system does not do.
 
 ---
+
+<p align="center"><img src="docs/img/banners/check-it.jpg" width="920" alt="Lena in the aisle facing the camera: Check it without reading any of this."></p>
 
 ## Check it without reading any of this
 
