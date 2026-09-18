@@ -111,9 +111,14 @@ class SapClient:
         The cookie must travel in the same session; only together are they
         valid.
         """
-        r = await self._client.get(
-            f"{self.base_url}{MATERIAL_DOC}/", headers={"X-CSRF-Token": "Fetch"}
-        )
+        try:
+            r = await self._client.get(
+                f"{self.base_url}{MATERIAL_DOC}/", headers={"X-CSRF-Token": "Fetch"}
+            )
+        except httpx.TimeoutException:
+            raise SapError("SAP_TIMEOUT", _timeout_message("the CSRF handshake"), 504)
+        except httpx.RequestError as e:
+            raise SapError("SAP_UNREACHABLE", f"SAP could not be reached: {e.__class__.__name__}.", 502)
         token = r.headers.get("X-CSRF-Token")
         if not token:
             raise SapError("CSRF_FETCH_FAILED", "Could not obtain a CSRF token from SAP.", 502)
@@ -133,11 +138,24 @@ class SapClient:
                 headers={"X-CSRF-Token": self._csrf or "", "Content-Type": "application/json"},
             )
 
-        r = await _send()
-        if r.status_code == 403:
-            # The token may have expired: refresh once and retry.
-            await self._fetch_csrf()
+        # A transport failure on the write is the one error the agent must not
+        # answer with a retry: the document may have been created and the
+        # answer lost. The message says so and names the recovery — read the
+        # recent documents, where the duplicate guard also looks — and the
+        # gateway passes it to the agent as a refusal, not as a 500.
+        try:
             r = await _send()
+            if r.status_code == 403:
+                # The token may have expired: refresh once and retry.
+                await self._fetch_csrf()
+                r = await _send()
+        except httpx.TimeoutException:
+            raise SapError("SAP_TIMEOUT", _timeout_message("the posting"), 504)
+        except httpx.RequestError as e:
+            raise SapError("SAP_UNREACHABLE",
+                           f"SAP could not be reached while posting ({e.__class__.__name__}). "
+                           f"Nothing is known about the document. Do not repeat the posting; "
+                           f"check the recent documents first.", 502)
 
         if r.status_code >= 400:
             code, msg = _parse_odata_error(r)
@@ -148,7 +166,12 @@ class SapClient:
     # -- Reads --------------------------------------------------------------
 
     async def _get(self, path: str, params: dict[str, Any]) -> list[dict[str, Any]]:
-        r = await self._client.get(f"{self.base_url}{path}", params=params)
+        try:
+            r = await self._client.get(f"{self.base_url}{path}", params=params)
+        except httpx.TimeoutException:
+            raise SapError("SAP_TIMEOUT", _timeout_message("a read"), 504)
+        except httpx.RequestError as e:
+            raise SapError("SAP_UNREACHABLE", f"SAP could not be reached: {e.__class__.__name__}.", 502)
         if r.status_code >= 400:
             code, msg = _parse_odata_error(r)
             raise SapError(code, msg, r.status_code)
@@ -171,6 +194,16 @@ class SapClient:
 
     async def list_documents(self, top: int = 10) -> list[dict[str, Any]]:
         return await self._get(f"{MATERIAL_DOC}/A_MaterialDocumentHeader", {"$top": top})
+
+
+def _timeout_message(step: str) -> str:
+    # Reads and the handshake are safe to repeat; the posting is not. The
+    # sentence the agent will speak has to carry that difference.
+    if step == "the posting":
+        return (f"SAP did not answer within {SAP_TIMEOUT:g} seconds while posting. The document "
+                f"may or may not exist. Do not repeat the posting; check the recent documents "
+                f"first, and only prepare a new draft if it is not there.")
+    return f"SAP did not answer within {SAP_TIMEOUT:g} seconds during {step}. Nothing was written; try again."
 
 
 def _parse_odata_error(r: httpx.Response) -> tuple[str, str]:
