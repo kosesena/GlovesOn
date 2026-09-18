@@ -115,10 +115,10 @@ class SapClient:
             r = await self._client.get(
                 f"{self.base_url}{MATERIAL_DOC}/", headers={"X-CSRF-Token": "Fetch"}
             )
-        except httpx.TimeoutException:
-            raise SapError("SAP_TIMEOUT", _timeout_message("the CSRF handshake"), 504)
+        except httpx.TimeoutException as e:
+            raise SapError("SAP_TIMEOUT", _timeout_message("the CSRF handshake"), 504) from e
         except httpx.RequestError as e:
-            raise SapError("SAP_UNREACHABLE", f"SAP could not be reached: {e.__class__.__name__}.", 502)
+            raise SapError("SAP_UNREACHABLE", f"SAP could not be reached: {e.__class__.__name__}.", 502) from e
         token = r.headers.get("X-CSRF-Token")
         if not token:
             raise SapError("CSRF_FETCH_FAILED", "Could not obtain a CSRF token from SAP.", 502)
@@ -149,13 +149,13 @@ class SapClient:
                 # The token may have expired: refresh once and retry.
                 await self._fetch_csrf()
                 r = await _send()
-        except httpx.TimeoutException:
-            raise SapError("SAP_TIMEOUT", _timeout_message("the posting"), 504)
+        except httpx.TimeoutException as e:
+            raise SapError("SAP_TIMEOUT", _timeout_message("the posting"), 504) from e
         except httpx.RequestError as e:
             raise SapError("SAP_UNREACHABLE",
                            f"SAP could not be reached while posting ({e.__class__.__name__}). "
                            f"Nothing is known about the document. Do not repeat the posting; "
-                           f"check the recent documents first.", 502)
+                           f"check the recent documents first.", 502) from e
 
         if r.status_code >= 400:
             code, msg = _parse_odata_error(r)
@@ -168,10 +168,10 @@ class SapClient:
     async def _get(self, path: str, params: dict[str, Any]) -> list[dict[str, Any]]:
         try:
             r = await self._client.get(f"{self.base_url}{path}", params=params)
-        except httpx.TimeoutException:
-            raise SapError("SAP_TIMEOUT", _timeout_message("a read"), 504)
+        except httpx.TimeoutException as e:
+            raise SapError("SAP_TIMEOUT", _timeout_message("a read"), 504) from e
         except httpx.RequestError as e:
-            raise SapError("SAP_UNREACHABLE", f"SAP could not be reached: {e.__class__.__name__}.", 502)
+            raise SapError("SAP_UNREACHABLE", f"SAP could not be reached: {e.__class__.__name__}.", 502) from e
         if r.status_code >= 400:
             code, msg = _parse_odata_error(r)
             raise SapError(code, msg, r.status_code)

@@ -17,7 +17,7 @@ from __future__ import annotations
 import time
 
 import pytest
-from conftest import AUTH, post_receipt, reverse_receipt, scoped_headers, stock_level
+from conftest import AUTH, post_receipt, scoped_headers, stock_level
 
 from gateway import store
 
