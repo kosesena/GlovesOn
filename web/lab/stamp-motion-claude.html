@@ -76,15 +76,27 @@
   .col li.sel { color: var(--ink); background: #ececee; }
   .labels { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 6px; margin-top: 4px; text-align: center;
     font: 600 7px/1 var(--sans); letter-spacing: .2em; color: #b6b9bf; }
-  /* the rubber base appears under the card when it becomes a stamp */
+  /* the card grows a body and a rubber pad under it when it becomes a stamp: a thing you press */
+  .body {
+    position: absolute; left: 0; right: 0; top: 100%; height: 0; margin-top: -14px;
+    background: linear-gradient(180deg, #f2f2f3 0%, #e4e4e6 55%, #d6d6d9 100%);
+    border-radius: 0 0 16px 16px; opacity: 0;
+    box-shadow: inset 0 -8px 12px -8px rgba(0,0,0,.18), inset 10px 0 12px -10px rgba(0,0,0,.08), inset -10px 0 12px -10px rgba(0,0,0,.08);
+    transition: height .7s cubic-bezier(.2,.9,.3,1), opacity .3s ease;
+  }
   .base {
-    position: absolute; left: 6px; right: 6px; bottom: -14px; height: 22px; border-radius: 10px;
-    background: linear-gradient(180deg, #2a2b2e, #101114); box-shadow: 0 10px 24px -6px rgba(0,0,0,.45);
-    transform: translateZ(-1px) scaleY(0); transform-origin: top; opacity: 0;
-    transition: transform .6s cubic-bezier(.2,.9,.3,1) .1s, opacity .4s ease .1s;
+    position: absolute; left: 8px; right: 8px; top: 100%; height: 0; margin-top: 34px;
+    border-radius: 0 0 8px 8px / 0 0 10px 10px;
+    background: linear-gradient(180deg, #3a3b3f 0%, #17181b 40%, #0c0d0f 100%);
+    box-shadow: 0 6px 10px -4px rgba(0,0,0,.5); opacity: 0;
+    transition: height .6s cubic-bezier(.2,.9,.3,1) .15s, opacity .3s ease .15s;
+  }
+  .base::after { /* the red rubber face, seen edge-on */
+    content: ""; position: absolute; left: 6px; right: 6px; bottom: 0; height: 4px; border-radius: 0 0 4px 4px;
+    background: linear-gradient(180deg, #7a1e17, #b1281f);
   }
   .block-shadow {
-    position: absolute; left: 10px; right: 10px; top: 108px; height: 34px; border-radius: 50%;
+    position: absolute; left: 10px; right: 10px; top: 176px; height: 34px; border-radius: 50%;
     background: radial-gradient(closest-side, rgba(0,0,0,.28), rgba(0,0,0,0)); filter: blur(6px);
     opacity: 0; transition: opacity .6s ease, transform 1.1s cubic-bezier(.5,0,.15,1);
   }
@@ -184,15 +196,16 @@
   /* ---------- stages ---------- */
   body[data-stage="lift"] .scene, body[data-stage="stamp"] .scene, body[data-stage="toast"] .scene,
   body[data-stage="flat"] .scene, body[data-stage="end"] .scene { opacity: 1; }
-  body[data-stage="lift"] .base, body[data-stage="stamp"] .base, body[data-stage="toast"] .base, body[data-stage="flat"] .base { transform: translateZ(-1px) scaleY(1); opacity: 1; }
+  body[data-stage="lift"] .body, body[data-stage="stamp"] .body, body[data-stage="toast"] .body, body[data-stage="flat"] .body { height: 62px; opacity: 1; }
+  body[data-stage="lift"] .base, body[data-stage="stamp"] .base, body[data-stage="toast"] .base, body[data-stage="flat"] .base { height: 18px; opacity: 1; }
   body[data-stage="lift"] .wheel, body[data-stage="stamp"] .wheel, body[data-stage="toast"] .wheel { box-shadow: 0 30px 50px -18px rgba(0,0,0,.35); }
   body[data-stage="lift"] .block-shadow, body[data-stage="stamp"] .block-shadow, body[data-stage="toast"] .block-shadow { opacity: 1; }
   /* stamp block travel: hover above paper (lift), come down onto the mark (stamp), lift off again (toast) */
   body[data-stage="lift"]  .stamp-block { transform: translate(60px, 150px) scale(.92); transition: transform 1.1s cubic-bezier(.5,0,.15,1); }
-  body[data-stage="stamp"] .stamp-block { transform: translate(134px, 262px) scale(.88); transition: transform .5s cubic-bezier(.55,0,.9,.45); }
+  body[data-stage="stamp"] .stamp-block { transform: translate(134px, 200px) scale(.88); transition: transform .5s cubic-bezier(.55,0,.9,.45); }
   body[data-stage="toast"] .stamp-block { transform: translate(150px, 40px) scale(.92); transition: transform .8s cubic-bezier(.2,.8,.3,1); }
   body[data-stage="flat"] .stamp-block, body[data-stage="end"] .stamp-block { transform: translate(60px, -260px) scale(.9); transition: transform 1s cubic-bezier(.5,0,.2,1); }
-  body.reset .stamp-block, body.reset .paper, body.reset .base, body.reset .block-shadow { transition: none !important; }
+  body.reset .stamp-block, body.reset .paper, body.reset .base, body.reset .body, body.reset .block-shadow { transition: none !important; }
   body[data-stage="flat"] .block-shadow, body[data-stage="end"] .block-shadow { opacity: 0; }
   body[data-stage="stamp"] .block-shadow { transform: translateY(-10px) scale(.7); }
   body[data-stage="flat"] .paper, body[data-stage="end"] .paper {
@@ -260,6 +273,7 @@
   <div class="card-anchor">
     <div class="stamp-block" id="block">
       <div class="block-shadow"></div>
+      <div class="body"></div>
       <div class="base"></div>
       <div class="wheel">
         <div class="top"><span>POSTED</span><i></i></div>
