@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GlovesOn — posted stamp motion (lab)</title>
+<!--
+  A web reproduction of the "made in Figma motion" clip Sena sent on 22 September 2026
+  (x.com/solutionb2u, 8.7 s): a date wheel becomes a rubber stamp, the document tilts into
+  perspective, the stamp comes down and leaves its mark, the document flattens again.
+  Same beats, same timing, our content: a material document, POSTED · 501, "reverse"
+  instead of "undo" because nothing is deleted. Stand-alone; index.html is untouched.
+  Press Enter or the button to run it, R to replay.
+-->
+<style>
+  :root {
+    --bg: #f3f3f4; --paper: #fbfbfb; --ink: #17181a; --muted: #8b8f96; --line: #e6e7ea;
+    --red: #e0362b; --green: #1f8f6b; --sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: radial-gradient(120% 90% at 50% 0%, #fbfbfc 0%, var(--bg) 55%, #e9e9ec 100%);
+    color: var(--ink); font-family: var(--sans); overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  .stage { position: relative; width: 100%; height: 100%; }
+
+  /* ---------- 1. the picker screen ---------- */
+  .picker {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+    padding-top: 9vh; transition: opacity .5s ease, filter .5s ease, transform .5s ease;
+  }
+  .picker .kicker { font: 500 10px/1 var(--sans); letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+  .picker h1 { margin: 10px 0 6px; font: 600 21px/1.2 var(--sans); letter-spacing: -.01em; }
+  .picker .sub { margin: 0 0 26px; font-size: 11.5px; color: var(--muted); }
+  .picker .date-label { margin-top: 18px; font: 600 11px/1 var(--sans); }
+  .picker .tabs { margin-top: 14px; display: flex; align-items: center; gap: 16px; }
+  .seg { display: flex; background: #ececee; border-radius: 8px; padding: 2px; }
+  .seg span { font: 500 10.5px/1 var(--sans); color: var(--muted); padding: 6px 12px; border-radius: 6px; }
+  .seg span.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .dots { display: flex; gap: 8px; }
+  .dots i { width: 11px; height: 11px; border-radius: 50%; display: block; box-shadow: inset 0 0 0 0 #fff; }
+  .dots i.on { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px currentColor; }
+  .cta { margin-top: 22px; background: var(--ink); color: #fff; border: 0; border-radius: 999px;
+    padding: 10px 22px; font: 600 11.5px/1 var(--sans); cursor: pointer; }
+  .cta:active { transform: scale(.97); }
+  .hint { margin-top: 8px; font-size: 9.5px; color: var(--muted); }
+  body[data-stage]:not([data-stage="pick"]) .picker .fade { opacity: 0; filter: blur(3px); }
+  .picker .fade { transition: opacity .55s ease, filter .55s ease; }
+
+  /* ---------- the wheel card, which becomes the stamp ---------- */
+  .card-anchor { position: absolute; left: 50%; top: calc(9vh + 98px); width: 0; height: 0; }
+  .stamp-block {
+    position: absolute; left: -125px; top: 0; width: 250px; height: 120px;
+    transform-style: preserve-3d; transition: transform 1.1s cubic-bezier(.5,0,.15,1);
+    will-change: transform;
+  }
+  .wheel {
+    position: absolute; inset: 0; background: linear-gradient(180deg, #ffffff 0%, #f6f6f7 100%);
+    border-radius: 18px; box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 12px 30px -12px rgba(0,0,0,.18);
+    padding: 12px 16px 10px; overflow: hidden; transition: box-shadow .8s ease, border-radius .8s ease;
+  }
+  .wheel .top { display: flex; justify-content: space-between; align-items: center;
+    font: 600 8.5px/1 var(--sans); letter-spacing: .18em; color: var(--muted); }
+  .wheel .top i { width: 7px; height: 7px; border-radius: 50%; background: var(--red); display: block; }
+  .cols { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 6px; margin-top: 8px; height: 62px;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 28%, #000 72%, transparent 100%);
+            mask-image: linear-gradient(180deg, transparent 0, #000 28%, #000 72%, transparent 100%); }
+  .col { position: relative; overflow: hidden; }
+  .col ul { list-style: none; margin: 0; padding: 0; position: absolute; left: 0; right: 0; top: 0;
+    transition: transform .9s cubic-bezier(.3,.9,.3,1); }
+  .col li { height: 20.6px; display: flex; align-items: center; justify-content: center;
+    font: 600 13px/1 var(--sans); color: #c3c6cb; border-radius: 6px; margin: 0 4px; transition: color .3s, background .3s; }
+  .col li.sel { color: var(--ink); background: #ececee; }
+  .labels { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 6px; margin-top: 4px; text-align: center;
+    font: 600 7px/1 var(--sans); letter-spacing: .2em; color: #b6b9bf; }
+  /* the rubber base appears under the card when it becomes a stamp */
+  .base {
+    position: absolute; left: 6px; right: 6px; bottom: -14px; height: 22px; border-radius: 10px;
+    background: linear-gradient(180deg, #2a2b2e, #101114); box-shadow: 0 10px 24px -6px rgba(0,0,0,.45);
+    transform: translateZ(-1px) scaleY(0); transform-origin: top; opacity: 0;
+    transition: transform .6s cubic-bezier(.2,.9,.3,1) .1s, opacity .4s ease .1s;
+  }
+  .block-shadow {
+    position: absolute; left: 10px; right: 10px; top: 108px; height: 34px; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(0,0,0,.28), rgba(0,0,0,0)); filter: blur(6px);
+    opacity: 0; transition: opacity .6s ease, transform 1.1s cubic-bezier(.5,0,.15,1);
+  }
+
+  /* ---------- 2. the document in perspective ---------- */
+  .scene {
+    position: absolute; inset: 0; perspective: 1400px; perspective-origin: 50% 30%;
+    opacity: 0; transition: opacity .7s ease; pointer-events: none;
+  }
+  .paper-anchor {
+    position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-style: preserve-3d;
+  }
+  .paper {
+    position: absolute; left: -190px; top: -260px; width: 380px; height: 520px;
+    background: var(--paper); border-radius: 3px; padding: 30px 30px 26px;
+    box-shadow: 0 30px 60px -30px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.06);
+    --tilt: rotateX(44deg) rotateZ(-5deg) translateZ(-40px);
+    transform: var(--tilt) scale(1.75) translateY(-40px);
+    transform-origin: 50% 60%;
+    transition: transform 1.3s cubic-bezier(.55,0,.2,1), box-shadow 1.3s ease;
+    transform-style: preserve-3d; font-size: 6.5px; color: #3a3d42; line-height: 1.55;
+  }
+  .paper .head { display: flex; justify-content: space-between; align-items: flex-start; }
+  .paper .title { font: 600 13px/1.1 var(--sans); color: var(--ink); }
+  .paper .studio { font-size: 6px; color: var(--muted); margin-top: 3px; }
+  .paper .logo { width: 16px; height: 16px; border-radius: 4px; background: #e96935; }
+  .paper .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+  .paper .meta b { font-weight: 600; color: var(--ink); }
+  .paper .lines { margin-top: 18px; }
+  .paper .lines .h { font: 600 7.5px/1 var(--sans); color: var(--ink); margin-bottom: 6px; }
+  .paper table { width: 100%; border-collapse: collapse; }
+  .paper th { text-align: left; font-weight: 500; color: var(--muted); padding: 3px 0; border-bottom: 1px solid var(--line); }
+  .paper td { padding: 4px 0; border-bottom: 1px solid #f0f0f2; }
+  .paper th:not(:first-child), .paper td:not(:first-child) { text-align: right; }
+  .paper .total { display: flex; justify-content: flex-end; margin-top: 8px; }
+  .paper .total div { text-align: right; }
+  .paper .total .n { font: 600 11px/1.2 var(--sans); color: var(--ink); }
+  .paper .bank { margin-top: 20px; }
+  .paper .bank b { display: block; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+  .paper .foot { position: absolute; left: 30px; right: 30px; bottom: 18px; display: flex; justify-content: space-between; color: var(--muted); font-size: 6px; }
+
+  /* the mark the stamp leaves */
+  .mark {
+    position: absolute; right: 44px; bottom: 96px; width: 118px; padding: 5px 6px 6px;
+    border: 2.5px solid var(--red); border-radius: 5px; color: var(--red); text-align: center;
+    transform: rotate(-9deg) scale(1.35); opacity: 0; transform-origin: 50% 50%;
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='60'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.3' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.9'/></filter><rect width='120' height='60' filter='url(%23n)' fill='white'/></svg>");
+            mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='60'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.3' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.9'/></filter><rect width='120' height='60' filter='url(%23n)' fill='white'/></svg>");
+    -webkit-mask-size: cover; mask-size: cover;
+  }
+  .mark .k { font: 600 5.5px/1 var(--sans); letter-spacing: .28em; }
+  .mark .d { font: 800 15px/1.05 var(--sans); letter-spacing: .02em; margin-top: 2px; }
+  .mark.on { animation: press .32s cubic-bezier(.2,1.1,.4,1) forwards; }
+  @keyframes press {
+    0%   { transform: rotate(-9deg) scale(1.35); opacity: 0; }
+    55%  { transform: rotate(-9deg) scale(.96); opacity: 1; }
+    100% { transform: rotate(-9deg) scale(1); opacity: .92; }
+  }
+  /* soft "impact" on the paper */
+  .paper-anchor.hit { animation: hit .35s ease-out; }
+  @keyframes hit {
+    0% { transform: translateY(0); }
+    40% { transform: translateY(5px); }
+    100% { transform: translateY(0); }
+  }
+  body[data-stage="lift"] .paper, body[data-stage="stamp"] .paper, body[data-stage="toast"] .paper { transform: var(--tilt) scale(1.2) translateY(0); }
+
+  /* ---------- 3. toast ---------- */
+  .toast {
+    position: absolute; left: 50%; bottom: 7vh; transform: translate(-50%, 16px); opacity: 0;
+    display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 999px;
+    padding: 6px 6px 6px 14px; box-shadow: 0 6px 24px -8px rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.06);
+    font: 500 10.5px/1 var(--sans); transition: opacity .35s ease, transform .35s ease; white-space: nowrap;
+  }
+  .toast i { width: 6px; height: 6px; border-radius: 50%; background: var(--red); display: inline-block; margin-right: 6px; }
+  .toast .sep { color: var(--muted); }
+  .toast button { border: 0; border-radius: 999px; padding: 7px 11px; font: 600 10.5px/1 var(--sans); cursor: pointer; background: #f1f1f3; color: var(--ink); }
+  .toast button.dark { background: var(--ink); color: #fff; }
+  .toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- 4. the flat end state ---------- */
+  .endhead {
+    position: absolute; left: 0; right: 0; top: 7vh; text-align: center; opacity: 0; transform: translateY(6px);
+    transition: opacity .5s ease .2s, transform .5s ease .2s;
+  }
+  .endhead .kicker { font: 500 9px/1 var(--sans); letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+  .endhead h1 { margin: 8px 0 4px; font: 600 20px/1.2 var(--sans); }
+  .endhead .sub { font-size: 10.5px; color: var(--muted); }
+  .endhead .sub i { width: 6px; height: 6px; border-radius: 50%; background: var(--red); display: inline-block; margin-right: 5px; vertical-align: 1px; }
+  .endbar {
+    position: absolute; left: 50%; bottom: 7vh; transform: translate(-50%, 8px); opacity: 0; display: flex; gap: 8px;
+    transition: opacity .5s ease .3s, transform .5s ease .3s;
+  }
+  .endbar button { border: 0; border-radius: 999px; padding: 9px 16px; font: 600 10.5px/1 var(--sans); background: #ececee; color: var(--ink); cursor: pointer; }
+  .endbar button.dark { background: var(--ink); color: #fff; }
+
+  /* ---------- stages ---------- */
+  body[data-stage="lift"] .scene, body[data-stage="stamp"] .scene, body[data-stage="toast"] .scene,
+  body[data-stage="flat"] .scene, body[data-stage="end"] .scene { opacity: 1; }
+  body[data-stage="lift"] .base, body[data-stage="stamp"] .base, body[data-stage="toast"] .base, body[data-stage="flat"] .base { transform: translateZ(-1px) scaleY(1); opacity: 1; }
+  body[data-stage="lift"] .wheel, body[data-stage="stamp"] .wheel, body[data-stage="toast"] .wheel { box-shadow: 0 30px 50px -18px rgba(0,0,0,.35); }
+  body[data-stage="lift"] .block-shadow, body[data-stage="stamp"] .block-shadow, body[data-stage="toast"] .block-shadow { opacity: 1; }
+  /* stamp block travel: hover above paper (lift), come down onto the mark (stamp), lift off again (toast) */
+  body[data-stage="lift"]  .stamp-block { transform: translate(60px, 150px) scale(.92); transition: transform 1.1s cubic-bezier(.5,0,.15,1); }
+  body[data-stage="stamp"] .stamp-block { transform: translate(134px, 262px) scale(.88); transition: transform .5s cubic-bezier(.55,0,.9,.45); }
+  body[data-stage="toast"] .stamp-block { transform: translate(150px, 40px) scale(.92); transition: transform .8s cubic-bezier(.2,.8,.3,1); }
+  body[data-stage="flat"] .stamp-block, body[data-stage="end"] .stamp-block { transform: translate(60px, -260px) scale(.9); transition: transform 1s cubic-bezier(.5,0,.2,1); }
+  body.reset .stamp-block, body.reset .paper, body.reset .base, body.reset .block-shadow { transition: none !important; }
+  body[data-stage="flat"] .block-shadow, body[data-stage="end"] .block-shadow { opacity: 0; }
+  body[data-stage="stamp"] .block-shadow { transform: translateY(-10px) scale(.7); }
+  body[data-stage="flat"] .paper, body[data-stage="end"] .paper {
+    transform: rotateX(0deg) rotateZ(0deg) translateZ(0) scale(.82) translateY(22px);
+    transition: transform 1.1s cubic-bezier(.6,0,.2,1), box-shadow 1.1s ease;
+    box-shadow: 0 10px 30px -18px rgba(0,0,0,.3), 0 1px 3px rgba(0,0,0,.05);
+  }
+  body[data-stage="end"] .endhead, body[data-stage="end"] .endbar { opacity: 1; transform: translate(0,0); }
+  body[data-stage="end"] .endbar { transform: translate(-50%, 0); }
+  body[data-stage="end"] .picker, body[data-stage="flat"] .picker { pointer-events: none; }
+
+  .replay { position: absolute; right: 14px; top: 12px; font: 500 10px/1 var(--mono); color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; cursor: pointer; }
+</style>
+</head>
+<body data-stage="pick">
+<div class="stage">
+
+  <!-- 1. picker -->
+  <section class="picker">
+    <div class="fade kicker">Plant 1000 · Receiving bay · 12 EA</div>
+    <h1 class="fade">Material document 4937706921</h1>
+    <p class="fade sub">Choose the posting date. It's printed on the document and saved to its history.</p>
+    <div style="height:120px"></div>
+    <div class="fade date-label" id="dateLabel">Saturday, 12 September 2026</div>
+    <div class="fade tabs">
+      <div class="seg"><span class="on">Posted</span><span>Reversed</span><span>Refused</span><span>Draft</span></div>
+      <div class="dots">
+        <i class="on" style="background:#e0362b;color:#e0362b"></i><i style="background:#2f6fe4"></i><i style="background:#2aa25b"></i><i style="background:#7a4de8"></i><i style="background:#1d1e21"></i>
+      </div>
+    </div>
+    <button class="fade cta" id="go">Mark as posted</button>
+    <div class="fade hint">or press Enter</div>
+  </section>
+
+  <!-- 2. the document -->
+  <section class="scene">
+    <div class="paper-anchor">
+      <div class="paper" id="paper">
+        <div class="head">
+          <div><div class="title">Goods receipt</div><div class="studio">GlovesOn · Plant 1000 / 0001</div></div>
+          <div class="logo"></div>
+        </div>
+        <div class="meta">
+          <div><b>Bin:</b> A-03-02<br><b>Material:</b> 4711<br><b>Movement:</b> 501 · receipt without PO</div>
+          <div><b>Document no.:</b> 4937706921<br><b>Document date:</b> 14/09/2026<br><b>Posting date:</b> 14/09/2026</div>
+        </div>
+        <div class="lines">
+          <div class="h">Description of goods</div>
+          <table>
+            <tr><th>Description</th><th>Quantity</th><th>Unit</th><th>Stock after</th></tr>
+            <tr><td>Hex Bolt M8x40 Zinc Plated</td><td>12.00</td><td>EA</td><td>283 EA</td></tr>
+            <tr><td>Bin A-03-02 · aisle A, level 3, position 2</td><td></td><td></td><td></td></tr>
+            <tr><td>Read back, confirmed by voice at 13:51:56</td><td></td><td></td><td></td></tr>
+          </table>
+          <div class="total"><div>Stock<br><span class="n">271 → 283 EA</span></div></div>
+        </div>
+        <div class="bank"><b>Why this document exists</b>"Twelve pieces of Hex Bolt M8x40 Zinc Plated into aisle A, level three, position two." — as the agent reported it.<br>Wrong? Say "reverse it". A reversal takes them back out and both documents stay.</div>
+        <div class="mark" id="mark"><div class="k">POSTED · 501</div><div class="d">14 SEP 2026</div></div>
+        <div class="foot"><span>Both documents stay in the record.</span><span>gloveson.space</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- the wheel card / stamp block, above everything -->
+  <div class="card-anchor">
+    <div class="stamp-block" id="block">
+      <div class="block-shadow"></div>
+      <div class="base"></div>
+      <div class="wheel">
+        <div class="top"><span>POSTED</span><i></i></div>
+        <div class="cols">
+          <div class="col"><ul id="days"><li>11</li><li>12</li><li>13</li><li>14</li><li>15</li><li>16</li><li>17</li></ul></div>
+          <div class="col"><ul id="months"><li>JUL</li><li>AUG</li><li>SEP</li><li>OCT</li><li>NOV</li></ul></div>
+          <div class="col"><ul id="years"><li>2024</li><li>2025</li><li>2026</li><li>2027</li><li>2028</li></ul></div>
+        </div>
+        <div class="labels"><span>DAY</span><span>MONTH</span><span>YEAR</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. toast -->
+  <div class="toast" id="toast"><span><i></i>Posted · 14 Sep 2026</span><span class="sep">·</span><button>Reverse</button><button class="dark" id="done">Done</button></div>
+
+  <!-- 4. end -->
+  <div class="endhead">
+    <div class="kicker">Plant 1000 · Receiving bay · 12 EA</div>
+    <h1>Material document 4937706921</h1>
+    <div class="sub"><i></i>Posted on Monday, 14 September 2026</div>
+  </div>
+  <div class="endbar"><button>Download PDF</button><button class="dark">Next receipt</button></div>
+
+  <button class="replay" id="replay">replay · R</button>
+</div>
+
+<script>
+  // Wheel: three columns, the middle row is the selected one. Rows are 20.6 px high and the
+  // window shows three, so the selected index sits at translateY(-(i-1) * 20.6).
+  const ROW = 20.6;
+  function setCol(id, index) {
+    const ul = document.getElementById(id);
+    ul.style.transform = `translateY(${-(index - 1) * ROW}px)`;
+    [...ul.children].forEach((li, i) => li.classList.toggle('sel', i === index));
+  }
+  const label = document.getElementById('dateLabel');
+  const body = document.body, mark = document.getElementById('mark'), paper = document.querySelector('.paper-anchor'), toast = document.getElementById('toast');
+  let timers = [];
+  const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+
+  function run() {
+    timers.forEach(clearTimeout); timers = [];
+    body.classList.add('reset'); body.dataset.stage = 'pick';
+    void body.offsetWidth; body.classList.remove('reset');
+    mark.classList.remove('on'); paper.classList.remove('hit'); toast.classList.remove('on');
+    setCol('days', 1); setCol('months', 2); setCol('years', 2);
+    label.textContent = 'Saturday, 12 September 2026';
+    // 0.0–1.6 s: the wheel scrolls from the 12th to the 14th, the real posting date
+    at(400,  () => { setCol('days', 2); label.textContent = 'Sunday, 13 September 2026'; });
+    at(1000, () => { setCol('days', 3); label.textContent = 'Monday, 14 September 2026'; });
+    // 1.9 s: "Mark as posted" — the UI fades, the card becomes a stamp, the document appears
+    at(1900, () => { body.dataset.stage = 'lift'; });
+    // 3.3 s: the stamp comes down
+    at(3300, () => { body.dataset.stage = 'stamp'; });
+    at(3800, () => { mark.classList.add('on'); paper.classList.add('hit'); });
+    // 4.2 s: it lifts off, the toast arrives
+    at(4200, () => { body.dataset.stage = 'toast'; });
+    at(4500, () => { toast.classList.add('on'); });
+    // 5.6 s: Done — the document flattens, the stamp leaves
+    at(5600, () => { toast.classList.remove('on'); body.dataset.stage = 'flat'; });
+    at(6600, () => { body.dataset.stage = 'end'; });
+  }
+  document.getElementById('go').addEventListener('click', run);
+  document.getElementById('replay').addEventListener('click', run);
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'r' || e.key === 'R') run(); });
+  setCol('days', 1); setCol('months', 2); setCol('years', 2);
+</script>
+</body>
+</html>
