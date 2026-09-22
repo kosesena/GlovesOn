@@ -1148,6 +1148,13 @@ def how_stories_script() -> FileResponse:
                         headers={'Cache-Control': 'no-cache'})
 
 
+@app.get('/stamp-motion.js', include_in_schema=False)
+def stamp_motion_script() -> FileResponse:
+    # The full-screen stamp the document card plays when a material document lands.
+    return FileResponse(WEB_DIR / 'stamp-motion.js', media_type='text/javascript',
+                        headers={'Cache-Control': 'no-cache'})
+
+
 @app.get("/assets/{scene}.webp", include_in_schema=False)
 def scene_webp(scene: str) -> FileResponse:
     if scene not in {"worker-3d"}:
