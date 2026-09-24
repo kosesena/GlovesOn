@@ -131,6 +131,12 @@ _Avoid_: contacts, users, team
 The named worker: a receiving-dock operator with both hands under a box. Every surface (README, deck, film, form) uses her, because a category has no morning.
 _Avoid_: the user, the operator, a warehouse worker (when a name will do)
 
+**Slogan**:
+"Work flows. Just speak." — settled 24 September 2026, on the cover and the site's eyebrow line.
+It replaces "Built for hands that are busy", which stays only in old drafts under `output/`.
+_Avoid_: "Voice. Woven into work." (a one-day draft), "hands-free SAP", any line that claims
+the agent adapts to the speaker.
+
 ## The limits
 
 **Principal propagation**:
