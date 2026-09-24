@@ -3,7 +3,7 @@
 
 <p align="center">
   <a href="https://gloveson.space"><img src="submission/cover-16x9.jpg" width="920"
-     alt="Lena, a warehouse worker in a headset, holds a box in a dark aisle beside the words Gloves on. Hands full. Just speak. Speak a goods receipt, review and confirm it, it posts into SAP."></a>
+     alt="The word GlovesOn embroidered in cream on olive work-jacket fabric, a blue-white cloud sphere standing in for the O, an orange voice wave stitched beneath it, and the line Work flows. Just speak."></a>
 </p>
 
 <p align="center">
@@ -424,7 +424,7 @@ sentences as this file so they cannot drift from it:
 | Deliverable | File | Note |
 |---|---|---|
 | Slide deck | [`GlovesOn-deck-cinematic.pdf`](submission/GlovesOn-deck-cinematic.pdf) | 13 slides over stills from the film; the cream edition is [`GlovesOn-deck.pdf`](submission/GlovesOn-deck.pdf) |
-| Cover image | [`cover-16x9.jpg`](submission/cover-16x9.jpg) | 1920×1080, same frame as the deck's first slide |
+| Cover image | [`cover-16x9.jpg`](submission/cover-16x9.jpg) | 1920×1080; the orb is the O of the name, the same mark the film opens on — sources and the rejected drafts in [`cover/`](submission/cover/) |
 | Evidence card | [`evidence-card-cinematic-16x9.png`](submission/evidence-card-cinematic-16x9.png) | the film's last frame; its counts are filled from `git` and `pytest` by [`render-cards.sh`](submission/render-cards.sh) |
 | Video | on the lablab submission page | script in [`video-script.md`](submission/video-script.md) |
 | Form copy | [`lablab-form.md`](submission/lablab-form.md) | short and long description, with the limits paragraph |
