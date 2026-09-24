@@ -1177,9 +1177,25 @@ def og_card() -> FileResponse:
                         headers={"Cache-Control": "public, max-age=86400"})
 
 
+# The favicon set. Google shows a globe for a site without one, and the mark is
+# the same orange arrow the site and the cover use, so the search result reads
+# as ours. Routed by name like every other asset.
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon_ico() -> FileResponse:
+    return FileResponse(WEB_DIR / "favicon.ico", media_type="image/x-icon",
+                        headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/assets/favicon.svg", include_in_schema=False)
+def favicon_svg() -> FileResponse:
+    return FileResponse(WEB_DIR / "assets" / "favicon.svg", media_type="image/svg+xml",
+                        headers={"Cache-Control": "public, max-age=86400"})
+
+
 @app.get("/assets/{scene}.png", include_in_schema=False)
 def scenario_image(scene: str) -> FileResponse:
-    if scene not in {"warehouse-3d", "warehouse-interior", "hero-scene", "workspace-parcel-studio", "hex-bolts-studio"}:
+    if scene not in {"warehouse-3d", "warehouse-interior", "hero-scene", "workspace-parcel-studio", "hex-bolts-studio",
+                     "apple-touch-icon", "icon-192", "icon-512", "favicon-48"}:
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(WEB_DIR / "assets" / f"{scene}.png",
                         headers={"Cache-Control": "public, max-age=86400"})
