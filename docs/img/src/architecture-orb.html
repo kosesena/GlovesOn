@@ -1,0 +1,79 @@
+<!doctype html><meta charset="utf-8">
+<style>
+ body{margin:0;background:#888;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}
+ .d{position:relative;width:1840px;height:760px;overflow:hidden;margin:0 0 20px}
+ .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+ /* A — cream lanes */
+ #A{background:#f7f3ea;color:#2a3d2f;height:600px}
+ #A .lane{position:absolute;top:70px;bottom:70px;border-radius:22px}
+ #A .lt{position:absolute;top:-46px;left:0;font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:#6d7a68}
+ #A .box{position:absolute;background:#fffdf7;border:1.5px solid #d9dccb;border-radius:16px;padding:16px 20px;box-shadow:0 10px 26px rgba(40,50,30,.08)}
+ #A .box b{display:block;font-size:22px;margin-bottom:4px}
+ #A .box span{display:block;font-size:14px;line-height:1.45;color:#5b6857}
+ /* B — the sentence */
+ #B{background:#1c2a20;color:#f4efe3}
+ /* C — dark olive, cover language */
+ #C{background:radial-gradient(1200px 700px at 50% 45%,#3a3f2c,#20241a 70%);color:#f4efe3}
+</style>
+
+<!-- A: three lanes, two boundaries -->
+<div class="d" id="A">
+ <div class="lane" style="left:60px;width:520px;background:#efe9da"><div class="lt">Voice · AssemblyAI</div></div>
+ <div class="lane" style="left:620px;width:520px;background:#f2eee2"><div class="lt">The page · Chrome</div></div>
+ <div class="lane" style="left:1180px;width:600px;background:#e9eddf"><div class="lt">Ours · gateway → SAP</div></div>
+ <div style="position:absolute;left:596px;top:60px;bottom:80px;border-left:3px dashed #e96935"></div>
+ <div style="position:absolute;left:1156px;top:60px;bottom:80px;border-left:3px dashed #e96935"></div>
+ <div class="mono" style="position:absolute;left:470px;bottom:26px;font-size:13px;color:#e96935;letter-spacing:.06em">the agent never sees the gateway</div>
+ <div class="mono" style="position:absolute;left:1040px;bottom:26px;font-size:13px;color:#e96935;letter-spacing:.06em">the agent never sees SAP</div>
+ <div class="box" style="left:100px;top:120px;width:400px"><b>Worker</b><span>gloves on, hands full. Speaks a receipt; hears it read back; says yes.</span></div>
+ <div class="box" style="left:100px;top:300px;width:400px"><b>Voice Agent API</b><span>STT · turns · LLM · TTS. Holds no URL of ours and no secret. Asks for a tool by name — the call comes back down the audio socket.</span></div>
+ <div class="box" style="left:660px;top:230px;width:420px"><b>Browser</b><span>mic, PCM16 at 24 kHz. Relays the tool call with a capability minted for this session only. Cannot write on its own.</span></div>
+ <div class="box" style="left:1220px;top:120px;width:520px;border-color:#2f7a4f;box-shadow:0 0 0 3px rgba(47,122,79,.12)"><b>GlovesOn gateway · FastAPI</b><span>allow-list · the shared secret · draft protocol · duplicate guard · spoken read-back · audit. <b style="display:inline;font-size:14px;color:#2f7a4f">The write is the gateway's alone.</b></span></div>
+ <div class="box" style="left:1220px;top:360px;width:240px"><b>S/4HANA</b><span>OData + CSRF. Mock today; a real tenant is one variable.</span></div>
+ <div class="box" style="left:1500px;top:360px;width:240px"><b>Live screen</b><span>SSE. The material document as it posts.</span></div>
+ <svg style="position:absolute;inset:0" width="1840" height="760"><defs><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2a3d2f"/></marker></defs>
+  <g stroke="#2a3d2f" stroke-width="2.5" fill="none" marker-end="url(#ar)">
+   <path d="M300 200 V295"/><path d="M500 300 H655" /><path d="M1085 300 H1215"/><path d="M1480 230 V355"/><path d="M1620 230 V355"/></g>
+  <g class="mono" font-size="12" fill="#6d7a68"><text x="520" y="322">tool call · audio</text><text x="1100" y="322">capability</text><text x="1490" y="300">OData</text><text x="1630" y="300">SSE</text></g></svg>
+</div>
+
+<!-- B: one sentence, seven stations -->
+<div class="d" id="B">
+ <div style="position:absolute;left:70px;top:48px;font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:#a8b39c">One goods receipt, end to end</div>
+ <div style="position:absolute;left:70px;top:82px;font-size:34px;font-weight:600">“Twenty pieces of material forty-seven eleven arrived.”</div>
+ <svg style="position:absolute;inset:0" width="1840" height="760">
+  <line x1="120" y1="420" x2="1720" y2="420" stroke="#e96935" stroke-width="4"/>
+  <g fill="#f4efe3" font-size="19" font-weight="600" text-anchor="middle">
+   <g transform="translate(160,420)"><circle r="18" fill="#e96935"/><text y="-40">spoken</text><text y="70" font-size="14" font-weight="400" fill="#a8b39c">worker</text></g>
+   <g transform="translate(400,420)"><circle r="18" fill="#e96935"/><text y="-40">understood</text><text y="70" font-size="14" font-weight="400" fill="#a8b39c">AssemblyAI · STT + LLM</text></g>
+   <g transform="translate(640,420)"><circle r="18" fill="#e96935"/><text y="-40">get_stock</text><text y="70" font-size="14" font-weight="400" fill="#a8b39c">bin, unit, description looked up</text></g>
+   <g transform="translate(880,420)"><circle r="18" fill="#e96935"/><text y="-40">read back</text><text y="70" font-size="14" font-weight="400" fill="#a8b39c">quantity · unit · description · bin</text></g>
+   <g transform="translate(1120,420)"><circle r="18" fill="#e96935"/><text y="-40">“Yes, confirm.”</text><text y="70" font-size="14" font-weight="400" fill="#a8b39c">a standalone yes</text></g>
+   <g transform="translate(1360,420)"><circle r="24" fill="#2f7a4f" stroke="#f4efe3" stroke-width="3"/><text y="-44">posted</text><text y="74" font-size="14" font-weight="400" fill="#a8b39c">gateway → OData → material document</text></g>
+   <g transform="translate(1640,420)"><circle r="18" fill="#e96935"/><text y="-40">on screen</text><text y="70" font-size="14" font-weight="400" fill="#a8b39c">SSE, with the document number</text></g>
+  </g>
+  <rect x="1230" y="300" width="330" height="240" rx="18" fill="none" stroke="#2f7a4f" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="1395" y="565" text-anchor="middle" fill="#7fbf95" font-size="15" font-family="Menlo,monospace">only here does anything get written</text>
+  <text x="120" y="640" fill="#a8b39c" font-size="17">Every station before the green one is free to be wrong: the worker can say “no”, correct a number, change the subject — nothing has happened yet.</text>
+  <text x="120" y="672" fill="#a8b39c" font-size="17">Past it, a document exists. That is why it is guarded by a read-back, a spoken yes, a draft token and a duplicate guard — and why a wrong one is reversed, never deleted.</text>
+ </svg>
+</div>
+
+<!-- C: the cover's language — the orb, the gate, the ledger -->
+<div class="d" id="C"><div class="mono" style="position:absolute;left:70px;top:44px;font-size:14px;letter-spacing:.16em;color:#a8b39c">GLOVESON · HOW A SPOKEN SENTENCE BECOMES A DOCUMENT</div>
+ <img src="file:///Users/kosesena/Desktop/gloveson/submission/video/full-c-20260920/lena-refs/orb-from-shotA.png" style="position:absolute;left:250px;top:250px;width:230px;filter:drop-shadow(0 30px 50px rgba(120,150,200,.35))">
+ <div style="position:absolute;left:230px;top:500px;width:270px;text-align:center"><div style="font-size:24px;font-weight:600">GlovesOn</div><div style="font-size:14px;color:#c9c3b2;margin-top:4px">hears, reads back, asks. Holds no secret, no address.</div></div>
+ <div style="position:absolute;left:640px;top:236px;width:300px;height:250px;border:2px solid #e96935;border-radius:22px;background:rgba(233,105,53,.08);display:flex;align-items:center;justify-content:center;gap:10px"><div style="width:8px;height:30px;background:#e96935;border-radius:4px"></div><div style="width:8px;height:60px;background:#e96935;border-radius:4px"></div><div style="width:8px;height:90px;background:#e96935;border-radius:4px"></div><div style="width:8px;height:50px;background:#e96935;border-radius:4px"></div><div style="width:8px;height:24px;background:#e96935;border-radius:4px"></div></div>
+ <div style="position:absolute;left:640px;top:500px;width:300px;text-align:center"><div style="font-size:24px;font-weight:600">The page</div><div style="font-size:14px;color:#c9c3b2;margin-top:4px">relays the tool call with a one-session capability.</div></div>
+ <div style="position:absolute;left:1080px;top:200px;width:330px;height:320px;border:3px solid #7fbf95;border-radius:26px;background:rgba(47,122,79,.18);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px">
+  <div class="mono" style="font-size:13px;letter-spacing:.14em;color:#7fbf95">THE GATE</div>
+  <div style="font-size:15px;color:#f4efe3;text-align:center;line-height:1.6">read-back · spoken yes<br>draft token · duplicate guard<br>allow-list · audit</div></div>
+ <div style="position:absolute;left:1080px;top:540px;width:330px;text-align:center"><div style="font-size:24px;font-weight:600">GlovesOn gateway</div><div style="font-size:14px;color:#c9c3b2;margin-top:4px">the only thing that can write.</div></div>
+ <div style="position:absolute;left:1520px;top:250px;width:230px;height:220px;border-radius:14px;background:#efe9da;color:#2a3d2f;padding:18px;box-sizing:border-box;box-shadow:0 20px 50px rgba(0,0,0,.35)">
+  <div class="mono" style="font-size:11px;letter-spacing:.16em;color:#6d7a68">MATERIAL DOCUMENT</div><div class="mono" style="font-size:22px;font-weight:700;margin-top:8px">4937706921</div><div style="font-size:13px;margin-top:10px;line-height:1.5">12 EA Hex Bolt M8x40<br>→ bin A-03-02</div>
+  <div class="mono" style="position:absolute;right:14px;bottom:14px;padding:4px 10px;border:3px solid #2f7a4f;color:#2f7a4f;border-radius:6px;font-size:12px;letter-spacing:.14em;transform:rotate(-8deg)">POSTED · 101</div></div>
+ <div style="position:absolute;left:1500px;top:500px;width:270px;text-align:center"><div style="font-size:24px;font-weight:600">S/4HANA</div><div style="font-size:14px;color:#c9c3b2;margin-top:4px">OData + CSRF. Mock today; the contract is real.<br>The document streams back to the live screen over SSE.</div></div>
+ <svg style="position:absolute;inset:0" width="1840" height="760"><g stroke="#e96935" stroke-width="3" fill="none"><path d="M490 360 H630" stroke-dasharray="2 10" stroke-linecap="round"/><path d="M950 360 H1070"/><path d="M1420 360 H1510"/></g>
+  <g font-size="13" fill="#c9c3b2" font-family="Menlo,monospace" text-anchor="middle"><text x="560" y="345">tool call, by name</text><text x="1010" y="345">capability</text><text x="1465" y="345">OData</text></g></svg>
+ <div style="position:absolute;left:0;right:0;bottom:36px;text-align:center;font-size:17px;color:#c9c3b2">the orb never sees the gate, and the gate never trusts the orb — that is why the ledger can</div>
+</div>

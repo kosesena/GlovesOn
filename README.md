@@ -66,8 +66,8 @@ communication flow does, what it refuses, and how it was checked.
 ## Architecture
 
 <p align="center">
-  <img src="docs/img/architecture-cinematic.svg" width="880"
-     alt="The worker speaks to the browser, which streams audio to the AssemblyAI Voice Agent API. The agent's tool call comes back down to the browser, which posts it to the GlovesOn gateway with a session capability. The gateway holds the shared secret, speaks OData to S/4HANA, and streams the live warehouse screen back over SSE.">
+  <img src="docs/img/architecture-orb.png" width="880"
+     alt="Four stations left to right on dark olive: the blue-white orb, GlovesOn, which hears, reads back and asks but holds no secret and no address; an orange frame with a voice wave, the page, which relays the tool call with a one-session capability; a green gate, the GlovesOn gateway, listing read-back, spoken yes, draft token, duplicate guard, allow-list and audit, the only thing that can write; and a cream material document stamped POSTED 101, S/4HANA, reached over OData with a CSRF handshake, mock today. Below: the orb never sees the gate, and the gate never trusts the orb — that is why the ledger can.">
 </p>
 
 **The agent never sees SAP.** It asks for a tool by name and gets warehouse terms back —
