@@ -117,3 +117,46 @@ def test_the_mock_accepts_the_same_receipt_twice(sap):
     assert first.status_code == 201 and second.status_code == 201
     assert (first.json()["d"]["MaterialDocument"]
             != second.json()["d"]["MaterialDocument"])
+
+
+# --- reads, the way SAP's sandbox answered them on 30 September ---------------
+
+STOCK = "/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV/A_MatlStkInAcctMod"
+
+
+def test_a_filter_is_read_from_dollar_filter(sap):
+    r = sap.get(STOCK, params={"$filter": "Material eq '4711' and Plant eq '1000'"})
+    assert r.status_code == 200
+    rows = r.json()["d"]["results"]
+    assert rows and {row["Material"] for row in rows} == {norm_matnr("4711")}
+
+
+def test_a_plain_query_parameter_is_ignored_as_sap_ignores_it(sap):
+    # SAP returned every stock row for `?Material=...`. The mock used to filter
+    # on it, which is how a client that never sent $filter passed every test.
+    everything = sap.get(STOCK).json()["d"]["results"]
+    plain = sap.get(STOCK, params={"Material": "4711"}).json()["d"]["results"]
+    assert len(plain) == len(everything) > 1
+
+
+def test_an_unreadable_filter_is_refused_in_sap_s_error_envelope(sap):
+    r = sap.get(STOCK, params={"$filter": "Material gt 4711"})
+    assert r.status_code == 400
+    assert r.json()["error"]["message"]["value"].startswith("Invalid filter")
+
+
+def test_a_quoted_and_inside_a_value_does_not_split_the_filter():
+    from gateway.sap_mock import _parse_filter
+    eq, contains = _parse_filter(
+        "substringof('nuts and bolts',ProductDescription) and Plant eq 'O''Neil'")
+    assert contains == {"ProductDescription": "nuts and bolts"}
+    assert eq == {"Plant": "O'Neil"}
+
+
+def test_the_client_asks_for_json_and_sends_filters_in_dollar_filter():
+    from gateway.sap_client import SapClient, eq_filter
+    assert eq_filter(Material="4711", Plant="1000") == \
+        "Material eq '4711' and Plant eq '1000'"
+    assert eq_filter(Product="O'Neil") == "Product eq 'O''Neil'"
+    c = SapClient(base_url="http://x", api_key="")
+    assert c._client.headers["Accept"] == "application/json"

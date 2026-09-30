@@ -57,6 +57,23 @@ def credentials(api_key: str | None = None) -> dict[str, str]:
     key = SAP_API_KEY if api_key is None else api_key
     return {"APIKey": key} if key else {}
 
+def odata_str(value: Any) -> str:
+    """An OData v2 string literal: single-quoted, a quote inside doubled."""
+    return "'" + str(value).strip().replace("'", "''") + "'"
+
+
+def eq_filter(**fields: Any) -> str:
+    """
+    `Material eq '4711' and Plant eq '1000'`.
+
+    These reads used to send `?Material=4711`, a plain query parameter. The mock
+    honoured it; SAP ignores any query option it does not know and returns the
+    whole entity set — 2,745 stock rows for one material, the first time this
+    client read from SAP's sandbox. A filter goes in `$filter` or nowhere.
+    """
+    return " and ".join(f"{k} eq {odata_str(v)}" for k, v in fields.items())
+
+
 MATERIAL_DOC = "/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV"
 MATERIAL_STOCK = "/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV"
 PRODUCT = "/sap/opu/odata/sap/API_PRODUCT_SRV"
@@ -94,9 +111,13 @@ class SapClient:
         # rejected before it can hand back a token, and the failure surfaces as
         # "could not obtain a CSRF token" — which reads like a protocol fault and
         # is an authentication one.
+        # Accept is not optional. The mock answers JSON whatever is asked; SAP
+        # answers Atom XML unless told otherwise, and every read then failed to
+        # parse. Nothing showed it until the first read against SAP's sandbox.
         self._client = httpx.AsyncClient(timeout=SAP_TIMEOUT, follow_redirects=False,
                                          transport=transport,
-                                         headers=credentials(api_key))
+                                         headers={"Accept": "application/json",
+                                                  **credentials(api_key)})
         self._csrf: str | None = None
 
     async def aclose(self) -> None:
@@ -179,17 +200,24 @@ class SapClient:
 
     async def get_stock(self, material: str, plant: str = "1000") -> list[dict[str, Any]]:
         return await self._get(f"{MATERIAL_STOCK}/A_MatlStkInAcctMod",
-                               {"Material": material, "Plant": plant})
+                               {"$filter": eq_filter(Material=material, Plant=plant)})
 
     async def get_description(self, material: str) -> dict[str, Any] | None:
-        rows = await self._get(f"{PRODUCT}/A_ProductDescription", {"Product": material})
+        rows = await self._get(f"{PRODUCT}/A_ProductDescription",
+                               # One row per language; unfiltered, SAP's
+                               # sandbox answered in Chinese first.
+                               {"$filter": eq_filter(Product=material, Language="EN")})
         return rows[0] if rows else None
 
     async def search_descriptions(self, query: str) -> list[dict[str, Any]]:
-        return await self._get(f"{PRODUCT}/A_ProductDescription", {"search": query})
+        return await self._get(f"{PRODUCT}/A_ProductDescription",
+                               {"$filter": f"substringof({odata_str(query)},ProductDescription)"
+                                           " and Language eq 'EN'",
+                                "$top": 5})
 
     async def get_purchase_order(self, order: str) -> dict[str, Any] | None:
-        rows = await self._get(f"{PURCHASE_ORDER}/A_PurchaseOrder", {"PurchaseOrder": order})
+        rows = await self._get(f"{PURCHASE_ORDER}/A_PurchaseOrder",
+                               {"$filter": eq_filter(PurchaseOrder=order)})
         return rows[0] if rows else None
 
     async def list_documents(self, top: int = 10) -> list[dict[str, Any]]:

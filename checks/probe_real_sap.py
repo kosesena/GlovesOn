@@ -82,7 +82,9 @@ async def main() -> int:
     base = os.getenv("SAP_BASE_URL", "").strip().rstrip("/") or SANDBOX
     print(f"Probing {base}\n")
 
-    async with httpx.AsyncClient(timeout=20, headers={"APIKey": key},
+    # Accept matters: without it SAP answers Atom XML and step 3 cannot parse it.
+    async with httpx.AsyncClient(timeout=20, headers={"APIKey": key,
+                                                      "Accept": "application/json"},
                                  follow_redirects=False) as client:
         print("1. Do the four services this gateway uses exist and answer?\n")
         reachable = {}

@@ -21,6 +21,7 @@ latency budget.
 from __future__ import annotations
 
 import random
+import re
 import secrets
 import time
 from datetime import UTC, datetime
@@ -50,6 +51,44 @@ def _odata_error(code: str, message: str, status: int = 400) -> JSONResponse:
         status_code=status,
         content={"error": {"code": code, "message": {"lang": "en", "value": message}}},
     )
+
+
+# The filter grammar the gateway actually sends: `Field eq 'value'` clauses and
+# `substringof('text',Field)`, joined by `and`. Real SAP reads a filter only from
+# `$filter` and ignores any other query option it does not know — so
+# `?Material=4711` returns the whole entity set there. The mock used to honour
+# that plain parameter, which is exactly how a client that never sent a
+# `$filter` passed every test here and then read 2,745 stock rows from SAP's
+# sandbox for one material. It now reads `$filter` only, as SAP does.
+_EQ = re.compile(r"^(\w+)\s+eq\s+'((?:[^']|'')*)'$")
+_SUBSTRINGOF = re.compile(r"^substringof\(\s*'((?:[^']|'')*)'\s*,\s*(\w+)\s*\)$")
+
+
+class _BadFilter(ValueError):
+    pass
+
+
+def _parse_filter(expr: str | None) -> tuple[dict[str, str], dict[str, str]]:
+    """Return ({field: value} for eq, {field: text} for substringof)."""
+    eq: dict[str, str] = {}
+    contains: dict[str, str] = {}
+    if not expr:
+        return eq, contains
+    # Split on `and` only outside quotes: "nuts and bolts" is one value.
+    for clause in re.split(r"\s+and\s+(?=(?:[^']*'[^']*')*[^']*$)", expr.strip()):
+        clause = clause.strip()
+        if m := _EQ.match(clause):
+            eq[m.group(1)] = m.group(2).replace("''", "'")
+        elif m := _SUBSTRINGOF.match(clause):
+            contains[m.group(2)] = m.group(1).replace("''", "'")
+        else:
+            raise _BadFilter(clause)
+    return eq, contains
+
+
+def _bad_filter(clause: str) -> JSONResponse:
+    return _odata_error("/IWBEP/CM_MGW_RT/022",
+                        f"Invalid filter expression: '{clause}'.", 400)
 
 
 def _issue_token() -> str:
@@ -221,13 +260,19 @@ async def create_material_document(
 # ---------------------------------------------------------------------------
 
 @router.get("/API_MATERIAL_STOCK_SRV/A_MatlStkInAcctMod")
-async def material_stock(material: str = Query(..., alias="Material"),
-                         plant: str = Query("1000", alias="Plant")):
-    matnr = norm_matnr(material)
+async def material_stock(filter_: str | None = Query(None, alias="$filter")):
+    try:
+        eq, _ = _parse_filter(filter_)
+    except _BadFilter as e:
+        return _bad_filter(str(e))
+    where, args = [], []
+    if "Material" in eq:
+        where.append("matnr=%s"); args.append(norm_matnr(eq["Material"]))
+    if "Plant" in eq:
+        where.append("werks=%s"); args.append(eq["Plant"])
+    sql = "SELECT * FROM mard" + (" WHERE " + " AND ".join(where) if where else "")
     with store.db() as conn:
-        rows = conn.execute(
-            "SELECT * FROM mard WHERE matnr=%s AND werks=%s ORDER BY lgort", (matnr, plant)
-        ).fetchall()
+        rows = conn.execute(sql + " ORDER BY matnr, lgort", args).fetchall()
     return {"d": {"results": [{
         "Material": r["matnr"], "Plant": r["werks"], "StorageLocation": r["lgort"],
         "StorageBin": r["lgpla"], "MatlWrhsStkQtyInMatlBaseUnit": str(r["labst"]),
@@ -236,17 +281,24 @@ async def material_stock(material: str = Query(..., alias="Material"),
 
 
 @router.get("/API_PRODUCT_SRV/A_ProductDescription")
-async def product_description(product: str | None = Query(None, alias="Product"),
-                              search: str | None = Query(None, alias="search")):
+async def product_description(filter_: str | None = Query(None, alias="$filter")):
+    try:
+        eq, contains = _parse_filter(filter_)
+    except _BadFilter as e:
+        return _bad_filter(str(e))
     with store.db() as conn:
-        if product:
+        if "Product" in eq:
             rows = conn.execute(
                 "SELECT DISTINCT matnr, maktx, meins FROM mard WHERE matnr=%s",
-                (norm_matnr(product),)).fetchall()
+                (norm_matnr(eq["Product"]),)).fetchall()
         else:
+            # SAP's substringof is case-sensitive; the mock folds case so that a
+            # spoken "bolt" still finds "Hex bolt". The gateway sends the same
+            # filter either way — the leniency is the mock's, not the client's.
+            text = contains.get("ProductDescription", "")
             rows = conn.execute(
                 "SELECT DISTINCT matnr, maktx, meins FROM mard WHERE LOWER(maktx) LIKE %s"
-                " ORDER BY maktx LIMIT 5", (f"%{(search or '').lower().strip()}%",)).fetchall()
+                " ORDER BY maktx LIMIT 5", (f"%{text.lower().strip()}%",)).fetchall()
     return {"d": {"results": [{
         "Product": r["matnr"], "Language": "EN", "ProductDescription": r["maktx"],
         "BaseUnit": r["meins"],
@@ -254,8 +306,12 @@ async def product_description(product: str | None = Query(None, alias="Product")
 
 
 @router.get("/API_PURCHASEORDER_PROCESS_SRV/A_PurchaseOrder")
-async def purchase_order(order: str = Query(..., alias="PurchaseOrder")):
-    ebeln = str(order).strip().replace(" ", "")
+async def purchase_order(filter_: str | None = Query(None, alias="$filter")):
+    try:
+        eq, _ = _parse_filter(filter_)
+    except _BadFilter as e:
+        return _bad_filter(str(e))
+    ebeln = str(eq.get("PurchaseOrder", "")).strip().replace(" ", "")
     with store.db() as conn:
         row = conn.execute("SELECT * FROM ekko WHERE ebeln=%s", (ebeln,)).fetchone()
         if row is None:
