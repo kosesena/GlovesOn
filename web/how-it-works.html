@@ -304,7 +304,7 @@ const NODES = {
   },
   gateway: {
     kicker:'The boundary', title:'The GlovesOn gateway',
-    what:'The agent speaks in warehouse terms — /erp/stock, /erp/goods-receipt — and never sees SAP. Everything SAP-specific lives behind this line: authentication, field translation, and every guardrail below. Swapping the mock for a real tenant is configuration rather than code — a base URL and a credential — because there is no second code path.',
+    what:'The agent speaks in warehouse terms — /erp/stock, /erp/goods-receipt — and never sees SAP. Everything SAP-specific lives behind this line: authentication, field translation, and every guardrail below. Swapping the mock for a real tenant is meant to be configuration — a base URL and a credential — because there is no second code path; reads against SAP's own sandbox already work, and they showed two shape differences still to handle.',
     files:[{p:'gateway/main.py',l:216,label:'require_tool_auth — constant-time secret check'},
            {p:'gateway/main.py',l:60,label:'refuses to start without TOOL_SHARED_SECRET'},
            {p:'gateway/sap_client.py',l:33,label:'SAP_BASE_URL — the one variable that moves it to a real tenant'}],
