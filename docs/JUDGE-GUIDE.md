@@ -5,6 +5,7 @@ reading, a command for running, and — at the end — what this system does **n
 do, said before you find it.
 
 **Live:** <https://gloveson.space> · no credentials, no sign-up, Chrome
+· **Film (4:25):** <https://youtu.be/5B2fo5k0wPQ>, also [`submission/GlovesOn-film.mp4`](../submission/GlovesOn-film.mp4)
 · **CI:** [![CI](https://github.com/kosesena/GlovesOn/actions/workflows/ci.yml/badge.svg)](https://github.com/kosesena/GlovesOn/actions/workflows/ci.yml)
 
 The first request of a session wakes a serverless function and a database

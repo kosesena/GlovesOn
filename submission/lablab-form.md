@@ -71,4 +71,4 @@ OData · Mock ERP · FastAPI · Python · Postgres · Logistics · Warehousing
 - Demo platform: Vercel + Neon Postgres
 - PDF deck: `submission/GlovesOn-deck.pdf` — refresh and review
 - Cover: `submission/cover-16x9.jpg` — cinematic cover, same still as the deck; the cream poster is kept as `cover-16x9-poster.jpg`
-- Pitch video: pending
+- Pitch video: https://youtu.be/5B2fo5k0wPQ (4:25, 1080p, public); the same file is `submission/GlovesOn-film.mp4`

@@ -432,7 +432,7 @@ sentences as this file so they cannot drift from it:
 | Slide deck | [`GlovesOn-deck-cinematic.pdf`](submission/GlovesOn-deck-cinematic.pdf) | 13 slides over stills from the film; the cream edition is [`GlovesOn-deck.pdf`](submission/GlovesOn-deck.pdf) |
 | Cover image | [`cover-16x9.jpg`](submission/cover-16x9.jpg) | 1920×1080; the orb is the O of the name, the same mark the film opens on — sources and the rejected drafts in [`cover/`](submission/cover/) |
 | Evidence card | [`evidence-card-cinematic-16x9.png`](submission/evidence-card-cinematic-16x9.png) | the film's last frame; its counts are filled from `git` and `pytest` by [`render-cards.sh`](submission/render-cards.sh) |
-| Video | on the lablab submission page | script in [`video-script.md`](submission/video-script.md) |
+| Video | [youtu.be/5B2fo5k0wPQ](https://youtu.be/5B2fo5k0wPQ) · [`GlovesOn-film.mp4`](submission/GlovesOn-film.mp4) | 4:25, 1080p; every app screen in it is a real recording of the running app; the prompts and shot lists that made it are in [`video/full-c-20260920/`](submission/video/full-c-20260920/) |
 | Form copy | [`lablab-form.md`](submission/lablab-form.md) | short and long description, with the limits paragraph |
 
 And the one thing a judge should leave with, which is also how the deck and the film end:
