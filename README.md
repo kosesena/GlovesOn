@@ -43,6 +43,12 @@ service user, so SAP cannot say *who* spoke. Closing that needs principal propag
 [`docs/clean-core.md`](docs/clean-core.md) spends a page on it instead of hoping nobody
 asks.
 
+**Who it is for, by the numbers.** The receiving clerk on the dock — one of 844,120 in the US
+alone (BLS, May 2023), measured on dock-to-stock hours, at sites where about 40 % still record
+on paper (MMH 2025). What GlovesOn measures for her: **8 seconds** from her spoken yes to a
+material document number, on the live app; two documents after a mistake, never one; zero writes
+without the yes. Every number and its source: [`docs/named-user.md`](docs/named-user.md).
+
 Built for the AssemblyAI Voice Agent Hackathon, September 2026.
 
 ---
