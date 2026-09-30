@@ -2177,7 +2177,31 @@ async function ensurePlayback() {
   return playCtx;
 }
 
+// Dev-only capture of the agent's voice, straight from the PCM the API sends,
+// so a line for the film can be taken clean instead of off a speaker: open the
+// page with ?capture=1, run the session, then click the button that appears.
+// Nothing here touches the tool path; the capture is a copy of what is played.
+const captureAgent = new URLSearchParams(location.search).get('capture') === '1';
+const agentCapture = [];
+if (captureAgent) {
+  const b = document.createElement('button');
+  b.textContent = 'Save agent audio (WAV)';
+  b.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:9999;padding:10px 14px;border-radius:10px;border:1px solid #244b35;background:#fffdf7;color:#244b35;font:600 13px system-ui;cursor:pointer';
+  b.onclick = () => {
+    const n = agentCapture.reduce((a, c) => a + c.length, 0);
+    const pcm = new Int16Array(n); let o = 0;
+    for (const c of agentCapture) { for (let i = 0; i < c.length; i++) { const s = Math.max(-1, Math.min(1, c[i])); pcm[o++] = s < 0 ? s * 0x8000 : s * 0x7fff; } }
+    const h = new ArrayBuffer(44), v = new DataView(h), w = (i, s) => { for (let k = 0; k < s.length; k++) v.setUint8(i + k, s.charCodeAt(k)); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, SAMPLE_RATE, true); v.setUint32(28, SAMPLE_RATE * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([h, pcm.buffer], { type: 'audio/wav' }));
+    a.download = 'gloveson-agent-' + new Date().toISOString().replace(/[:.]/g, '-') + '.wav'; a.click();
+  };
+  document.body.appendChild(b);
+}
+
 function playChunk(float32) {
+  if (captureAgent) agentCapture.push(Float32Array.from(float32));
   let sum = 0;
   for (let i = 0; i < float32.length; i += 8) sum += float32[i] * float32[i];
   agentLevel = Math.max(agentLevel, Math.min(1, Math.sqrt(sum / (float32.length / 8)) * 5));
