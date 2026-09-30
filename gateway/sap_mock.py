@@ -267,9 +267,11 @@ async def material_stock(filter_: str | None = Query(None, alias="$filter")):
         return _bad_filter(str(e))
     where, args = [], []
     if "Material" in eq:
-        where.append("matnr=%s"); args.append(norm_matnr(eq["Material"]))
+        where.append("matnr=%s")
+        args.append(norm_matnr(eq["Material"]))
     if "Plant" in eq:
-        where.append("werks=%s"); args.append(eq["Plant"])
+        where.append("werks=%s")
+        args.append(eq["Plant"])
     sql = "SELECT * FROM mard" + (" WHERE " + " AND ".join(where) if where else "")
     with store.db() as conn:
         rows = conn.execute(sql + " ORDER BY matnr, lgort", args).fetchall()
