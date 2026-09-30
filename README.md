@@ -156,28 +156,34 @@ refusing is cheaper than guessing.
 
 ## Talking to SAP
 
-### Connection status — rechecked 11 September 2026
+### Connection status — 30 September 2026
 
-**GlovesOn currently uses its mock SAP environment.** Goods receipts, stock queries
-and reversals in the demo do not write to a company's SAP system.
+**Reads are verified against SAP's own S/4HANA Cloud sandbox. Writes are not: goods
+receipts and reversals in the demo post to the mock S/4HANA and to no SAP system.**
 
-A personal SAP Business Accelerator Hub sandbox key has been obtained and stored
-locally in the gitignored `.env`. A read-only control request to SAP's SuccessFactors
-sandbox returned **HTTP 200**, confirming that the key works. The four S/4HANA
-services below returned **HTTP 401**, including a material-document read through
-the Hub's own **Try Out** screen. This points to an S/4HANA sandbox access problem;
-the precise SAP-side cause is not confirmed.
+On 30 September the four services below answered **HTTP 200** from SAP's Business
+Accelerator Hub sandbox with the saved key, and the CSRF fetch returned a token and a
+session cookie. The gateway's own `sap_client`, unpatched, then read real rows through
+them: the recent material documents, stock, the material description and the
+description search. `checks/probe_real_sap.py` completes against the sandbox, and a bad
+filter comes back in `error.message.value`, the envelope the client parses.
 
-Rechecked on 11 September: the same four services still answer 401. Sending the
-same request with no key returns `FailedToResolveAPIKey` from SAP's API gateway
-and with a made-up key `Invalid ApiKey`, while our key returns neither and
-reaches the backend's own logon failure instead. The key is accepted; the refusal
-happens behind the gateway.
+Getting there exposed two faults the mock had hidden, both now fixed in client and mock
+alike: the client sent no `Accept: application/json` (SAP answers Atom XML otherwise),
+and it filtered with plain query parameters, which SAP silently ignores, returning the
+whole entity set; reads now send `$filter`, and the mock ignores a plain parameter the
+way SAP does. Descriptions filter `Language eq 'EN'`.
 
-SuccessFactors was used only to check the key. Development continues against the
-mock; **real S/4HANA reads and writes remain unverified**. No paid service was
-activated during these checks. Recheck the required S/4HANA sandbox endpoints
-before switching the demo backend or claiming a working SAP connection.
+Two shape differences are recorded rather than fixed. SAP splits stock by special stock
+and sales document, so an on-hand figure has to be summed per storage location; and
+`A_MatlStkInAcctMod` carries no storage bin at all, because bins live in EWM. The mock's
+bin on the stock entity is a convenience SAP does not offer.
+
+**Nothing has been posted to SAP.** The sandbox is SAP's shared environment; writing
+into it is a separate, deliberate decision, not taken. Until a write has run against a
+real tenant, the claim is the contract, not a working SAP posting. Earlier, from 10 to
+11 September, the same four services answered 401 behind SAP's gateway; the key was
+accepted and the refusal came from the backend logon. No paid service was activated.
 
 ### OData contract
 

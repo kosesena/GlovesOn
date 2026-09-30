@@ -25,8 +25,9 @@ readiness. The repo remains private for now at the user's request.
 
 Server drafts bind exact action details and a confirmation value reported by the
 agent. They are not independent proof of speech or authenticated worker identity.
-A real S/4HANA connection is still unverified; changing configuration alone does
-not establish tenant compatibility.
+Reads have been verified against SAP's S/4HANA Cloud sandbox (30 September); writes
+have not, and changing configuration alone does not establish that a posting would
+succeed on a real tenant.
 
 ## In sixty seconds, without speaking
 
@@ -152,11 +153,15 @@ ERP behind it is a mock.
 worker. Closing that needs principal propagation through SAP BTP; it is the
 largest gap in [`clean-core.md`](clean-core.md) and it is not implemented.
 
-**The ERP is a mock.** The contract is faithful and the protocol is real, but no
-claim is made that this has been proven against a live tenant. The gap between
-"speaks the API correctly" and "works against S/4HANA" is real: CSRF behaviour
-behind a reverse proxy, `$batch` for multi-item documents, and error payloads
-considerably less tidy than a mock's.
+**Writes go to a mock ERP.** On 30 September the gateway's client read real rows
+from SAP's S/4HANA Cloud sandbox through all four services it uses (documents, stock,
+description, search); two faults the mock had hidden were found and fixed on the way
+(no `Accept: application/json`; filters sent as plain parameters that SAP ignores).
+No goods receipt or reversal has been posted to SAP: the sandbox is shared and writing
+to it was not done. So the reads are proven against SAP; the writes are proven against
+a mock that follows SAP's contract, and the gap between the two is real: CSRF behaviour
+behind a reverse proxy, `$batch` for multi-item documents, stock split by special stock,
+bins that live in EWM, and error payloads less tidy than a mock's.
 
 **Untested with real accents and real noise.** The English input now uses
 `transcription_mode: max_accuracy`, specialized keyterms and tool parameter hints.
