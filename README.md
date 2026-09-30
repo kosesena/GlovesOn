@@ -442,7 +442,7 @@ And the one thing a judge should leave with, which is also how the deck and the 
 
 <p align="center">
   <img src="submission/evidence-card-cinematic-16x9.png" width="820"
-     alt="What a judge can check: the goods receipt posts straight into SAP, here a mock S/4HANA that speaks SAP's released OData contract. Checkable: gloveson.space with no login, the repository with its commits, tests and CI, receipts/ with document 4922857164 posted, refused as a duplicate and reversed, the provenance endpoint, six decision records. Not verified: a real S/4HANA tenant — the sandbox answered 401 — posting as the worker, accents and forklift noise; email, calls and notes are demo records.">
+     alt="What a judge can check: the goods receipt posts straight into SAP, here a mock S/4HANA that speaks SAP's released OData contract. Checkable: gloveson.space with no login, the repository with its commits, tests and CI, receipts/ with document 4922857164 posted, refused as a duplicate and reversed, the provenance endpoint, six decision records. Not verified: writes to a real S/4HANA — reads are verified in SAP's sandbox, nothing has been posted there — posting as the worker, accents and forklift noise; email, calls and notes are demo records.">
 </p>
 
 ## License
