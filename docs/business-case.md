@@ -1,9 +1,9 @@
 # Business case
 
 Feeds the lablab "long description", the Business Value slide and the video
-narration. Every number below is imported from `docs/market.md`, which carries
-the source and the bias tag for each; nothing here may cite a figure that is
-not there. Costs come from `docs/assemblyai-notlari.md` §1 and follow the rule
+narration. Every number below carries a bias tag and its source is listed at
+the end; nothing here may cite a figure that is not there. Tags: **[V]** vendor
+marketing · **[I]** independent or first-hand · **[R]** paid analyst report. Costs come from `docs/assemblyai-notlari.md` §1 and follow the rule
 in `docs/nfr.md` §5: no ROI claim until session length per receipt is measured.
 
 ---
@@ -43,19 +43,19 @@ speaker-independent recognition **[V]**. But every incumbent voice-guides
 *planned* work: the WMS issues a task, the worker answers fixed prompts. The
 unplanned pallet on the dock — the thing that actually interrupts a floor —
 has no voice path. None of them lets a worker *initiate* a document by
-describing it (`market.md` §1, §5).
+describing it.
 
 SAP itself is the proof the gap is real: Joule already posts and reverses
 goods movements *by chat* in EWM, and SAP announced real-time voice for Joule
 (LiveKit partnership) with GA planned H2 2026 — in its top cloud tiers first
-**[V]** (`market.md` §2). The market leader is walking toward this product.
+**[V]**. The market leader is walking toward this product.
 GlovesOn demonstrates it working today, on a browser and a consumer headset.
 
 ## The numbers
 
 - Voice-directed warehousing is an established budget line: analyst estimates
   of the market range from **$4.8B to $6.5B today, growing 14–17% a year**
-  **[R]** (`market.md` §4 — cite as a range, the estimates disagree).
+  **[R]** (cited as a range: the estimates disagree).
 - The incumbent cost norm is **~$5,000 per user** in hardware and software
   (integrator budgeting figure **[I-ish]**), with ROI typically accepted at
   10–15 users and up.
@@ -83,3 +83,17 @@ noise robustness is untested and nothing is enabled yet; the posting is not
 made as the individual worker (principal propagation is the missing Clean
 Core piece); the demo serves one session at a time by design; Turkish is
 understood on input but the agent cannot yet answer in Turkish.
+
+## Sources
+
+- Honeywell Voice (Vocollect), scale and SAP integration: <https://thirdfin.io/voice-picking/honeywell-vocollect/> ·
+  <https://automation.honeywell.com/content/dam/honeywell-edam/sps/ppr/en-us/public/software/common/documents/sps-ppr-honeywell-voicedirect-erp-for-sap-brochure-en-us-ltr.pdf>
+- Lydia 9 Voice Browser, SAP-certified: <https://www.logisticsbusiness.com/it-in-logistics/lydia-9-voice-browser-certified-sap/> ·
+  <https://epg.com/logistics-software/lydia-voice/>
+- Joule, transactional EWM actions by chat: <https://community.sap.com/t5/supply-chain-management-q-a/ai-in-warehousing-what-you-need-to-start-with-joule/qaq-p/14345541>;
+  real-time voice with LiveKit: <https://livekit.com/blog/livekit-partners-with-sap-to-deliver-intelligent-voice-for-joule>
+- Market size: <https://www.gminsights.com/industry-analysis/voice-directed-warehousing-solution-market> ·
+  <https://market.us/report/global-voice-directed-warehousing-solutions-market/> ·
+  <https://www.mordorintelligence.com/industry-reports/voice-picking-solution-market>
+- Incumbent cost per user: <https://www.fcbco.com/blog/bid/156266/voice-technology-in-the-warehouse> ·
+  <https://www.capturetech.com/en/techniques/pick-by-voice/the-profit-and-investment-in-voice-picking/>

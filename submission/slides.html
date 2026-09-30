@@ -240,7 +240,7 @@
    <div class="card"><div class="who">SAP itself</div><h3>Joule</h3><p>Posts and reverses goods movements — by <b>chat</b>, today. Real-time voice announced for its top cloud tiers, GA planned H2 2026.</p></div>
  </div>
  <div class="lede" style="margin-top:26px;color:var(--ink);font-weight:600;font-size:23px">GlovesOn is the unplanned moment — by voice, today.</div>
- <div class="foot"><span class="src">sources with bias tags: docs/market.md §1–2</span></div>
+ <div class="foot"><span class="src">sources with bias tags: docs/business-case.md</span></div>
 </section>
 
 <!-- 10 · MARKET + COST -->
@@ -252,7 +252,7 @@
    <div class="metric"><div class="big">~$5,000</div><div class="cap">incumbent cost per user, hardware + software</div></div>
    <div class="metric"><div class="big o">$0.00</div><div class="cap">GlovesOn per-seat hardware — a browser and a headset. Voice: $0.075/connected min.</div></div>
  </div>
- <div class="lede" style="margin-top:auto;font-size:16px">No ROI figure is quoted — session length per receipt is unmeasured (docs/nfr.md §5). <span class="src">market numbers: docs/market.md §4</span></div>
+ <div class="lede" style="margin-top:auto;font-size:16px">No ROI figure is quoted — session length per receipt is unmeasured (docs/nfr.md §5). <span class="src">market numbers: docs/business-case.md</span></div>
  <div class="foot">GlovesOn · <svg class="aai" role="img" aria-label="AssemblyAI"><use href="#aai"/></svg> Voice Agent Hackathon · 2026</div>
 </section>
 
@@ -261,7 +261,7 @@
  <div class="kicker">Named, not hidden</div>
  <h2 style="margin:22px 0 30px">What this does not do yet.</h2>
  <div class="lim">
-   <div class="row"><span><b>The ERP is a mock</b> — the OData contract and the CSRF handshake are real; a live tenant was tried and the Business Accelerator Hub sandbox answered <b>401</b> on all four required services (10 September). Nothing here has run against real S/4HANA.</span></div>
+   <div class="row"><span><b>Writes go to a mock ERP</b> — the OData contract and the CSRF handshake are real; reads were verified against SAP's S/4HANA Cloud sandbox on 30 September, all four services, but no document has been posted to SAP.</span></div>
    <div class="row"><span><b>No employee sign-in or SAP principal propagation</b> — session capabilities protect tool calls, but do not establish a worker’s identity.</span></div>
    <div class="row"><span><b>Noise robustness is unmeasured</b> — voice_focus: far-field is set, but a config change is a claim, not a measurement.</span></div>
    <div class="row"><span><b>Session events are isolated; warehouse records are shared</b> — this is a demonstration, not a tenant-isolated production system.</span></div>

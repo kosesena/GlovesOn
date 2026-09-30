@@ -21,7 +21,7 @@ document against the wrong part.
   "warehouse ambience" loop at a measured distance works.
 - A phone SPL meter app to set the noise level. Test at three levels:
   **quiet (~45 dB), moderate (~65 dB), loud (~80 dB)**. 80 dB is a real
-  receiving floor; `market.md` §5 notes incumbents are tuned for 85 dB.
+  receiving floor; incumbent voice systems are tuned for 85 dB.
 
 ## The script — 20 utterances, fixed
 
@@ -78,7 +78,7 @@ Only turn one at a time, and re-run the script after each, or you learn nothing:
 ## What this test cannot fix
 
 If accuracy collapses at 80 dB and stays there, that is not a bug to hide — it
-is `market.md` §5 being right: ruggedized incumbents beat a browser-and-headset
+is the incumbents' known strength showing: ruggedized incumbents beat a browser-and-headset
 on extreme-noise robustness, and the honest positioning already concedes it.
 The read-back is the backstop by design: even a mishear does not post, because
 nothing posts without the spoken yes.

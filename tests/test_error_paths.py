@@ -1,7 +1,7 @@
 """
 What the gateway says when SAP misbehaves mid-write.
 
-NEXT.md lists these as the code work left: a timeout mid-write, a CSRF token
+The hardening list named these as the code work left: a timeout mid-write, a CSRF token
 refused twice, a reversal of a document that has scrolled out of the last ten.
 The faults are injected at the transport between the gateway's SapClient and
 the mock, so the OData path, the handshake and the mock's own rules stay

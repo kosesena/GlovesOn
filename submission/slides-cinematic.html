@@ -137,20 +137,20 @@
  <div class="txt"><div class="k">Everyone else voice-guides planned work</div><h1 class="s">The unplanned pallet has no voice path.</h1>
  <div class="cards"><div class="card"><div class="who">The incumbents</div><h3>Honeywell · Lydia · Ivanti</h3><p>The WMS issues the task; the worker answers fixed prompts. Decades of it. But a worker cannot initiate a document by describing it.</p></div><div class="card"><div class="who">SAP itself</div><h3>Joule</h3><p>Posts and reverses goods movements — by <b>chat</b>, today. Real-time voice announced for its top cloud tiers, GA planned H2 2026.</p></div></div></div>
  <div class="punch">GlovesOn is the unplanned moment — by voice, today.</div>
- <div class="foot"><span>sources with bias tags: docs/market.md §1–2</span><span></span></div></section>
+ <div class="foot"><span>sources with bias tags: docs/business-case.md</span><span></span></div></section>
 
 <!-- 10 · MARKET & COST -->
 <section class="slide"><img class="bg" src="stills/box-front.jpg" alt="" style="object-position:right"><div class="shade full"></div><span class="tag">10 · MARKET &amp; COST</span>
  <div class="txt"><div class="k">An established budget line</div><h1 class="s">Zero per-seat hardware against a $5,000 norm.</h1>
  <div class="nums"><div class="num"><div class="v">$4.8–6.5B</div><p>voice-directed warehousing today · ~14–17%/yr (analyst estimates, cited as a range)</p></div><div class="num"><div class="v">~$5,000</div><p>incumbent cost per user, hardware + software</p></div><div class="num"><div class="v" style="color:var(--orange)">$0.00</div><p>GlovesOn per-seat hardware — a browser and a headset. Voice: $0.075 per connected minute.</p></div></div>
  <div class="cap" style="margin-top:28px;font-size:15px">No ROI figure is quoted — session length per receipt is unmeasured (docs/nfr.md §5).</div></div>
- <div class="foot"><span>market numbers: docs/market.md §4</span><span></span></div></section>
+ <div class="foot"><span>market numbers: docs/business-case.md</span><span></span></div></section>
 
 <!-- 11 · HONEST LIMITS -->
 <section class="slide"><img class="bg" src="stills/desk-monitor.jpg" alt="" style="object-position:right"><div class="shade full"></div><span class="tag">11 · HONEST LIMITS</span>
  <div class="txt" style="top:.75in"><div class="k">Named, not hidden</div><h1 class="s" style="margin:14px 0 14px">What this does not do yet.</h1>
  <div class="lim">
-  <div class="row"><span><b>The ERP is a mock</b> — the OData contract and the CSRF handshake are real; a live tenant was tried and the Business Accelerator Hub sandbox answered <b>401</b> on all four required services (10 September). Nothing here has run against real S/4HANA.</span></div>
+  <div class="row"><span><b>Writes go to a mock ERP</b> — the OData contract and the CSRF handshake are real; reads were verified against SAP's S/4HANA Cloud sandbox on 30 September, all four services, but no document has been posted to SAP.</span></div>
   <div class="row"><span><b>No employee sign-in or SAP principal propagation</b> — session capabilities protect tool calls, but do not establish a worker's identity.</span></div>
   <div class="row"><span><b>Noise robustness is unmeasured</b> — voice_focus: far-field is set, but a config change is a claim, not a measurement.</span></div>
   <div class="row"><span><b>Session events are isolated; warehouse records are shared</b> — this is a demonstration, not a tenant-isolated production system.</span></div>
@@ -165,7 +165,7 @@
  <div class="cols">
   <div><h3>What it does</h3><ul><li><code>X-CSRF-Token: Fetch</code> handshake, <code>A_MaterialDocumentHeader</code>, movement types 101 / 102</li><li>Read-back names quantity, unit, material <em>description</em> and bin; nothing posts without a spoken yes</li><li>Wrong receipt is reversed, never deleted — both documents stay</li><li>The same receipt twice is refused in the gateway</li></ul></div>
   <div><h3>What you can check</h3><ul><li><b>gloveson.space</b> — no login, talk to it</li><li><code>github.com/kosesena/GlovesOn</code> — <b>281 commits</b> since 5 Sept, <b>97 tests</b>, CI green, MIT</li><li><code>receipts/</code> — <b>13 steps</b> of one real run: document <b>4922857164</b> posted, the same receipt refused, then reversed</li><li><code>/api/provenance/4922857164</code> — the sentence that caused the document</li><li><code>docs/adr/</code> — six decisions, each with the option rejected and its cost</li></ul></div>
-  <div class="red"><h3 class="red">Not verified</h3><ul><li>Real S/4HANA: the sandbox answered <b>401</b> on all four required services</li><li>The posting is not made as the worker — no principal propagation yet</li><li>Accents and forklift noise: not benchmarked</li><li>Email, calls and notes are demo records; nothing reaches a real person</li></ul></div>
+  <div class="red"><h3 class="red">Not verified</h3><ul><li>Writes to real S/4HANA: reads are verified in SAP's sandbox, but nothing has been posted there</li><li>The posting is not made as the worker — no principal propagation yet</li><li>Accents and forklift noise: not benchmarked</li><li>Email, calls and notes are demo records; nothing reaches a real person</li></ul></div>
  </div></div>
  <div class="foot"><span><b>gloveson.space</b> · Built on the AssemblyAI Voice Agent API</span><span>Demo: mock ERP · simulated calls · demo email outbox</span></div></section>
 

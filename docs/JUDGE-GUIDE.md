@@ -20,9 +20,7 @@ New communication tools use a fictional directory and persist only demo outbox,
 call-log and note records. Nobody is contacted. The split workspace shows actual
 tool outcomes; incident notes do not move stock. See
 [workspace evidence](agent-workspace.md) for offline tests and the remaining live
-voice checks. The [submission checklist](hackathon-readiness.md) records current
-readiness. The repo remains private for now at the user's request.
-
+voice checks. 
 Server drafts bind exact action details and a confirmation value reported by the
 agent. They are not independent proof of speech or authenticated worker identity.
 Reads have been verified against SAP's S/4HANA Cloud sandbox (30 September); writes
@@ -134,8 +132,8 @@ costs — not a summary of what was built.
 
 Also: [`nfr.md`](nfr.md) latency, concurrency, failure modes, security posture,
 cost · [`clean-core.md`](clean-core.md) where this complies with SAP Clean Core
-and, at greater length, where it does not · [`market.md`](market.md) the
-competitive landscape, fact-checked, including the claims we may **not** make.
+and, at greater length, where it does not · [`business-case.md`](business-case.md)
+who this is for and what it displaces, every figure sourced.
 
 ---
 
@@ -168,8 +166,8 @@ bins that live in EWM, and error payloads less tidy than a mock's.
 A synthetic English stock-query smoke test correctly selected material 4711; it is
 not an accent or noise benchmark. Noise
 robustness is listed as untested in [`nfr.md`](nfr.md) and no claim is made
-about it. Incumbent voice systems beat this on both counts; see
-[`market.md`](market.md) §5 for what they do better.
+about it. Incumbent voice systems, built on ruggedized hardware and tuned for
+85 dB floors over decades, beat this on both counts.
 
 **Demo scale and identity limits.** Browser sessions use separate signed scopes and
 the gateway stores shared state in Postgres. Scope isolation is not authenticated

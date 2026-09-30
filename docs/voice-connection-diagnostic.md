@@ -77,7 +77,7 @@ been established. The new diagnostic code is deployed; the earlier UI changes
 remain separate local changes.
 
 See `voice-provider-evidence.json` for sanitized request IDs and response metadata,
-and `assemblyai-support-draft.md` for an unsent support report. No external message
+No external message
 has been sent. Diagnostic tests cover authorization, invalid tool credentials,
 agent tracking and redaction. Local check suite: 28 passed.
 

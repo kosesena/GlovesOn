@@ -8,7 +8,7 @@ was refused once must stay refused, a token from one session must be worthless
 in another, a newer draft must retire the older one. Each one ends by reading
 the stock back, so "nothing was written" is asserted, never assumed.
 
-Every test here is a sentence from NEXT.md's hardening list or from the
+Every test here is a sentence from the hardening list or from the
 "Five guardrails" slide, so a failure is a claim going false out loud.
 """
 

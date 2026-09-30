@@ -56,7 +56,7 @@ robustness, productivity savings and production suitability are not established.
 The repository includes gateway checks, browser lifecycle and result-state
 checks, architecture decisions and a judge guide. Exact evidence and outstanding
 delivery work are listed in `docs/agent-workspace.md` and
-`docs/hackathon-readiness.md`.
+`docs/JUDGE-GUIDE.md`.
 
 ## Technology & category tags
 

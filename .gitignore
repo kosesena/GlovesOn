@@ -26,3 +26,23 @@ docs/experiments/
 
 # Local drafts, renders and research (never publish)
 output/
+
+# Internal notes, competitor research and film production notes: kept locally, never published
+docs/market.md
+docs/field-census.md
+docs/PROGRESS.md
+docs/SESSION-HANDOFF-20260916.md
+docs/SESSION-HANDOFF-20260920.md
+docs/SESSION-HANDOFF-20260921.md
+docs/SESSION-HANDOFF-20260923.md
+docs/SESSION-HANDOFF-20260929.md
+NEXT.md
+AGENTS.md
+CLAUDE.md
+docs/lena-memory.md
+docs/hackathon-readiness.md
+docs/assemblyai-support-draft.md
+submission/video-script.md
+submission/slides-outline.md
+submission/video/
+docs/SESSION-HANDOFF-*.md
