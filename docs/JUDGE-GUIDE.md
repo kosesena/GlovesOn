@@ -14,7 +14,7 @@ is warm.
 
 ---
 
-## Workspace update — 10 September 2026
+## Demo communications and what the drafts prove
 
 New communication tools use a fictional directory and persist only demo outbox,
 call-log and note records. Nobody is contacted. The split workspace shows actual
