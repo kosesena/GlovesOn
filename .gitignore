@@ -22,3 +22,7 @@ docs/experiments/
 .env.*
 !.env.example
 .envecho
+.vercel
+
+# Local drafts, renders and research (never publish)
+output/
