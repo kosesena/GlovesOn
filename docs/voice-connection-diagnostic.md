@@ -81,10 +81,10 @@ No external message
 has been sent. Diagnostic tests cover authorization, invalid tool credentials,
 agent tracking and redaction. Local check suite: 28 passed.
 
-## Earlier follow-up: explicit user authorization and key replacement
+## Earlier follow-up: key replacement
 
-The user instructed replacing Vercel's ASSEMBLYAI_API_KEY with the working value
-from the local .env, redeploying, and probing again. Updated the existing project
+Vercel's ASSEMBLYAI_API_KEY was replaced with the working value from the local
+.env, the project redeployed, and the probe run again. Updated the existing project
 variable with Vercel's PATCH API (HTTP 200); sensitive type and production/preview
 targets were retained. No key value was printed, and no other variable was changed.
 
@@ -106,7 +106,7 @@ has since explicitly authorized the key replacement and production connection pr
 
 ## Reproduced failure
 
-The user sees `session.error: agent_not_found` after Start talking in Safari.
+Safari showed `session.error: agent_not_found` after Start talking.
 The same error was reproduced using a Python WebSocket client, so this failure
 occurs before microphone capture and is not specific to Safari.
 

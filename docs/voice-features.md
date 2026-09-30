@@ -116,8 +116,7 @@ The paid protocol probe tests inline configuration, resumption, and history:
 
 The full ERP suite requires the separately configured `TEST_DATABASE_URL`. Never
 point it at the demonstration database: it resets its own test schema. Bluejay account
-integration is intentionally not activated; the user requested local infrastructure
-until an account exists.
+integration is intentionally not activated; it stays local until an account exists.
 
 ## Scope decisions
 
